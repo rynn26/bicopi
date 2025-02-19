@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "bichopi_mobile" "\0"
+            VALUE "FileDescription", "coba3" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "bichopi_mobile" "\0"
+            VALUE "InternalName", "coba3" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "bichopi_mobile.exe" "\0"
-            VALUE "ProductName", "bichopi_mobile" "\0"
+            VALUE "OriginalFilename", "coba3.exe" "\0"
+            VALUE "ProductName", "coba3" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
