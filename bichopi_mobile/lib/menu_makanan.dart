@@ -3,7 +3,7 @@ import 'cart_page.dart';
 
 class FoodMenuPage extends StatefulWidget {
   final String categoryName;
-  
+
   const FoodMenuPage({super.key, required this.categoryName});
 
   @override
@@ -14,71 +14,85 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
   List<Map<String, dynamic>> menuItems = [
     {
       "name": "Ricebowl",
-      "price": 15000,
+      "price": "15.000",
       "image": "assets/ricebowl.png",
-      "description": "Ricebowl dengan ayam crispy dan saus spesial.",
+      "description": "Makanan lezat dan bergizi",
+    },
+    {
+      "name": "Mie Goreng Jawa",
+      "price": "14.000",
+      "image": "assets/mie_goreng.png",
+      "description": "Mie goreng khas Jawa dengan cita rasa otentik",
+    },
+    {
+      "name": "Bakso Campur",
+      "price": "13.000",
+      "image": "assets/bakso.png",
+      "description": "Bakso dengan aneka campuran lezat dan kuah gurih",
+    },
+    {
+      "name": "Nasi Goreng Jawa",
+      "price": "14.000",
+      "image": "assets/nasi_goreng.png",
+      "description":
+          "Nasi goreng khas Jawa dengan bumbu spesial dan topping lengkap",
     },
   ];
-
-  List<Map<String, dynamic>> cart = [];
-
-  void addToCart(Map<String, dynamic> item) {
-    setState(() {
-      cart.add(item);
-    });
-  }
-
-  int getTotalPrice() {
-  return cart.fold(0, (sum, item) => sum + (item['price'] as int));
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.green.shade700,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(widget.categoryName, style: const TextStyle(color: Colors.white)),
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green.shade700,
-              borderRadius: const BorderRadius.only(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Bichopi, Indonesia", style: TextStyle(color: Colors.white70)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 40),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Icon(Icons.star, color: Colors.white, size: 16),
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            "Menu Makanan",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Bichopi, Indonesia",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text("Tambahkan Menu", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            ),
-          ),
-          const SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -86,52 +100,82 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
               itemBuilder: (context, index) {
                 final item = menuItems[index];
                 return Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(10),
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(item['image'], width: 50, height: 50, fit: BoxFit.cover),
-                    ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(item['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text("Rp ${item['price']}", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green.shade700)),
-                      ],
-                    ),
-                    subtitle: Column(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item['description']),
+                        Column(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                item["image"]!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(color: Colors.green),
+                                ),
+                              ),
+                              child: const Text(
+                                "Tambah",
+                                style: TextStyle(color: Colors.green),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item["name"]!,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item["description"]!,
+                                style: const TextStyle(color: Colors.black54),
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Text(
+                                  "Rp ${item["price"]}",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: () => addToCart(item),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: const Text("+", style: TextStyle(fontSize: 18)),
                     ),
                   ),
                 );
               },
             ),
           ),
-          if (cart.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.green,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.shopping_cart, color: Colors.white),
-                  Text("${cart.length} Pesanan", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  Text("Rp ${getTotalPrice()}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
         ],
       ),
     );

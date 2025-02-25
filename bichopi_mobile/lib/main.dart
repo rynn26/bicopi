@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'menu_makanan.dart'; // Pastikan halaman menu_page.dart sudah ada
+import 'menu_makanan.dart' as makanan;
+
+import 'menu_minuman.dart';
+import 'menu_snack.dart' as snack;
 
 void main() {
   runApp(const MaterialApp(
@@ -18,6 +21,32 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> allMenus = [
+    {"name": "Ricebowl", "price": 15000, "image": "assets/ricebowl.png"},
+    {"name": "Mie Goreng Jawa", "price": 14000, "image": "assets/mie_goreng.png"},
+    {"name": "Bakso Campur", "price": 13000, "image": "assets/bakso.png"},
+    {"name": "Nasi Goreng Jawa", "price": 14000, "image": "assets/nasi_goreng.png"},
+  ];
+   List<Map<String, dynamic>> filteredMenus = [];
+
+  @override
+  void initState() {
+    super.initState();
+    filteredMenus = allMenus; // Set awal ke semua menu
+  }
+
+  void _filterMenu(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredMenus = allMenus;
+      } else {
+        filteredMenus = allMenus
+            .where((menu) => menu["name"].toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -25,11 +54,49 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void navigateToMenuPage(String categoryName) {
+ void navigateToMenuPage(String categoryName, BuildContext context) {
+  if (categoryName == "Minuman") {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => FoodMenuPage(categoryName: categoryName),
+      MaterialPageRoute(builder: (context) => const DrinkMenuPage()),
+    );
+  } else if (categoryName == "Snack") {
+   Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
+
+
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => makanan.FoodMenuPage(categoryName: categoryName)),
+    );
+  }
+}
+
+
+  Widget _buildCategoryList(BuildContext context) {
+    final categories = [
+      {"name": "Makanan", "icon": Icons.fastfood},
+      {"name": "Minuman", "icon": Icons.local_cafe},
+      {"name": "Snack", "icon": Icons.lunch_dining},
+      {"name": "Lainnya", "icon": Icons.more_horiz},
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: categories.map((category) {
+          return _CategoryItem(
+            categoryName: category["name"] as String,
+            icon: category["icon"] as IconData,
+            onTap: () {
+              navigateToMenuPage(category["name"] as String, context);
+            },
+          );
+        }).toList(),
       ),
     );
   }
@@ -44,7 +111,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             _buildTopBar(),
             _buildSearchBar(),
-            _buildCategoryList(),
+            _buildCategoryList(context),
             _buildCarousel(),
             _buildMenuList(),
           ],
@@ -163,23 +230,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: "Cari menu...",
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    child: TextField(
+      controller: _searchController,
+      onChanged: _filterMenu, // Saat pengguna mengetik, filter menu
+      decoration: InputDecoration(
+        hintText: "Cari menu...",
+        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
         ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 10),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildCarousel() {
     final List<String> imageList = [
@@ -204,32 +274,6 @@ class _HomePageState extends State<HomePage> {
               fit: BoxFit.cover,
               width: double.infinity,
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildCategoryList() {
-    final categories = [
-      {"name": "Makanan", "icon": Icons.fastfood},
-      {"name": "Minuman", "icon": Icons.local_cafe},
-      {"name": "Snack", "icon": Icons.lunch_dining},
-      {"name": "Lainnya", "icon": Icons.more_horiz},
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: categories.map((category) {
-          return _CategoryItem(
-            categoryName: category["name"] as String,
-            icon: category["icon"] as IconData,
-            onTap: () {
-              // Navigasi ke halaman menu dengan kategori yang dipilih
-              navigateToMenuPage(category["name"] as String);
-            },
           );
         }).toList(),
       ),
@@ -312,25 +356,25 @@ class _HomePageState extends State<HomePage> {
 class _CategoryItem extends StatelessWidget {
   final String categoryName;
   final IconData icon;
-  final VoidCallback onTap;  // Tambahkan callback onTap
+  final VoidCallback onTap; // Tambahkan callback onTap
 
   const _CategoryItem({
     required this.categoryName,
     required this.icon,
-    required this.onTap,  // Tambahkan parameter onTap
+    required this.onTap, // Tambahkan parameter onTap
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,  // Jalankan onTap saat item diketuk
+      onTap: onTap, // Jalankan onTap saat item diketuk
       child: Column(
         children: [
           CircleAvatar(
             radius: 30,
             backgroundColor: Colors.grey[200],
             child: Icon(icon, size: 30, color: Colors.green),
-            ),
+          ),
           const SizedBox(height: 4),
           Text(
             categoryName,
