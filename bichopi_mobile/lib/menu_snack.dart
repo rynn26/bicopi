@@ -1,41 +1,98 @@
 import 'package:flutter/material.dart';
 
-class SnackMenuPage extends StatelessWidget {
+class SnackMenuPage extends StatefulWidget {
   const SnackMenuPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final snackItems = [
-      {
-        "name": "Kentang Goreng",
-        "category": "Snack",
-        "description": "Kentang goreng krispi",
-        "price": "12.000",
-        "image": "assets/kentang.png"
-      },
-      {
-        "name": "Pisang Kipas",
-        "category": "Snack",
-        "description": "pisang manis dan renyah",
-        "price": "12.000",
-        "image": "assets/pisang_kipas.png"
-      },
-      {
-        "name": "Tahu Crispy",
-        "category": "Snack",
-        "description": "Crispy dan tambahan cabai garam",
-        "price": "12.000",
-        "image": "assets/tahu.png"
-      },
-      {
-        "name": "Sempol Ayam",
-        "category": "Snack",
-        "description": "ekstra daging ayam",
-        "price": "10.000",
-        "image": "assets/sempol.png"
-      },
-    ];
+  _SnackMenuPageState createState() => _SnackMenuPageState();
+}
 
+class _SnackMenuPageState extends State<SnackMenuPage> {
+  final List<Map<String, dynamic>> snackItems = [
+    {
+      "name": "Kentang Goreng",
+      "category": "Snack",
+      "description": "Kentang goreng krispi",
+      "price": "12.000",
+      "image": "assets/kentang.png"
+    },
+    {
+      "name": "Pisang Kipas",
+      "category": "Snack",
+      "description": "pisang manis dan renyah",
+      "price": "12.000",
+      "image": "assets/pisang_kipas.png"
+    },
+    {
+      "name": "Tahu Crispy",
+      "category": "Snack",
+      "description": "Crispy dan tambahan cabai garam",
+      "price": "12.000",
+      "image": "assets/tahu.png"
+    },
+    {
+      "name": "Sempol Ayam",
+      "category": "Snack",
+      "description": "ekstra daging ayam",
+      "price": "10.000",
+      "image": "assets/sempol.png"
+    },
+  ];
+
+  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          height: 80, // Mengurangi ukuran popup
+          decoration: const BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.shopping_cart, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("1 Pesanan", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      Text(
+                        item["name"],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Text(
+                "${item["price"]}",
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -49,7 +106,7 @@ class SnackMenuPage extends StatelessWidget {
                 bottomRight: Radius.circular(20),
               ),
             ),
-             child: Column(
+            child: Column(
               children: [
                 const SizedBox(height: 40),
                 Row(
@@ -119,7 +176,7 @@ class SnackMenuPage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 5),
                                 ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () => _showAddToCartDialog(context, item),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(

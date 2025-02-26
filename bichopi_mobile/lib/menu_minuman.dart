@@ -1,41 +1,99 @@
 import 'package:flutter/material.dart';
 
-class DrinkMenuPage extends StatelessWidget {
+class DrinkMenuPage extends StatefulWidget {
   const DrinkMenuPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final drinkItems = [
-      {
-        "name": "Boba",
-        "category": "Minuman",
-        "description": "Minuman segar dan manis",
-        "price": "15.000",
-        "image": "assets/boba.png"
-      },
-      {
-        "name": "Chocolatte",
-        "category": "Minuman",
-        "description": "Minuman coklat lezat",
-        "price": "14.000",
-        "image": "assets/chocolatte.png"
-      },
-      {
-        "name": "Es Teh",
-        "category": "Minuman",
-        "description": "Minuman teh segar",
-        "price": "13.000",
-        "image": "assets/tea.png"
-      },
-      {
-        "name": "Thai Tea",
-        "category": "Minuman",
-        "description": "Minuman teh khas Thailand",
-        "price": "14.000",
-        "image": "assets/thai_tea.png"
-      },
-    ];
+  _DrinkMenuPageState createState() => _DrinkMenuPageState();
+}
 
+class _DrinkMenuPageState extends State<DrinkMenuPage> {
+  final drinkItems = [
+    {
+      "name": "Boba",
+      "category": "Minuman",
+      "description": "Minuman segar dan manis",
+      "price": "15.000",
+      "image": "assets/boba.png"
+    },
+    {
+      "name": "Chocolatte",
+      "category": "Minuman",
+      "description": "Minuman coklat lezat",
+      "price": "14.000",
+      "image": "assets/chocolatte.png"
+    },
+    {
+      "name": "Es Teh",
+      "category": "Minuman",
+      "description": "Minuman teh segar",
+      "price": "13.000",
+      "image": "assets/tea.png"
+    },
+    {
+      "name": "Thai Tea",
+      "category": "Minuman",
+      "description": "Minuman teh khas Thailand",
+      "price": "14.000",
+      "image": "assets/thai_tea.png"
+    },
+  ];
+
+  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          height: 60, // Ukuran popup lebih kecil
+          decoration: const BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.shopping_cart, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("1 Pesanan",
+                          style: TextStyle(color: Colors.white, fontSize: 10)),
+                      Text(
+                        item["name"],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Text(
+                "Rp ${item["price"]}",
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -49,7 +107,7 @@ class DrinkMenuPage extends StatelessWidget {
                 bottomRight: Radius.circular(20),
               ),
             ),
-             child: Column(
+            child: Column(
               children: [
                 const SizedBox(height: 40),
                 Row(
@@ -64,7 +122,7 @@ class DrinkMenuPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
                           Text(
-                            "Menu Minuman",
+                            "Menu Snack",
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -119,12 +177,14 @@ class DrinkMenuPage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 5),
                                 ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: () =>
+                                      _showAddToCartDialog(context, item),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
-                                      side: const BorderSide(color: Colors.green),
+                                      side:
+                                          const BorderSide(color: Colors.green),
                                     ),
                                   ),
                                   child: const Text(
@@ -142,12 +202,15 @@ class DrinkMenuPage extends StatelessWidget {
                                   Text(
                                     item["name"]!,
                                     style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.bold),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                   Text(
                                     item["category"]!,
                                     style: const TextStyle(
-                                        fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(item["description"]!),
