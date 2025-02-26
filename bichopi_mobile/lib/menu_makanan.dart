@@ -34,10 +34,63 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
       "name": "Nasi Goreng Jawa",
       "price": "14.000",
       "image": "assets/nasi_goreng.png",
-      "description":
-          "Nasi goreng khas Jawa dengan bumbu spesial dan topping lengkap",
+      "description": "Nasi goreng khas Jawa dengan bumbu spesial dan topping lengkap",
     },
   ];
+  void _addToCart(Map<String, dynamic> item){}
+
+  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.green,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.shopping_cart, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("1 Pesanan", style: TextStyle(color: Colors.white, fontSize: 12)),
+                      Text(
+                        item["name"],
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Text(
+                "${item["price"]}",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +175,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                             ),
                             const SizedBox(height: 5),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () => _showAddToCartDialog(context, item),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -153,18 +206,6 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                               Text(
                                 item["description"]!,
                                 style: const TextStyle(color: Colors.black54),
-                              ),
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: Text(
-                                  "Rp ${item["price"]}",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
                               ),
                             ],
                           ),
