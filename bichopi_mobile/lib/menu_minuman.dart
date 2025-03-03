@@ -50,7 +50,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
           padding: const EdgeInsets.all(12),
           height: 60, // Ukuran popup lebih kecil
           decoration: const BoxDecoration(
-            color: Colors.green,
+            color: Color(0xFF078603), // Ubah warna hijau
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: Row(
@@ -101,7 +101,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Colors.green,
+               color: Color(0xFF078603), // Ubah warna hijau
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -184,12 +184,13 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       side:
-                                          const BorderSide(color: Colors.green),
+                                         const BorderSide(
+                                          color: Color(0xFF078603)),
                                     ),
                                   ),
                                   child: const Text(
                                     "Tambah",
-                                    style: TextStyle(color: Colors.green),
+                                    style: TextStyle(color: Color(0xFF078603)), // Ubah warna hijau
                                   ),
                                 ),
                               ],

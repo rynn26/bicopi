@@ -113,7 +113,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
-           bottomNavigationBar: Padding(
+      bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
           decoration: BoxDecoration(
@@ -132,11 +132,13 @@ class _HomePageState extends State<HomePage> {
             child: BottomNavigationBar(
               items: [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.chair), label: 'reservasi'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.chair), label: 'reservasi'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
               ],
               currentIndex: _currentIndex,
-              selectedItemColor: const Color.fromARGB(255, 8, 188, 68),
+              selectedItemColor: Color(0xFF078603),
               unselectedItemColor: Colors.grey,
               showUnselectedLabels: false,
               backgroundColor: Colors.white,
@@ -149,8 +151,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
-
 
 class HomeContent extends StatelessWidget {
   @override
@@ -207,11 +207,10 @@ Widget _buildCategoryList(BuildContext context) {
           child: Column(
             children: [
               CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.grey[200],
-                child: Icon(category["icon"] as IconData,
-                    size: 30, color: Colors.green),
-              ),
+                  radius: 30,
+                  backgroundColor: Colors.grey[200],
+                  child: Icon(category["icon"] as IconData,
+                      size: 30, color: Color(0xFF078603))),
               const SizedBox(height: 4),
               Text(
                 category["name"] as String,
@@ -231,7 +230,10 @@ Widget _buildTopBar() {
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
     decoration: const BoxDecoration(
       gradient: LinearGradient(
-        colors: [Color(0xFF00C853), Color(0xFF00C853)],
+        colors: [
+          Color(0xFF078603),
+          Color(0xFF078603),
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -337,9 +339,9 @@ Widget _buildSearchBar() {
 
 Widget _buildCarousel() {
   final List<String> imageList = [
-    "assets/ricebowl.png",
-    "assets/ricebowl.png",
-    "assets/ricebowl.png",
+    "assets/paketramadhan.jpg",
+    "assets/paketb.jpg",
+    "assets/bicopi.jpg",
   ];
 
   return Padding(
@@ -367,96 +369,122 @@ Widget _buildCarousel() {
 Widget _buildMenuList() {
   final menuItems = [
     {
+      "name": "Boba",
+      "category": "Minuman",
+      "description": "Minuman segar dan manis",
+      "price": "15.000",
+      "image": "assets/boba.png"
+    },
+    {
       "name": "Nasi Goreng Pedas",
+      "category": "Makanan",
+      "description": "Nasi goreng dengan cita rasa pedas",
       "price": "18.000",
       "image": "assets/ricebowl.png"
     },
-    {"name": "2 Rice Bowl", "price": "20.000", "image": "assets/ricebowl.png"},
-    {"name": "Nasi", "price": "18.000", "image": "assets/ricebowl.png"},
-    {"name": "Coffe Latte", "price": "15.000", "image": "assets/ricebowl.png"},
     {
-      "name": "Chocolate Coffe",
-      "price": "16.000",
-      "image": "assets/ricebowl.png"
+      "name": "Boba",
+      "category": "Minuman",
+      "description": "Minuman segar dan manis",
+      "price": "15.000",
+      "image": "assets/boba.png"
     },
   ];
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 7),
-          child: Text(
-            "Rekomendasi Menu",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    child: ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: menuItems.length,
+      itemBuilder: (context, index) {
+        final item = menuItems[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-        ),
-        ListView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          itemCount: menuItems.length,
-          itemBuilder: (context, index) {
-            final item = menuItems[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    item["image"]!,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
+          color: const Color.fromARGB(
+              255, 255, 255, 255), // Warna latar belakang lembut
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        item["image"]!,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 80, // Sesuaikan lebar tombol dengan gambar
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.green,
+                          side: const BorderSide(color: Colors.green),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                        ),
+                        child: const Text(
+                          "Tambah",
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item["name"]!,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      Text(
+                        item["category"]!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item["description"]!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                title: Text(
-                  item["name"]!,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Text(
+                  "Rp ${item["price"]}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-                subtitle: Text("Rp ${item["price"]}"),
-              ),
-            );
-          },
-        ),
-      ],
+              ],
+            ),
+          ),
+        );
+      },
     ),
   );
-}
-
-class _CategoryItem extends StatelessWidget {
-  final String categoryName;
-  final IconData icon;
-  final VoidCallback onTap; // Tambahkan callback onTap
-
-  const _CategoryItem({
-    required this.categoryName,
-    required this.icon,
-    required this.onTap, // Tambahkan parameter onTap
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap, // Jalankan onTap saat item diketuk
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.grey[200],
-            child: Icon(icon, size: 30, color: Colors.green),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            categoryName,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
 }
