@@ -1,8 +1,33 @@
 import 'package:flutter/material.dart';
 import 'bukti_reservasi.dart';
 
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          floatingLabelStyle: const TextStyle(color: Color(0xFF078603)), // Label berubah hijau saat diklik
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF078603), width: 2),
+          ),
+        ),
+      ),
+      home: const ReservationFormScreen(category: {'name': 'Contoh Reservasi'}),
+    );
+  }
+}
+
 class ReservationFormScreen extends StatefulWidget {
-  final Map<String, dynamic> category; // Tambahkan parameter category
+  final Map<String, dynamic> category;
 
   const ReservationFormScreen({super.key, required this.category});
 
@@ -21,92 +46,124 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: const Color(0xFF078603),
+        elevation: 4,
+        toolbarHeight: 80,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
         title: Text(
-          'Reservasi - ${widget.category['name']}', // Menampilkan kategori
-          style: const TextStyle(color: Colors.white),
+          'Reservasi - ${widget.category['name']}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
+
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Tambahkan Data Reservasi untuk ${widget.category['name']}',
-              style: TextStyle(
-                color: Colors.green[700],
-                fontSize: 16,
+              style: const TextStyle(
+                color: Color(0xFF078603),
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
-            buildTextField('Nama', namaController, 'Nama Pemesan'),
-            buildTextField('Tanggal Reservasi', tanggalController, 'Tanggal', Icons.calendar_today),
-            buildTextField('Waktu Reservasi', waktuController, 'Waktu'),
-            buildTextField('Jumlah Orang', jumlahController, 'Jumlah Orang'),
-            buildTextField('Keterangan', keteranganController, 'Tambahkan keterangan (opsional)'),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HasilReservasiScreen(
-                        nama: namaController.text,
-                        tanggal: tanggalController.text,
-                        waktu: waktuController.text,
-                        jumlah: jumlahController.text,
-                        keterangan: keteranganController.text,
-                      ),
-                    ),
-                  );
-                },
-                child: const Text(
-                  'Cetak Reservasi',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+            const SizedBox(height: 15),
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    buildTextField('Nama', namaController, 'Nama Pemesan', Icons.person),
+                    buildTextField('Tanggal Reservasi', tanggalController, 'Tanggal', Icons.calendar_today),
+                    buildTextField('Waktu Reservasi', waktuController, 'Waktu', Icons.access_time),
+                    buildTextField('Jumlah Orang', jumlahController, 'Jumlah Orang', Icons.people),
+                    buildTextField('Keterangan', keteranganController, 'Tambahkan keterangan (opsional)', Icons.notes),
+                  ],
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Tombol Cetak Reservasi
+            Center(
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF078603),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HasilReservasiScreen(
+                          nama: namaController.text,
+                          tanggal: tanggalController.text,
+                          waktu: waktuController.text,
+                          jumlah: jumlahController.text,
+                          keterangan: keteranganController.text,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.print, color: Colors.white),
+                  label: const Text(
+                    'Cetak Reservasi',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget buildTextField(String label, TextEditingController controller, String hint, [IconData? icon]) {
+  Widget buildTextField(String label, TextEditingController controller, String hint, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: hint,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              suffixIcon: icon != null ? Icon(icon, color: Colors.green) : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        cursorColor: const Color(0xFF078603),
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon, color: Colors.green),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-        ],
+          filled: true,
+          fillColor: Colors.grey[100],
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        ),
       ),
     );
   }

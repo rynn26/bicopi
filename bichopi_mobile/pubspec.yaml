@@ -81,6 +81,10 @@ flutter:
     - assets/paketramadhan.jpg
     - assets/paketb.jpg
     - assets/bicopi.jpg
+    - assets/reservasi1.png
+    - assets/reservasi2.png
+    - assets/reservasi3.png
+    - assets/icon_wa.png
    
 
     
@@ -113,3 +117,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  

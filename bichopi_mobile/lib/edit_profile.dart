@@ -16,14 +16,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Edit Profile',
-          style: TextStyle(color: Colors.white),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(70), // Samakan tinggi AppBar
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(25), // Tambahkan corner radius
+            bottomRight: Radius.circular(25),
+          ),
+          child: AppBar(
+            title: Text(
+              'Edit Profile',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Color(0xFF078603),
+            centerTitle: true,
+            iconTheme: IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
         ),
-        backgroundColor: Color(0xFF078603),
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24.0),
@@ -47,7 +57,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Simpan perubahan atau lakukan tindakan lain
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Perubahan disimpan!')),
                   );

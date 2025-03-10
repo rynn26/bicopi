@@ -50,7 +50,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           padding: const EdgeInsets.all(12),
           height: 80, // Mengurangi ukuran popup
           decoration: const BoxDecoration(
-            color: Colors.green,
+            color:  Color(0xFF078603),
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
           ),
           child: Row(
@@ -100,7 +100,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Colors.green,
+              color:  Color(0xFF078603),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -186,7 +186,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                                   ),
                                   child: const Text(
                                     "Tambah",
-                                    style: TextStyle(color: Colors.green),
+                                    style: TextStyle(color:  Color(0xFF078603),),
                                   ),
                                 ),
                               ],

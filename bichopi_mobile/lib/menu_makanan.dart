@@ -13,32 +13,32 @@ class FoodMenuPage extends StatefulWidget {
 class _FoodMenuPageState extends State<FoodMenuPage> {
   List<Map<String, dynamic>> menuItems = [
      {
-      "name": "Boba",
-      "category": "Minuman",
-      "description": "Minuman segar dan manis",
+      "name": "Ayam Geprek",
+      "category": "Makanan",
+      "description": "Pedas dan bergizi",
       "price": "15.000",
-      "image": "assets/boba.png"
+      "image": "assets/ayamgeprek.png"
     },
     {
-      "name": "Chocolatte",
-      "category": "Minuman",
-      "description": "Minuman coklat lezat",
+      "name": "Bakso",
+      "category": "Makanan",
+      "description": "Tanpa Tepung",
       "price": "14.000",
-      "image": "assets/chocolatte.png"
+      "image": "assets/bakso.png"
     },
     {
-      "name": "Es Teh",
-      "category": "Minuman",
-      "description": "Minuman teh segar",
+      "name": "Mie Goreng",
+      "category": "Makanan",
+      "description": "Cocok untuk akhir bulan",
       "price": "13.000",
-      "image": "assets/tea.png"
+      "image": "assets/mie_goreng.png"
     },
     {
-      "name": "Thai Tea",
-      "category": "Minuman",
-      "description": "Minuman teh khas Thailand",
+      "name": "Nasi Goreng",
+      "category": "Makanan",
+      "description": "Pedas Nampol",
       "price": "14.000",
-      "image": "assets/thai_tea.png"
+      "image": "assets/nasi_goreng.png"
     },
   ];
 

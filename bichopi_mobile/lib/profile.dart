@@ -13,20 +13,30 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Profile Pengguna',
-          style: TextStyle(color: Colors.white), // Warna title putih
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(70), // Samakan tinggi dengan contoh
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(25), // Radius membulat untuk estetika
+            bottomRight: Radius.circular(25),
+          ),
+          child: AppBar(
+            title: Text(
+              'Profile Pengguna',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Color(0xFF078603), // Warna hijau elegan
+            centerTitle: true,
+            iconTheme: IconThemeData(color: Colors.white), // Warna ikon kembali putih
+            elevation: 0, // Hilangkan shadow agar lebih smooth
+          ),
         ),
-        backgroundColor: Color(0xFF078603), // Hijau lebih elegan
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white), // Warna ikon kembali putih
       ),
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 30),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: CircleAvatar(
@@ -41,28 +51,29 @@ class ProfilePage extends StatelessWidget {
               _buildProfileField("Email", email),
               _buildProfileField("No Telepon", noTelepon),
               SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Navigasi ke halaman Edit Profile
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => EditProfilePage()),
-                    );
-                  },
-                  icon: Icon(Icons.edit, color: Colors.white),
-                  label: Text(
-                    'Ubah Data Pribadi',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF078603), // Warna hijau elegan
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              
+              // Ubah data pribadi sebagai teks dengan ikon
+              GestureDetector(
+                onTap: () {
+                  // Navigasi ke halaman Edit Profile
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditProfilePage()),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Icon(Icons.article, size: 24, color: Colors.black), // Ikon di sebelah kiri
+                    SizedBox(width: 8), // Spasi antara ikon dan teks
+                    Text(
+                      'Ubah data pribadi',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -83,16 +94,12 @@ class ProfilePage extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           SizedBox(height: 5),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 16),
+          TextField(
+            controller: TextEditingController(text: value),
+            readOnly: true,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             ),
           ),
         ],

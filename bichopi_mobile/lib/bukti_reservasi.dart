@@ -20,16 +20,25 @@ class HasilReservasiScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Reservasi"),
-        backgroundColor: Colors.green,
+        title: const Text(
+          "Reservasi",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF078603),
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
+        toolbarHeight: 80, // Tinggi AppBar ditingkatkan
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20), // Membuat AppBar melengkung di bawah
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Announcement
             const Text(
               "Announcement",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -41,30 +50,27 @@ class HasilReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Gambar & Detail Singkat
+            // Gambar & Detail Singkat dengan Border Radius
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
                     spreadRadius: 1,
-                    blurRadius: 5,
+                    blurRadius: 6,
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    ),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
                     child: Image.asset(
-                      'assets/kursi.jpg', // Ganti dengan path gambar yang benar
-                      width: 90,
-                      height: 80,
+                      'assets/kursi.jpg',
+                      width: 100, // Lebih besar agar proporsional
+                      height: 90,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -76,6 +82,7 @@ class HasilReservasiScreen extends StatelessWidget {
                         "Kursi Deretan Depan",
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
+                      SizedBox(height: 4),
                       Text(
                         "Kapasitas 20 Orang",
                         style: TextStyle(fontSize: 14, color: Colors.grey),
@@ -87,17 +94,17 @@ class HasilReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Detail Reservasi
+            // Detail Reservasi dengan Border Radius
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16), // Padding lebih besar agar lebih nyaman
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.3),
                     spreadRadius: 1,
-                    blurRadius: 5,
+                    blurRadius: 6,
                   ),
                 ],
               ),
@@ -120,28 +127,34 @@ class HasilReservasiScreen extends StatelessWidget {
 
             const Spacer(),
 
-            // Tombol Hubungi Sekarang
+            // Tombol Hubungi Sekarang dengan Border Radius
             Center(
-              child: TextButton(
-                onPressed: () {
-                  // Tambahkan logika untuk menghubungi WhatsApp
-                },
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/whatsapp.png', // Pastikan gambar tersedia
-                      width: 24,
-                      height: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text("Hubungi Sekarang", style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ],
+              child: SizedBox(
+                width: double.infinity, // Tombol memenuhi lebar parent
+                child: TextButton(
+                  onPressed: () {
+                    // Tambahkan logika untuk menghubungi WhatsApp
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFF078603),
+                    padding: const EdgeInsets.symmetric(vertical: 16), // Tinggi tombol lebih besar
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/icon_wa.png',
+                        width: 28,
+                        height: 28,
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        "Hubungi Sekarang",
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -154,12 +167,12 @@ class HasilReservasiScreen extends StatelessWidget {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value, style: const TextStyle(color: Colors.black)),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(value, style: const TextStyle(color: Colors.black, fontSize: 16)),
         ],
       ),
     );
