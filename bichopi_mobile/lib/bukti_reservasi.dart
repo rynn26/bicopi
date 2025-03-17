@@ -68,7 +68,7 @@ class HasilReservasiScreen extends StatelessWidget {
                   ClipRRect(
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
                     child: Image.asset(
-                      'assets/kursi.jpg',
+                      'assets/reservasi1.png',
                       width: 100, // Lebih besar agar proporsional
                       height: 90,
                       fit: BoxFit.cover,

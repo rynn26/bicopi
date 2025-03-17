@@ -5,9 +5,9 @@ class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   // Contoh data pengguna
-  final String namaLengkap = "John Doe";
-  final String username = "johndoe";
-  final String email = "johndoe@example.com";
+  final String namaLengkap = "Muzaka Najih";
+  final String username = "muzaka86_";
+  final String email = "muzaka@example.com";
   final String noTelepon = "+6281234567890";
 
   @override
@@ -63,12 +63,12 @@ class ProfilePage extends StatelessWidget {
                 },
                 child: Row(
                   children: [
-                    Icon(Icons.article, size: 24, color: Colors.black), // Ikon di sebelah kiri
+                    Icon(Icons.article, size: 22, color: Colors.black), // Ikon di sebelah kiri
                     SizedBox(width: 8), // Spasi antara ikon dan teks
                     Text(
                       'Ubah data pribadi',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),

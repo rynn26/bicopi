@@ -8,9 +8,9 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController namaController = TextEditingController(text: "John Doe");
-  final TextEditingController usernameController = TextEditingController(text: "johndoe");
-  final TextEditingController emailController = TextEditingController(text: "johndoe@example.com");
+  final TextEditingController namaController = TextEditingController(text: "Muzaka Najih");
+  final TextEditingController usernameController = TextEditingController(text: "muzaka86_");
+  final TextEditingController emailController = TextEditingController(text: "muzaka@example.com");
   final TextEditingController noTeleponController = TextEditingController(text: "+6281234567890");
 
   @override

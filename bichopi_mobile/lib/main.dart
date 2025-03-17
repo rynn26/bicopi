@@ -7,6 +7,7 @@ import 'menu_makanan.dart' as makanan;
 import 'package:coba3/home.dart';
 import 'menu_minuman.dart';
 import 'menu_snack.dart' as snack;
+import 'reedem.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -35,6 +36,7 @@ class _HomePageState extends State<HomePage> {
     HomeContent(),
     CartPage(),
     ProfilePage(),
+     RedeemPage(),
   ];
   void _onItemTapped(int index) {
     setState(() {
@@ -136,6 +138,8 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(Icons.chair), label: 'reservasi'),
                 BottomNavigationBarItem(
                     icon: Icon(Icons.person), label: 'Profile'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.redeem_rounded), label: 'Reedem'),
               ],
               currentIndex: _currentIndex,
               selectedItemColor: Color(0xFF078603),
