@@ -6,22 +6,12 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
 import 'menu_minuman.dart';
 import 'menu_snack.dart' as snack;
-import 'splash_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem.dart';
 
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://nfafmiaxogrxxwjuyqfs.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
-  );
-
-  runApp(MaterialApp(
+void main() {
+  runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: SplashScreen.new(),
+    home: HomePage(),
   ));
 }
 
@@ -43,9 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     HomeContent(),
-    CartPage(
-      selectedItem: {},
-    ),
+    CartPage(selectedItem: {},),
     ProfilePage(),
      RedeemPage(),
   ];
@@ -96,10 +84,7 @@ class _HomePageState extends State<HomePage> {
     if (categoryName == "Minuman") {
       Navigator.push(
         context,
-        MaterialPageRoute(
-            builder: (context) => const DrinkMenuPage(
-                  categoryName: '',
-                )),
+        MaterialPageRoute(builder: (context) => const DrinkMenuPage()),
       );
     } else if (categoryName == "Snack") {
       Navigator.push(
@@ -180,48 +165,7 @@ class HomeContent extends StatelessWidget {
           _buildTopBar(),
           _buildSearchBar(),
           _buildCategoryList(context),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(
-              "Paket",
-              style: TextStyle(
-                fontFamily: "Poppins-Light",
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          ),
           _buildCarousel(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Favorit",
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigasi ke halaman paket
-                  },
-                  child: Text(
-                    "Lihat Semua",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
           _buildMenuList(),
         ],
       ),
@@ -254,10 +198,7 @@ Widget _buildCategoryList(BuildContext context) {
             } else if (category["name"] == "Minuman") {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (context) => const DrinkMenuPage(
-                          categoryName: '',
-                        )),
+                MaterialPageRoute(builder: (context) => const DrinkMenuPage()),
               );
             } else if (category["name"] == "Snack") {
               Navigator.push(

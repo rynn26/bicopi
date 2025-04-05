@@ -3,11 +3,11 @@ import 'input_reservasi.dart'; // Import halaman formulir reservasi
 import 'bukti_reservasi.dart';
 
 void main() {
-  runApp(const CartPage(selectedItem: {},));
+  runApp(const CartPage());
 }
 
 class CartPage extends StatelessWidget {
-  const CartPage({super.key, required Map<String, dynamic> selectedItem});
+  const CartPage({super.key});
 
   @override
   Widget build(BuildContext context) {

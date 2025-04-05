@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'cart_halaman.dart';
+import 'reservasi.dart';
 
 class FoodMenuPage extends StatefulWidget {
   final String categoryName;
@@ -10,130 +10,90 @@ class FoodMenuPage extends StatefulWidget {
   State<FoodMenuPage> createState() => _FoodMenuPageState();
 }
 
-
 class _FoodMenuPageState extends State<FoodMenuPage> {
   List<Map<String, dynamic>> menuItems = [
      {
       "name": "Ayam Geprek",
       "category": "Makanan",
       "description": "Pedas dan bergizi",
-      "price": 15000,
+      "price": "15.000",
       "image": "assets/ayamgeprek.png"
     },
     {
       "name": "Bakso",
       "category": "Makanan",
       "description": "Tanpa Tepung",
-      "price": 14000,
+      "price": "14.000",
       "image": "assets/bakso.png"
     },
     {
       "name": "Mie Goreng",
       "category": "Makanan",
       "description": "Cocok untuk akhir bulan",
-      "price": 13000,
+      "price": "13.000",
       "image": "assets/mie_goreng.png"
     },
     {
       "name": "Nasi Goreng",
       "category": "Makanan",
       "description": "Pedas Nampol",
-      "price": 14000,
+      "price": "14.000",
       "image": "assets/nasi_goreng.png"
     },
   ];
-  Map<String, int> cartQuantities = {}; // Menyimpan jumlah item dalam keranjang
 
-  void _addToCart(Map<String, dynamic> item) {
-    setState(() {
-      // Jika item sudah ada, tambahkan jumlahnya
-      if (cartQuantities.containsKey(item["name"])) {
-        cartQuantities[item["name"]] = cartQuantities[item["name"]]! + 1;
-      } else {
-        cartQuantities[item["name"]] = 1;
-      }
-    });
-
-    _showAddToCartDialog(context, item); // ✅ Tampilkan modal dengan jumlah terbaru
-  }
- void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["name"]] ?? 1;
-    int price = item["price"]; // ✅ Harga sudah dalam bentuk int
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-    ),
-    builder: (BuildContext context) {
-      return GestureDetector(
-               onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CartPage(
-                  cartItems: cartQuantities,
-                  menu_makanan: {for (var item in menuItems) item["name"]: item["price"]}, // ✅ Kirim data makanan ke CartPage
-                  menu_minuman: {}, // Kosong karena hanya makanan
-                ),
-              ),
-            );
-          },
-        behavior: HitTestBehavior.opaque, // Memastikan GestureDetector menangkap tap di seluruh area modal
-        child: Container(
+  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
           padding: const EdgeInsets.all(12),
+          height: 60,
           decoration: const BoxDecoration(
-            color: Color(0xFF078603), // Warna hijau
+            color: Color(0xFF078603), // Ubah warna hijau
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  const Icon(Icons.shopping_cart, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.shopping_cart, color: Colors.white),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Jumlah Pesanan: $quantity",
-                            style: const TextStyle(color: Colors.white, fontSize: 10),
-                          ),
-                          Text(
-                            item["name"],
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                      const Text("1 Pesanan",
+                          style: TextStyle(color: Colors.white, fontSize: 10)),
+                      Text(
+                        item["name"],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
-                  Text(
-                        "Rp ${price * quantity}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 10),
+              Text(
+                "Rp ${item["price"]}",
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
-        ),
-      );
-    },
-  );
-}
-
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +104,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0xFF078603), // Warna hijau
+              color: Color(0xFF078603), // Ubah warna hijau
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -212,7 +172,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.asset(
-                                    item["image"],
+                                    item["image"]!,
                                     width: 80,
                                     height: 80,
                                     fit: BoxFit.cover,
@@ -220,18 +180,19 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                                 ),
                                 const SizedBox(height: 5),
                                 ElevatedButton(
-                                  onPressed: () => _addToCart(item),
+                                  onPressed: () =>
+                                      _showAddToCartDialog(context, item),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       side: const BorderSide(
-                                          color: Color(0xFF078603)), // Warna hijau
+                                          color: Color(0xFF078603)), // Ubah warna hijau
                                     ),
                                   ),
                                   child: const Text(
                                     "Tambah",
-                                    style: TextStyle(color: Color(0xFF078603)), // Warna hijau
+                                    style: TextStyle(color: Color(0xFF078603)), // Ubah warna hijau
                                   ),
                                 ),
                               ],
@@ -242,20 +203,20 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item["name"],
+                                    item["name"]!,
                                     style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold),
                                   ),
                                   Text(
-                                    item["category"],
+                                    item["category"]!,
                                     style: const TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.grey),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(item["description"]),
+                                  Text(item["description"]!),
                                 ],
                               ),
                             ),

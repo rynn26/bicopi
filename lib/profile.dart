@@ -23,15 +23,11 @@ class ProfilePage extends StatelessWidget {
           child: AppBar(
             title: Text(
               'Profile Pengguna',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
             backgroundColor: Color(0xFF078603), // Warna hijau elegan
             centerTitle: true,
-            iconTheme:
-                IconThemeData(color: Colors.white), // Warna ikon kembali putih
+            iconTheme: IconThemeData(color: Colors.white), // Warna ikon kembali putih
             elevation: 0, // Hilangkan shadow agar lebih smooth
           ),
         ),
@@ -55,7 +51,7 @@ class ProfilePage extends StatelessWidget {
               _buildProfileField("Email", email),
               _buildProfileField("No Telepon", noTelepon),
               SizedBox(height: 20),
-
+              
               // Ubah data pribadi sebagai teks dengan ikon
               GestureDetector(
                 onTap: () {
@@ -67,8 +63,6 @@ class ProfilePage extends StatelessWidget {
                 },
                 child: Row(
                   children: [
-
-                    
                     Icon(Icons.article, size: 22, color: Colors.black), // Ikon di sebelah kiri
                     SizedBox(width: 8), // Spasi antara ikon dan teks
                     Text(
@@ -105,8 +99,7 @@ class ProfilePage extends StatelessWidget {
             readOnly: true,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             ),
           ),
         ],

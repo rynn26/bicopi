@@ -111,7 +111,7 @@ class RewardItem extends StatelessWidget {
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 5),
-                    Text("Dapatkan kopi gratis di"),
+                    Text("Dapatkan kopi reguler gratis di lokasi kami"),
                   ],
                 ),
                 Text(
@@ -132,7 +132,7 @@ class RewardItem extends StatelessWidget {
                   context: context,
                   builder: (context) => RedeemPopup(
                     userName: "Muzaka Najih",
-                    redeemPoints: 200,
+                    redeemPoints: 250,
                     dateTime: "15 Januari 2025\n10.30 AM",
                   ),
                 );
