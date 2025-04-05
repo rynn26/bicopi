@@ -4,7 +4,6 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
-import 'package:coba3/home.dart';
 import 'menu_minuman.dart';
 import 'menu_snack.dart' as snack;
 import 'reedem.dart';
@@ -34,7 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     HomeContent(),
-    CartPage(),
+    CartPage(selectedItem: {},),
     ProfilePage(),
      RedeemPage(),
   ];
