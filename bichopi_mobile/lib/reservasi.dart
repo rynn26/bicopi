@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'input_reservasi.dart'; // Import halaman formulir reservasi
 import 'bukti_reservasi.dart';
 
-void main() {
-  runApp(const CartPage(selectedItem: {},));
-}
-
-class CartPage extends StatelessWidget {
-  const CartPage({super.key, required Map<String, dynamic> selectedItem});
+class ReservasiPage extends StatelessWidget {
+  const ReservasiPage({super.key, required Map<String, dynamic> selectedItem});
 
   @override
   Widget build(BuildContext context) {

@@ -1,115 +1,156 @@
 import 'package:flutter/material.dart';
-import 'edit_profile.dart'; // Import halaman edit profile
+import 'ubah_password.dart'; // Pastikan file ini ada
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
-  // Contoh data pengguna
-  final String namaLengkap = "Muzaka Najih";
-  final String username = "muzaka86_";
-  final String email = "muzaka@example.com";
-  final String noTelepon = "+6281234567890";
+  @override
+  _ProfilePage createState() => _ProfilePage();
+}
+
+class _ProfilePage extends State<ProfileScreen> {
+  final TextEditingController _nameController =
+      TextEditingController(text: "John Doe");
+  final TextEditingController _emailController =
+      TextEditingController(text: "JohnDoe@gmail.com");
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(70), // Samakan tinggi dengan contoh
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(25), // Radius membulat untuk estetika
-            bottomRight: Radius.circular(25),
-          ),
-          child: AppBar(
-            title: Text(
-              'Profile Pengguna',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: Color(0xFF078603), // Warna hijau elegan
-            centerTitle: true,
-            iconTheme:
-                IconThemeData(color: Colors.white), // Warna ikon kembali putih
-            elevation: 0, // Hilangkan shadow agar lebih smooth
-          ),
+      appBar: AppBar(
+        title: const Text(
+          "Profile",
+          style: TextStyle(color: Colors.white),
         ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF078603),
+        automaticallyImplyLeading: false, // Menghilangkan tombol back
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.grey.shade300,
-                  child: Icon(Icons.person, size: 70, color: Colors.white),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Avatar
+            const Center(
+              child: CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage("assets/foto_profile.png"),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Nama & Email
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    _nameController.text,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    _emailController.text,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Informasi Akun
+            _buildSectionTitle("Informasi Akun"),
+            _buildEditableTextField("Nama Lengkap", _nameController),
+            _buildEditableTextField("Email", _emailController),
+
+            const SizedBox(height: 20),
+
+            // Pengaturan keamanan
+            _buildSectionTitle("Pengaturan Keamanan"),
+            _buildClickableBox("Ubah Password", Icons.lock, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UbahPasswordScreen()),
+              );
+            }),
+
+            const SizedBox(height: 30),
+
+            // Tombol Logout
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.logout, color: Colors.white),
+                label: const Text("Logout",
+                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF078603),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-              SizedBox(height: 30),
-              _buildProfileField("Nama Lengkap", namaLengkap),
-              _buildProfileField("Username", username),
-              _buildProfileField("Email", email),
-              _buildProfileField("No Telepon", noTelepon),
-              SizedBox(height: 20),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              // Ubah data pribadi sebagai teks dengan ikon
-              GestureDetector(
-                onTap: () {
-                  // Navigasi ke halaman Edit Profile
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => EditProfilePage()),
-                  );
-                },
-                child: Row(
-                  children: [
+  // Widget untuk Judul Section
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
 
-                    
-                    Icon(Icons.article, size: 22, color: Colors.black), // Ikon di sebelah kiri
-                    SizedBox(width: 8), // Spasi antara ikon dan teks
-                    Text(
-                      'Ubah data pribadi',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  // Widget untuk Input yang Bisa Diedit
+  Widget _buildEditableTextField(
+      String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileField(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          SizedBox(height: 5),
-          TextField(
-            controller: TextEditingController(text: value),
-            readOnly: true,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+  // Widget untuk Kotak Klik "Ubah Password"
+  Widget _buildClickableBox(String text, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: Colors.black54),
+                const SizedBox(width: 10),
+                Text(text, style: const TextStyle(fontSize: 16)),
+              ],
             ),
-          ),
-        ],
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+          ],
+        ),
       ),
     );
   }

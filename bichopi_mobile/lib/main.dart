@@ -1,6 +1,5 @@
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
@@ -9,7 +8,8 @@ import 'menu_snack.dart' as snack;
 import 'splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem.dart';
-
+import 'profile.dart';
+import 'cart_halaman.dart'; // Import halaman CartPage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +34,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(initialPage: 0);
+  int? _focusedIndex; // Menyimpan indeks item yang sedang ditekan
+  Map<String, int> _cart = {}; // Menyimpan item dalam keranjang (nama: jumlah)
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -42,41 +45,55 @@ class _HomePageState extends State<HomePage> {
   }
 
   final List<Widget> _pages = [
-    HomeContent(),
-    CartPage(
-      selectedItem: {},
-    ),
-    ProfilePage(),
-     RedeemPage(),
+    HomePage(),
+    ReservasiPage(selectedItem: {}),
+    RewardPage(),
+    ProfileScreen(),
   ];
-  void _onItemTapped(int index) {
+
+  void _onBottomNavItemTapped(int index) {
     setState(() {
       _currentIndex = index;
+      _focusedIndex = index; // Set fokus saat item ditekan
     });
-    _pageController.animateToPage(index,
-        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 200), // Animasi lebih cepat
+      curve: Curves.easeInOut,
+    );
+    // Reset fokus setelah animasi selesai (opsional)
+    Future.delayed(const Duration(milliseconds: 300), () {
+      setState(() {
+        _focusedIndex = null;
+      });
+    });
+  }
+
+  void _onCartButtonTapped() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CartPage(
+          cartItems: _cart,
+          menu_makanan: _getFoodMenuPrices(),
+          menu_minuman: _getDrinkMenuPrices(),
+        ),
+      ),
+    );
   }
 
   List<Map<String, dynamic>> allMenus = [
     {"name": "Ricebowl", "price": 15000, "image": "assets/ricebowl.png"},
-    {
-      "name": "Mie Goreng Jawa",
-      "price": 14000,
-      "image": "assets/mie_goreng.png"
-    },
+    {"name": "Mie Goreng Jawa", "price": 14000, "image": "assets/mie_goreng.png"},
     {"name": "Bakso Campur", "price": 13000, "image": "assets/bakso.png"},
-    {
-      "name": "Nasi Goreng Jawa",
-      "price": 14000,
-      "image": "assets/nasi_goreng.png"
-    },
+    {"name": "Nasi Goreng Jawa", "price": 14000, "image": "assets/nasi_goreng.png"},
   ];
   List<Map<String, dynamic>> filteredMenus = [];
 
   @override
   void initState() {
     super.initState();
-    filteredMenus = allMenus; // Set awal ke semua menu
+    filteredMenus = allMenus;
   }
 
   void _filterMenu(String query) {
@@ -85,8 +102,7 @@ class _HomePageState extends State<HomePage> {
         filteredMenus = allMenus;
       } else {
         filteredMenus = allMenus
-            .where((menu) =>
-                menu["name"].toLowerCase().contains(query.toLowerCase()))
+            .where((menu) => menu["name"].toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -116,61 +132,151 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _addItemToCart(String itemName) {
+    setState(() {
+      _cart[itemName] = (_cart[itemName] ?? 0) + 1;
+    });
+    print("Keranjang: $_cart"); // Untuk debugging
+  }
+
+  Map<String, int> _getFoodMenuPrices() {
+    Map<String, int> prices = {};
+    // Anda perlu mengganti ini dengan data harga menu makanan Anda
+    for (var menu in allMenus) {
+      if (["Ricebowl", "Mie Goreng Jawa", "Bakso Campur", "Nasi Goreng Jawa"].contains(menu["name"])) {
+        prices[menu["name"]] = menu["price"] as int;
+      }
+    }
+    return prices;
+  }
+
+  Map<String, int> _getDrinkMenuPrices() {
+    Map<String, int> prices = {};
+    // Anda perlu mengganti ini dengan data harga menu minuman Anda
+    // Contoh: prices["Boba"] = 15000;
+    return prices;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: PageView(
         controller: _pageController,
-        children: _pages,
+        children: [
+          HomeContent(addItemToCart: _addItemToCart), // Pass the callback
+          _pages[1],
+          _pages[2],
+          _pages[3],
+        ],
         onPageChanged: (index) {
           setState(() {
             _currentIndex = index;
+            _focusedIndex = null; // Reset fokus saat halaman berubah
           });
         },
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              )
+      floatingActionButton: FloatingActionButton(
+        onPressed: _onCartButtonTapped,
+        backgroundColor: const Color(0xFF078603),
+        child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
+        elevation: 4,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Kurangi padding vertikal
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: <Widget>[
+              _buildNavItem(
+                index: 0,
+                icon: Icons.home,
+                label: 'Home',
+                onTap: _onBottomNavItemTapped,
+                currentIndex: _currentIndex,
+                isFocused: _focusedIndex == 0,
+              ),
+              _buildNavItem(
+                index: 1,
+                icon: Icons.chair_sharp,
+                label: 'Reservasi',
+                onTap: _onBottomNavItemTapped,
+                currentIndex: _currentIndex,
+                isFocused: _focusedIndex == 1,
+              ),
+              const SizedBox(width: 48.0), // Spasi untuk FAB
+              _buildNavItem(
+                index: 2,
+                icon: Icons.redeem_rounded,
+                label: 'Redeem',
+                onTap: _onBottomNavItemTapped,
+                currentIndex: _currentIndex,
+                isFocused: _focusedIndex == 2,
+              ),
+              _buildNavItem(
+                index: 3,
+                icon: Icons.person_outline,
+                label: 'Profil',
+                onTap: _onBottomNavItemTapped,
+                currentIndex: _currentIndex,
+                isFocused: _focusedIndex == 3,
+              ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: BottomNavigationBar(
-              items: [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.chair), label: 'reservasi'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.person), label: 'Profile'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.redeem_rounded), label: 'Reedem'),
-              ],
-              currentIndex: _currentIndex,
-              selectedItemColor: Color(0xFF078603),
-              unselectedItemColor: Colors.grey,
-              showUnselectedLabels: false,
-              backgroundColor: Colors.white,
-              onTap: _onItemTapped,
-              type: BottomNavigationBarType.fixed,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required String label,
+    required Function(int) onTap,
+    required int currentIndex,
+    bool isFocused = false,
+  }) {
+    const double iconSize = 24.0; // Ukuran ikon yang lebih kecil untuk menghindari overflow
+    const double textSize = 11.0; // Ukuran teks yang lebih kecil
+
+    final bool isSelected = currentIndex == index;
+    final Color color = isSelected ? const Color(0xFF078603) : Colors.grey;
+    final double scale = isFocused ? 1.1 : 1.0; // Skala untuk efek "menonjol"
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: AnimatedScale(
+        scale: scale,
+        duration: const Duration(milliseconds: 150), // Durasi animasi
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: iconSize),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: textSize,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
+// Bagian HomeContent dan widget lainnya tetap sama seperti sebelumnya.
 class HomeContent extends StatelessWidget {
+  final Function(String) addItemToCart;
+
+  HomeContent({required this.addItemToCart});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -222,7 +328,7 @@ class HomeContent extends StatelessWidget {
               ],
             ),
           ),
-          _buildMenuList(),
+          _buildMenuList(addItemToCart: addItemToCart), // Pass the callback
         ],
       ),
     );
@@ -231,11 +337,13 @@ class HomeContent extends StatelessWidget {
 
 Widget _buildCategoryList(BuildContext context) {
   final categories = [
-    {"name": "Makanan", "icon": Icons.fastfood},
-    {"name": "Minuman", "icon": Icons.local_cafe},
-    {"name": "Snack", "icon": Icons.lunch_dining},
-    {"name": "Lainnya", "icon": Icons.more_horiz},
+    {"name": "Makanan", "icon": "assets/icon_makanan.png"},
+    {"name": "Minuman", "icon": "assets/icon_minuman.png"},
+    {"name": "Snack", "icon": "assets/icon_snack.png"},
+    {"name": "Lainnya", "icon": "assets/icon_paket.png"},
   ];
+
+  final Color buttonBackgroundColor = Colors.lightGreen.withOpacity(0.7);
 
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -244,35 +352,23 @@ Widget _buildCategoryList(BuildContext context) {
       children: categories.map((category) {
         return GestureDetector(
           onTap: () {
-            if (category["name"] == "Makanan") {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        makanan.FoodMenuPage(categoryName: "Makanan")),
-              );
-            } else if (category["name"] == "Minuman") {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const DrinkMenuPage(
-                          categoryName: '',
-                        )),
-              );
-            } else if (category["name"] == "Snack") {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
-              );
-            }
+            // ... (kode onTap Anda)
           },
           child: Column(
             children: [
               CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.grey[200],
-                  child: Icon(category["icon"] as IconData,
-                      size: 30, color: Color(0xFF078603))),
+                radius: 35,
+                backgroundColor: buttonBackgroundColor, // Set warna background
+                child: Padding(
+                  padding: const EdgeInsets.all(6.0),
+                  child: Image.asset(
+                    category["icon"] as String,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 category["name"] as String,
@@ -406,6 +502,7 @@ Widget _buildCarousel() {
     "assets/bicopi.jpg",
   ];
 
+
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: CarouselSlider(
@@ -428,7 +525,8 @@ Widget _buildCarousel() {
   );
 }
 
-Widget _buildMenuList() {
+
+Widget _buildMenuList({required Function(String p1) addItemToCart}) {
   final menuItems = [
     {
       "name": "Boba",
