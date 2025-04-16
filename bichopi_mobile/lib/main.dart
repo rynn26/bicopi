@@ -340,10 +340,8 @@ Widget _buildCategoryList(BuildContext context) {
     {"name": "Makanan", "icon": "assets/icon_makanan.png"},
     {"name": "Minuman", "icon": "assets/icon_minuman.png"},
     {"name": "Snack", "icon": "assets/icon_snack.png"},
-    {"name": "Lainnya", "icon": "assets/icon_paket.png"},
+    {"name": "Paket", "icon": "assets/icon_paket.png"},
   ];
-
-  final Color buttonBackgroundColor = Colors.lightGreen.withOpacity(0.7);
 
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -352,15 +350,36 @@ Widget _buildCategoryList(BuildContext context) {
       children: categories.map((category) {
         return GestureDetector(
           onTap: () {
-            // ... (kode onTap Anda)
+           if (category["name"] == "Makanan") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        makanan.FoodMenuPage(categoryName: "Makanan")),
+              );
+            } else if (category["name"] == "Minuman") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const DrinkMenuPage(
+                          categoryName: '',
+                        )),
+              );
+            } else if (category["name"] == "Snack") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
+              );
+            }
+          
           },
           child: Column(
             children: [
               CircleAvatar(
-                radius: 35,
-                backgroundColor: buttonBackgroundColor, // Set warna background
+                radius: 30,
+                backgroundColor: Colors.grey[200], // Warna latar belakang ikon (abu-abu muda)
                 child: Padding(
-                  padding: const EdgeInsets.all(6.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Image.asset(
                     category["icon"] as String,
                     width: 50,
@@ -382,7 +401,6 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
-
 Widget _buildTopBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
