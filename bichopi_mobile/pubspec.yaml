@@ -110,6 +110,13 @@ flutter:
     - assets/kopiesti.png
     - assets/icon_cash.png
     - assets/icon_qris.png
+    - assets/foto_profile.png
+
+    - assets/icon_makanan.png
+    - assets/icon_minuman.png
+    - assets/icon_snack.png
+    - assets/icon_paket.png
+
 
     
 

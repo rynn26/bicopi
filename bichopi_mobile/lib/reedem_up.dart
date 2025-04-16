@@ -1,89 +1,98 @@
 import 'package:flutter/material.dart';
 
-class RedeemPopup extends StatelessWidget {
-  final String userName;
-  final int redeemPoints;
-  final String dateTime;
+class PopupPage extends StatelessWidget {
+  final String title;
+  final int points;
+  final String transactionId; // Tambahkan transactionId
 
-  RedeemPopup({
-    required this.userName,
-    required this.redeemPoints,
-    required this.dateTime,
-  });
+  const PopupPage({super.key, required this.title, required this.points, required this.transactionId});
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.grey.shade50, // Warna latar belakang
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long, size: 50, color: Colors.black),
-            SizedBox(height: 8),
-            Text(
+            const Icon(Icons.receipt_long, size: 50, color: Colors.black),
+            const SizedBox(height: 12),
+
+            // Judul
+            const Text(
               "Tanda Terima Penukaran",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
-            Divider(thickness: 1, color: Colors.black26),
-            SizedBox(height: 12),
-            _infoRow("username", "$userName"),
-            SizedBox(height: 8),
-            _infoRow("Penukaran Point", "$redeemPoints POIN", icon: Icons.stars),
-            SizedBox(height: 8),
-            _infoRow("Tanggal & waktu", dateTime, icon: Icons.calendar_today),
-            SizedBox(height: 20),
-            Divider(thickness: 1, color: Colors.black26),
-            SizedBox(height: 12),
+
+            const SizedBox(height: 12),
+
+            // Garis panjang pemisah setelah judul
+            const Divider(thickness: 1.2, color: Colors.black38),
+
+            const SizedBox(height: 12),
+
+            // ID Penukaran
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "ID Penukaran",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(transactionId, style: const TextStyle(color: Colors.black87)),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Penukaran Poin
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Penukaran Point",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 4),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _popupButton(context, "Close", Colors.green, Icons.close, () => Navigator.pop(context)),
-                _popupButton(context, "Save", Colors.green, Icons.save, () {}),
+                const Icon(Icons.sync, size: 18),
+                const SizedBox(width: 6),
+                Text("$points POIN", style: const TextStyle(fontSize: 16)),
               ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
+            ),
 
-  Widget _infoRow(String title, String value, {IconData? icon}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            if (icon != null) Icon(icon, size: 20, color: Colors.black),
-            if (icon != null) SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(fontSize: 12, color: Colors.black54),
+            const SizedBox(height: 16),
+
+            // Garis panjang sebelum tombol Close
+            const Divider(thickness: 1.2, color: Colors.black38),
+
+            const SizedBox(height: 12),
+
+            // Tombol Close (Lebar lebih pendek)
+            SizedBox(
+              width: 120, // Lebar tombol lebih pendek
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green, // Warna teks hijau
+                  side: const BorderSide(color: Colors.green, width: 2), // Border hijau
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text(
+                  "Close",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ],
         ),
-        SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  Widget _popupButton(BuildContext context, String text, Color color, IconData icon, VoidCallback onPressed) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: color),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      icon: Icon(icon, size: 18, color: color),
-      label: Text(text, style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.bold)),
     );
   }
 }

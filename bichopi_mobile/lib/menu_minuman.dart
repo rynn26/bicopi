@@ -106,8 +106,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                           children: [
                             Text(
                               "Jumlah Pesanan: $quantity",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
+                              style:
+                                  const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
                               item["nama_menu"],
@@ -159,57 +159,37 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
               children: [
                 const SizedBox(height: 40),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon:
-                              const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              "Menu Minuman",
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "Bichopi, Indonesia",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                     IconButton(
-                      icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CartPage(
-                              cartItems: cartQuantities,
-                              menu_makanan: {},
-                              menu_minuman: {
-                                for (var item in menuItems)
-                                  item["nama_menu"]: item["harga_menu"]
-                              },
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            "Menu Minuman",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                        );
-                      },
+                          SizedBox(height: 4),
+                          Text(
+                            "Bichopi, Indonesia",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 10),
+                    // Ikon keranjang dihilangkan di sini
                   ],
                 ),
               ],
@@ -229,66 +209,88 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
+                        child: Stack(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      item["foto_menu"] ?? '',
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Image.asset(
-                                        'assets/no_image.png',
-                                        width: 80,
-                                        height: 80,
+                                  Column(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          item["foto_menu"] ?? '',
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Image.asset(
+                                            'assets/no_image.png',
+                                            width: 80,
+                                            height: 80,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 5),
+                                      ElevatedButton(
+                                        onPressed: () => _addToCart(item),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            side: const BorderSide(
+                                                color: Color(0xFF078603)),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "Tambah",
+                                          style:
+                                              TextStyle(color: Color(0xFF078603)),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 5),
-                                  ElevatedButton(
-                                    onPressed: () => _addToCart(item),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                        side: const BorderSide(
-                                            color: Color(0xFF078603)),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                    ),
-                                    child: const Text(
-                                      "Tambah",
-                                      style: TextStyle(color: Color(0xFF078603)),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(item["nama_menu"],
+                                            style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold)),
+                                        Text(
+                                            item["deskripsi_menu"] ??
+                                                "Tidak ada deskripsi",
+                                            style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.grey)),
+                                        const SizedBox(height: 4),
+                                        // You might want to display more info here if available
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(item["nama_menu"],
-                                        style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold)),
-                                    Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi",
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                  ],
+                            ),
+                            Positioned(
+                              bottom: 8,
+                              right: 12,
+                              child: Text(
+                                "Rp ${item["harga_menu"]}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
                                 ),
                               ),
-                              Text("Rp ${item["harga_menu"]}",
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     },
