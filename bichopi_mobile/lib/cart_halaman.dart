@@ -5,6 +5,7 @@ class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
   final Map<String, int> menu_makanan;
   final Map<String, int> menu_minuman;
+  
 
   const CartPage({
     super.key,
@@ -77,7 +78,7 @@ class _CartPageState extends State<CartPage> {
             child: cartItems.isEmpty
                 ? const Center(
                     child: Text(
-                      "Keranjang masih kosong",
+                      "Keranjangg masih kosong",
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),

@@ -1,3 +1,4 @@
+import 'package:coba3/login.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ void main() async {
 
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: SplashScreen.new(),
+    home: LoginScreen(),
   ));
 }
 
@@ -69,18 +70,19 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _onCartButtonTapped() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CartPage(
-          cartItems: _cart,
-          menu_makanan: _getFoodMenuPrices(),
-          menu_minuman: _getDrinkMenuPrices(),
-        ),
+ void _onCartButtonTapped() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CartPage(
+        cartItems: _cart,
+        menu_makanan: _getFoodMenuPrices(),
+        menu_minuman: _getDrinkMenuPrices(),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   List<Map<String, dynamic>> allMenus = [
     {"name": "Ricebowl", "price": 15000, "image": "assets/ricebowl.png"},
