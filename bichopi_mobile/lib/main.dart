@@ -1,4 +1,3 @@
-import 'package:coba3/login.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +21,7 @@ void main() async {
 
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: LoginScreen(),
+    home: SplashScreen.new(),
   ));
 }
 
