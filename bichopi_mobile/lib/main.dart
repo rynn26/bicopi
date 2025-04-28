@@ -8,21 +8,23 @@ import 'menu_snack.dart' as snack;
 import 'splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem.dart';
-import 'profile.dart';
 import 'cart_halaman.dart'; // Import halaman CartPage
+import 'register.dart';
+import 'login.dart' as login_page;
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Supabase.initialize(
     url: 'https://nfafmiaxogrxxwjuyqfs.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
   );
 
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: SplashScreen.new(),
-  ));
+  runApp(const MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: HomePage(), // <-- ini ganti ke HomePage
+));
+
 }
 
 class HomePage extends StatefulWidget {
@@ -30,6 +32,15 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+class SignUpScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      
+    );
+  }
 }
 
 class _HomePageState extends State<HomePage> {

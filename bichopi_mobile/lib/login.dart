@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'register.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Hero(
           tag: "logo",
           child: Image.asset(
-            'assets/tea.png',  // Pastikan path benar
+            'assets/bicopi_logo.png',  // Pastikan path benar
             width: 120,
             height: 120,
             fit: BoxFit.contain,
@@ -85,13 +85,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
+
 
 class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(40),
                         child: Image.asset(
-                          'assets/tea.png',  // Pastikan path benar
+                          'assets/bicopi_logo.png',  // Pastikan path benar
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,  // Sesuaikan agar gambar proporsional
@@ -250,6 +250,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   child: const Text("Forgot Password?", style: TextStyle(color: Colors.green)),
                 ),
                 const SizedBox(height: 20),
+                
 
                 /// Sign Up
                 Row(
@@ -257,7 +258,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   children: [
                     const Text("Don't have an account?", style: TextStyle(color: Colors.black)),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                        );
+                      },
                       child: const Text("Sign Up", style: TextStyle(color: Colors.green)),
                     ),
                   ],
