@@ -10,21 +10,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem.dart';
 import 'cart_halaman.dart'; // Import halaman CartPage
 import 'register.dart';
-import 'login.dart' as login_page;
+import 'login.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
     url: 'https://nfafmiaxogrxxwjuyqfs.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
   );
 
   runApp(const MaterialApp(
-  debugShowCheckedModeBanner: false,
-  home: HomePage(), // <-- ini ganti ke HomePage
-));
-
+    debugShowCheckedModeBanner: false,
+    home: LoginScreen(), // <-- ini ganti ke HomePage
+  ));
 }
 
 class HomePage extends StatefulWidget {
@@ -37,9 +37,7 @@ class HomePage extends StatefulWidget {
 class SignUpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      
-    );
+    return Scaffold();
   }
 }
 
@@ -80,25 +78,32 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
- void _onCartButtonTapped() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => CartPage(
-        cartItems: _cart,
-        menu_makanan: _getFoodMenuPrices(),
-        menu_minuman: _getDrinkMenuPrices(),
+  void _onCartButtonTapped() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CartPage(
+          cartItems: _cart,
+          menu_makanan: _getFoodMenuPrices(),
+          menu_minuman: _getDrinkMenuPrices(),
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   List<Map<String, dynamic>> allMenus = [
     {"name": "Ricebowl", "price": 15000, "image": "assets/ricebowl.png"},
-    {"name": "Mie Goreng Jawa", "price": 14000, "image": "assets/mie_goreng.png"},
+    {
+      "name": "Mie Goreng Jawa",
+      "price": 14000,
+      "image": "assets/mie_goreng.png"
+    },
     {"name": "Bakso Campur", "price": 13000, "image": "assets/bakso.png"},
-    {"name": "Nasi Goreng Jawa", "price": 14000, "image": "assets/nasi_goreng.png"},
+    {
+      "name": "Nasi Goreng Jawa",
+      "price": 14000,
+      "image": "assets/nasi_goreng.png"
+    },
   ];
   List<Map<String, dynamic>> filteredMenus = [];
 
@@ -114,7 +119,8 @@ class _HomePageState extends State<HomePage> {
         filteredMenus = allMenus;
       } else {
         filteredMenus = allMenus
-            .where((menu) => menu["name"].toLowerCase().contains(query.toLowerCase()))
+            .where((menu) =>
+                menu["name"].toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -155,7 +161,8 @@ class _HomePageState extends State<HomePage> {
     Map<String, int> prices = {};
     // Anda perlu mengganti ini dengan data harga menu makanan Anda
     for (var menu in allMenus) {
-      if (["Ricebowl", "Mie Goreng Jawa", "Bakso Campur", "Nasi Goreng Jawa"].contains(menu["name"])) {
+      if (["Ricebowl", "Mie Goreng Jawa", "Bakso Campur", "Nasi Goreng Jawa"]
+          .contains(menu["name"])) {
         prices[menu["name"]] = menu["price"] as int;
       }
     }
@@ -200,7 +207,8 @@ class _HomePageState extends State<HomePage> {
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Kurangi padding vertikal
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16.0), // Kurangi padding vertikal
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
@@ -252,7 +260,8 @@ class _HomePageState extends State<HomePage> {
     required int currentIndex,
     bool isFocused = false,
   }) {
-    const double iconSize = 24.0; // Ukuran ikon yang lebih kecil untuk menghindari overflow
+    const double iconSize =
+        24.0; // Ukuran ikon yang lebih kecil untuk menghindari overflow
     const double textSize = 11.0; // Ukuran teks yang lebih kecil
 
     final bool isSelected = currentIndex == index;
@@ -362,7 +371,7 @@ Widget _buildCategoryList(BuildContext context) {
       children: categories.map((category) {
         return GestureDetector(
           onTap: () {
-           if (category["name"] == "Makanan") {
+            if (category["name"] == "Makanan") {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -383,13 +392,13 @@ Widget _buildCategoryList(BuildContext context) {
                 MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
               );
             }
-          
           },
           child: Column(
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: Colors.grey[200], // Warna latar belakang ikon (abu-abu muda)
+                backgroundColor: Colors
+                    .grey[200], // Warna latar belakang ikon (abu-abu muda)
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Image.asset(
@@ -413,6 +422,7 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
+
 Widget _buildTopBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -532,7 +542,6 @@ Widget _buildCarousel() {
     "assets/bicopi.jpg",
   ];
 
-
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: CarouselSlider(
@@ -554,7 +563,6 @@ Widget _buildCarousel() {
     ),
   );
 }
-
 
 Widget _buildMenuList({required Function(String p1) addItemToCart}) {
   final menuItems = [
