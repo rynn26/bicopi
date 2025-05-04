@@ -1,6 +1,8 @@
+import 'package:coba3/main.dart';
 import 'package:flutter/material.dart';
-import 'register.dart' as register_screen; // Import register.dart with a prefix
-import 'main.dart'; // Import main.dart
+import 'register.dart' as register_screen;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'profile.dart';  // Mengimpor ProfileScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,22 +34,37 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoggingIn = true;
       });
 
-      Future.delayed(const Duration(seconds: 2), () {
+      try {
+        final response = await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+
+        if (response.user != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()), // Mengarah ke ProfileScreen
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login gagal. Periksa email dan password.')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login error: ${e.toString()}')),
+        );
+      } finally {
         setState(() {
           _isLoggingIn = false;
         });
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      });
+      }
     }
   }
 
@@ -166,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const register_screen.SignUpScreen()), // Use the prefixed import
+                              MaterialPageRoute(builder: (context) => const register_screen.SignUpScreen()),
                             );
                           },
                           child: const Text("Sign Up", style: TextStyle(color: Colors.green)),
