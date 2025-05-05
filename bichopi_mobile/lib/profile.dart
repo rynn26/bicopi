@@ -18,7 +18,7 @@ class _ProfilePage extends State<ProfileScreen> {
   bool _isLoading = true; // To show a loading indicator
 
   @override
-  void initState() {
+  void initState() {  
     super.initState();
     _loadUserData();
   }
@@ -228,3 +228,4 @@ class _ProfilePage extends State<ProfileScreen> {
     );
   }
 }
+

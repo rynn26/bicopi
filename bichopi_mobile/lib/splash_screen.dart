@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'main.dart'; // Ganti dengan halaman utama aplikasi
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
