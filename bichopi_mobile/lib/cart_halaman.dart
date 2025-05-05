@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'payment.dart';
+import 'main.dart';
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -12,6 +13,7 @@ class CartPage extends StatefulWidget {
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
+    
   });
 
   @override
@@ -160,7 +162,7 @@ class _CartPageState extends State<CartPage> {
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.green,
+                                                color:  const Color(0xFF078603),
                                               ),
                                             ),
                                           ],
@@ -179,7 +181,7 @@ class _CartPageState extends State<CartPage> {
                                           IconButton(
                                             icon: const Icon(
                                                 Icons.add_circle_outline,
-                                                color: Colors.green),
+                                                color:  const Color(0xFF078603)),
                                             onPressed: () =>
                                                 _increaseQuantity(itemName),
                                           ),
@@ -237,7 +239,7 @@ class _CartPageState extends State<CartPage> {
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),
-                                    backgroundColor: Colors.green,
+                                    backgroundColor:  const Color(0xFF078603),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),

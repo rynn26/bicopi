@@ -110,10 +110,16 @@ flutter:
     - assets/icon_qris.png
     - assets/foto_profile.png
 
-    - assets/icon_makanan.png
-    - assets/icon_minuman.png
-    - assets/icon_snack.png
-    - assets/icon_paket.png
+
+
+    - assets/icon_miee.png
+    - assets/icon_minuman1.png
+    - assets/icon_snack1.png
+    - assets/icon_paket1.png
+
+
+
+
 
 
     
