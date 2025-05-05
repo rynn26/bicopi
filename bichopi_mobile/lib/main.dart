@@ -1,3 +1,4 @@
+import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
 import 'package:flutter/material.dart';
@@ -297,8 +298,6 @@ class HomeContent extends StatelessWidget {
   final Function(String) addItemToCart;
 
   HomeContent({required this.addItemToCart});
-
-  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
@@ -322,33 +321,17 @@ class HomeContent extends StatelessWidget {
           _buildCarousel(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Favorit",
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigasi ke halaman paket
-                  },
-                  child: Text(
-                    "Lihat Semua",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              "Favorit",
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
+          const SizedBox(
+              height: 8), // Mengurangi jarak antara "Favorit" dan menu
           _buildMenuList(addItemToCart: addItemToCart), // Pass the callback
         ],
       ),
@@ -358,10 +341,10 @@ class HomeContent extends StatelessWidget {
 
 Widget _buildCategoryList(BuildContext context) {
   final categories = [
-    {"name": "Makanan", "icon": "assets/icon_makanan.png"},
-    {"name": "Minuman", "icon": "assets/icon_minuman.png"},
-    {"name": "Snack", "icon": "assets/icon_snack.png"},
-    {"name": "Paket", "icon": "assets/icon_paket.png"},
+    {"name": "Makanan", "icon": "assets/icon_miee.png"},
+    {"name": "Minuman", "icon": "assets/icon_minuman1.png"},
+    {"name": "Snack", "icon": "assets/icon_snack1.png"},
+    {"name": "Paket", "icon": "assets/icon_paket1.png"},
   ];
 
   return Padding(
@@ -391,20 +374,31 @@ Widget _buildCategoryList(BuildContext context) {
                 context,
                 MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
               );
+            } else if (category["name"] == "Paket") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => PaketMenuPage(
+                          categoryName: '',
+                        )), // Navigasi ke PaketMenuPage
+              );
             }
           },
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors
-                    .grey[200], // Warna latar belakang ikon (abu-abu muda)
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF078603).withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Image.asset(
                     category["icon"] as String,
-                    width: 50,
-                    height: 50,
+                    width: 35,
+                    height: 35,
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -564,6 +558,93 @@ Widget _buildCarousel() {
   );
 }
 
+void _showItemDetails(BuildContext context, Map<String, String> item,
+    Function(String itemName) addItemToCart) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0), // Lebih melengkung
+        ),
+        backgroundColor: Colors.grey[50], // Latar belakang lebih lembut
+        title: Text(
+          item["name"]!,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600, // Sedikit lebih tebal
+            fontSize: 20,
+            color: Colors.black87,
+          ),
+        ),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              item["category"]!,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item["description"]!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Rp ${item["price"]!}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    addItemToCart(item["name"]!);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    elevation: 2, // Efek bayangan tipis
+                  ),
+                  child: const Text("Tambah"),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[600],
+            ),
+            child: const Text("Batal"),
+          ),
+        ],
+        actionsAlignment: MainAxisAlignment.end, // Tombol aksi di kanan
+      );
+    },
+  );
+}
+
 Widget _buildMenuList({required Function(String p1) addItemToCart}) {
   final menuItems = [
     {
@@ -602,8 +683,7 @@ Widget _buildMenuList({required Function(String p1) addItemToCart}) {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          color: const Color.fromARGB(
-              255, 255, 255, 255), // Warna latar belakang lembut
+          color: const Color.fromARGB(255, 255, 255, 255),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -622,9 +702,12 @@ Widget _buildMenuList({required Function(String p1) addItemToCart}) {
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
-                      width: 80, // Sesuaikan lebar tombol dengan gambar
+                      width: 80,
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _showItemDetails(context, item,
+                              addItemToCart); // Sertakan addItemToCart
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.green,
                           side: const BorderSide(color: Colors.green),
