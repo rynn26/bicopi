@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ubah_password.dart'; // Pastikan file ini ada
 
 class ProfileScreen extends StatefulWidget {
@@ -9,10 +10,32 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfilePage extends State<ProfileScreen> {
-  final TextEditingController _nameController =
-      TextEditingController(text: "John Doe");
-  final TextEditingController _emailController =
-      TextEditingController(text: "JohnDoe@gmail.com");
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final response = await Supabase.instance.client
+          .from('users')
+          .select()
+          .eq('id_user', user.id)
+          .single();
+
+      setState(() {
+        _nameController.text = response['username'] ?? '';
+        _emailController.text = response['email'] ?? '';
+        _phoneController.text = response['phone'] ?? '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +47,7 @@ class _ProfilePage extends State<ProfileScreen> {
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF078603),
-        automaticallyImplyLeading: false, // Menghilangkan tombol back
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -62,6 +85,7 @@ class _ProfilePage extends State<ProfileScreen> {
             _buildSectionTitle("Informasi Akun"),
             _buildEditableTextField("Nama Lengkap", _nameController),
             _buildEditableTextField("Email", _emailController),
+            _buildEditableTextField("No. Telepon", _phoneController),
 
             const SizedBox(height: 20),
 
@@ -82,7 +106,11 @@ class _ProfilePage extends State<ProfileScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  await Supabase.instance.client.auth.signOut();
+                  if (!mounted) return;
+                  Navigator.of(context).pushReplacementNamed('/login'); // Sesuaikan dengan rute login kamu
+                },
                 icon: const Icon(Icons.logout, color: Colors.white),
                 label: const Text("Logout",
                     style: TextStyle(color: Colors.white, fontSize: 16)),
@@ -100,7 +128,6 @@ class _ProfilePage extends State<ProfileScreen> {
     );
   }
 
-  // Widget untuk Judul Section
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -111,13 +138,13 @@ class _ProfilePage extends State<ProfileScreen> {
     );
   }
 
-  // Widget untuk Input yang Bisa Diedit
   Widget _buildEditableTextField(
       String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextField(
         controller: controller,
+        readOnly: true, // Supaya tidak bisa diubah manual oleh user
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(
@@ -128,7 +155,6 @@ class _ProfilePage extends State<ProfileScreen> {
     );
   }
 
-  // Widget untuk Kotak Klik "Ubah Password"
   Widget _buildClickableBox(String text, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -148,7 +174,8 @@ class _ProfilePage extends State<ProfileScreen> {
                 Text(text, style: const TextStyle(fontSize: 16)),
               ],
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
+            const Icon(Icons.arrow_forward_ios,
+                size: 16, color: Colors.black54),
           ],
         ),
       ),

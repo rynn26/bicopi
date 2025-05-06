@@ -1,3 +1,4 @@
+import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
 import 'package:flutter/material.dart';
@@ -8,20 +9,22 @@ import 'menu_snack.dart' as snack;
 import 'splash_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem.dart';
-import 'profile.dart';
 import 'cart_halaman.dart'; // Import halaman CartPage
+import 'register.dart';
+import 'login.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Supabase.initialize(
     url: 'https://nfafmiaxogrxxwjuyqfs.supabase.co',
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
   );
 
-  runApp(MaterialApp(
+  runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: SplashScreen.new(),
+    home: LoginScreen(), // <-- ini ganti ke HomePage
   ));
 }
 
@@ -30,6 +33,13 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+class SignUpScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold();
+  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -84,9 +94,17 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> allMenus = [
     {"name": "Ricebowl", "price": 15000, "image": "assets/ricebowl.png"},
-    {"name": "Mie Goreng Jawa", "price": 14000, "image": "assets/mie_goreng.png"},
+    {
+      "name": "Mie Goreng Jawa",
+      "price": 14000,
+      "image": "assets/mie_goreng.png"
+    },
     {"name": "Bakso Campur", "price": 13000, "image": "assets/bakso.png"},
-    {"name": "Nasi Goreng Jawa", "price": 14000, "image": "assets/nasi_goreng.png"},
+    {
+      "name": "Nasi Goreng Jawa",
+      "price": 14000,
+      "image": "assets/nasi_goreng.png"
+    },
   ];
   List<Map<String, dynamic>> filteredMenus = [];
 
@@ -102,7 +120,8 @@ class _HomePageState extends State<HomePage> {
         filteredMenus = allMenus;
       } else {
         filteredMenus = allMenus
-            .where((menu) => menu["name"].toLowerCase().contains(query.toLowerCase()))
+            .where((menu) =>
+                menu["name"].toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -143,7 +162,8 @@ class _HomePageState extends State<HomePage> {
     Map<String, int> prices = {};
     // Anda perlu mengganti ini dengan data harga menu makanan Anda
     for (var menu in allMenus) {
-      if (["Ricebowl", "Mie Goreng Jawa", "Bakso Campur", "Nasi Goreng Jawa"].contains(menu["name"])) {
+      if (["Ricebowl", "Mie Goreng Jawa", "Bakso Campur", "Nasi Goreng Jawa"]
+          .contains(menu["name"])) {
         prices[menu["name"]] = menu["price"] as int;
       }
     }
@@ -188,7 +208,8 @@ class _HomePageState extends State<HomePage> {
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Kurangi padding vertikal
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16.0), // Kurangi padding vertikal
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
@@ -240,7 +261,8 @@ class _HomePageState extends State<HomePage> {
     required int currentIndex,
     bool isFocused = false,
   }) {
-    const double iconSize = 24.0; // Ukuran ikon yang lebih kecil untuk menghindari overflow
+    const double iconSize =
+        24.0; // Ukuran ikon yang lebih kecil untuk menghindari overflow
     const double textSize = 11.0; // Ukuran teks yang lebih kecil
 
     final bool isSelected = currentIndex == index;
@@ -276,8 +298,6 @@ class HomeContent extends StatelessWidget {
   final Function(String) addItemToCart;
 
   HomeContent({required this.addItemToCart});
-
-  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
@@ -301,33 +321,17 @@ class HomeContent extends StatelessWidget {
           _buildCarousel(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Favorit",
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigasi ke halaman paket
-                  },
-                  child: Text(
-                    "Lihat Semua",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              "Favorit",
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
+          const SizedBox(
+              height: 8), // Mengurangi jarak antara "Favorit" dan menu
           _buildMenuList(addItemToCart: addItemToCart), // Pass the callback
         ],
       ),
@@ -337,10 +341,10 @@ class HomeContent extends StatelessWidget {
 
 Widget _buildCategoryList(BuildContext context) {
   final categories = [
-    {"name": "Makanan", "icon": "assets/icon_makanan.png"},
-    {"name": "Minuman", "icon": "assets/icon_minuman.png"},
-    {"name": "Snack", "icon": "assets/icon_snack.png"},
-    {"name": "Paket", "icon": "assets/icon_paket.png"},
+    {"name": "Makanan", "icon": "assets/icon_miee.png"},
+    {"name": "Minuman", "icon": "assets/icon_minuman1.png"},
+    {"name": "Snack", "icon": "assets/icon_snack1.png"},
+    {"name": "Paket", "icon": "assets/icon_paket1.png"},
   ];
 
   return Padding(
@@ -350,7 +354,7 @@ Widget _buildCategoryList(BuildContext context) {
       children: categories.map((category) {
         return GestureDetector(
           onTap: () {
-           if (category["name"] == "Makanan") {
+            if (category["name"] == "Makanan") {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -370,20 +374,31 @@ Widget _buildCategoryList(BuildContext context) {
                 context,
                 MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
               );
+            } else if (category["name"] == "Paket") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => PaketMenuPage(
+                          categoryName: '',
+                        )), // Navigasi ke PaketMenuPage
+              );
             }
-          
           },
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.grey[200], // Warna latar belakang ikon (abu-abu muda)
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF078603).withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Image.asset(
                     category["icon"] as String,
-                    width: 50,
-                    height: 50,
+                    width: 35,
+                    height: 35,
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -401,6 +416,7 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
+
 Widget _buildTopBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -520,7 +536,6 @@ Widget _buildCarousel() {
     "assets/bicopi.jpg",
   ];
 
-
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: CarouselSlider(
@@ -543,6 +558,92 @@ Widget _buildCarousel() {
   );
 }
 
+void _showItemDetails(BuildContext context, Map<String, String> item,
+    Function(String itemName) addItemToCart) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0), // Lebih melengkung
+        ),
+        backgroundColor: Colors.grey[50], // Latar belakang lebih lembut
+        title: Text(
+          item["name"]!,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600, // Sedikit lebih tebal
+            fontSize: 20,
+            color: Colors.black87,
+          ),
+        ),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              item["category"]!,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item["description"]!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Rp ${item["price"]!}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    addItemToCart(item["name"]!);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    elevation: 2, // Efek bayangan tipis
+                  ),
+                  child: const Text("Tambah"),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey[600],
+            ),
+            child: const Text("Batal"),
+          ),
+        ],
+        actionsAlignment: MainAxisAlignment.end, // Tombol aksi di kanan
+      );
+    },
+  );
+}
 
 Widget _buildMenuList({required Function(String p1) addItemToCart}) {
   final menuItems = [
@@ -582,8 +683,7 @@ Widget _buildMenuList({required Function(String p1) addItemToCart}) {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          color: const Color.fromARGB(
-              255, 255, 255, 255), // Warna latar belakang lembut
+          color: const Color.fromARGB(255, 255, 255, 255),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -602,9 +702,12 @@ Widget _buildMenuList({required Function(String p1) addItemToCart}) {
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
-                      width: 80, // Sesuaikan lebar tombol dengan gambar
+                      width: 80,
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _showItemDetails(context, item,
+                              addItemToCart); // Sertakan addItemToCart
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.green,
                           side: const BorderSide(color: Colors.green),

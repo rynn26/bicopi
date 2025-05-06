@@ -31,8 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+
+  supabase_flutter: ^1.10.3   
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.0.0
   flutter_slidable: ^4.0.0
@@ -43,10 +43,9 @@ dependencies:
   rive: ^0.11.2
   flutter_animate: ^4.5.0
   intl: ^0.18.1
-  supabase_flutter: ^2.0.0
   qr_flutter: ^4.1.0
   http: ^0.13.4
-  midtrans_sdk: ^0.4.0
+  
 
 
 dev_dependencies:
@@ -89,7 +88,6 @@ flutter:
     - assets/bakso.png
     - assets/ricebowl.png
     - assets/boba.png
-    - assets/tea.png
     - assets/chocolatte.png
     - assets/thai_tea.png
     - assets/nasi_goreng.png
@@ -112,10 +110,16 @@ flutter:
     - assets/icon_qris.png
     - assets/foto_profile.png
 
-    - assets/icon_makanan.png
-    - assets/icon_minuman.png
-    - assets/icon_snack.png
-    - assets/icon_paket.png
+
+
+    - assets/icon_miee.png
+    - assets/icon_minuman1.png
+    - assets/icon_snack1.png
+    - assets/icon_paket1.png
+
+
+
+
 
 
     

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'payment.dart';
+import 'main.dart';
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -11,6 +13,7 @@ class CartPage extends StatefulWidget {
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
+    
   });
 
   @override
@@ -19,7 +22,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   late Map<String, int> cartItems;
-  int serviceFee = 2000; // Biaya layanan tetap
+  int serviceFee = 2000;
 
   @override
   void initState() {
@@ -43,7 +46,6 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  /// **🔹 Menghitung subtotal dari makanan & minuman**
   int _calculateSubtotal() {
     return cartItems.entries.fold(0, (sum, entry) {
       int price =
@@ -52,19 +54,49 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  /// **🔹 Menghitung total harga**
   int _calculateTotalPrice() {
     return _calculateSubtotal() + serviceFee;
   }
 
-  /// **🔹 Fungsi untuk checkout**
- void _checkout() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => PaymentPagee()),
-  );
-}
+  /// ✅ Simpan ke tabel 'keranjang' Supabase
+  Future<void> _saveCartToSupabase() async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
 
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User belum login')),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+
+    for (var entry in cartItems.entries) {
+      final itemName = entry.key;
+      final quantity = entry.value;
+      final price = widget.menu_makanan[itemName] ??
+          widget.menu_minuman[itemName] ??
+          0;
+
+      await supabase.from('keranjang').insert({
+        'user_id': userId,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+    }
+  }
+
+  void _checkout() async {
+    await _saveCartToSupabase();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PaymentPagee()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +109,7 @@ class _CartPageState extends State<CartPage> {
             child: cartItems.isEmpty
                 ? const Center(
                     child: Text(
-                      "Keranjang masih kosong",
+                      "Keranjangg masih kosong",
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -130,7 +162,7 @@ class _CartPageState extends State<CartPage> {
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.green,
+                                                color:  const Color(0xFF078603),
                                               ),
                                             ),
                                           ],
@@ -149,7 +181,7 @@ class _CartPageState extends State<CartPage> {
                                           IconButton(
                                             icon: const Icon(
                                                 Icons.add_circle_outline,
-                                                color: Colors.green),
+                                                color:  const Color(0xFF078603)),
                                             onPressed: () =>
                                                 _increaseQuantity(itemName),
                                           ),
@@ -163,7 +195,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
 
-                        /// **Detail Pembayaran + Tombol Checkout**
+                        /// Detail pembayaran + tombol
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -198,10 +230,7 @@ class _CartPageState extends State<CartPage> {
                                     const Text("Total"),
                                     Text("Rp ${_calculateTotalPrice()}")
                                   ]),
-
                               const SizedBox(height: 12),
-
-                              /// **Tombol Checkout**
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -210,7 +239,7 @@ class _CartPageState extends State<CartPage> {
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),
-                                    backgroundColor: Colors.green,
+                                    backgroundColor:  const Color(0xFF078603),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
