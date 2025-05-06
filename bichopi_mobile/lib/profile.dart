@@ -1,8 +1,6 @@
-import 'package:coba3/register.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ubah_password.dart';
-import 'login.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,10 +13,10 @@ class _ProfilePage extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  bool _isLoading = true; // To show a loading indicator
+  bool _isLoading = true;
 
   @override
-  void initState() {  
+  void initState() {
     super.initState();
     _loadUserData();
   }
@@ -28,22 +26,17 @@ class _ProfilePage extends State<ProfileScreen> {
     if (user != null) {
       try {
         final response = await Supabase.instance.client
-            .from('users')
+            .from('profil')
             .select()
             .eq('id_user', user.id)
             .single();
 
-        if (response.error != null) {
-          // Handle error
-          print('Error fetching user data: ${response.error!.message}');
-        } else {
-          setState(() {
-            _nameController.text = response['username'] ?? '';
-            _emailController.text = response['email'] ?? '';
-            _phoneController.text = response['phone'] ?? '';
-            _isLoading = false; // Data has been loaded
-          });
-        }
+        setState(() {
+          _nameController.text = response['nama'] ?? '';
+          _emailController.text = response['email'] ?? '';
+          _phoneController.text = response['phone']?.toString() ?? '';
+          _isLoading = false;
+        });
       } catch (e) {
         print('Error fetching user data: $e');
         setState(() {
@@ -51,7 +44,6 @@ class _ProfilePage extends State<ProfileScreen> {
         });
       }
     } else {
-      // Handle no user logged in
       setState(() {
         _isLoading = false;
       });
@@ -61,21 +53,20 @@ class _ProfilePage extends State<ProfileScreen> {
   Future<void> _updateUserData() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
-      final response = await Supabase.instance.client
-          .from('users')
-          .update({
-            'username': _nameController.text,
-            'email': _emailController.text,
-            'phone': _phoneController.text,
-          })
-          .eq('id_user', user.id);
+      try {
+        await Supabase.instance.client.from('profil').update({
+          'nama': _nameController.text,
+          'email': _emailController.text,
+          'phone': int.tryParse(_phoneController.text),
+        }).eq('id_user', user.id);
 
-      if (response.error == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Data berhasil diperbarui")));
-      } else {
+          const SnackBar(content: Text("Data berhasil diperbarui")),
+        );
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${response.error!.message}")));
+          SnackBar(content: Text("Gagal update data: $e")),
+        );
       }
     }
   }
@@ -90,16 +81,13 @@ class _ProfilePage extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Profile",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Profile", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: const Color(0xFF078603),
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loading indicator
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -161,8 +149,8 @@ class _ProfilePage extends State<ProfileScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _logout,
-                      child:
-                          const Text("Logout", style: TextStyle(fontSize: 16)),
+                      child: const Text("Logout",
+                          style: TextStyle(fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                       ),
@@ -190,7 +178,6 @@ class _ProfilePage extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextField(
         controller: controller,
-        readOnly: true, // Supaya tidak bisa diubah manual oleh user
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(
@@ -228,4 +215,3 @@ class _ProfilePage extends State<ProfileScreen> {
     );
   }
 }
-

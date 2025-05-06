@@ -1,8 +1,7 @@
 import 'package:coba3/main.dart';
 import 'package:flutter/material.dart';
-import 'register.dart' as register_screen;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'profile.dart';  // Mengimpor ProfileScreen
+import 'profile.dart'; // Halaman profil setelah login
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,66 +10,73 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoggingIn = false;
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..forward();
-
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
-  }
-
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoggingIn = true;
-      });
+      setState(() => _isLoggingIn = true);
 
       try {
         final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
         );
 
-        if (response.user != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomePage()), // Mengarah ke ProfileScreen
-          );
+        final user = response.user;
+
+        if (user != null) {
+          // Ambil metadata
+          final metadata = user.userMetadata;
+          final nama = metadata?['nama'] ?? 'Pengguna Baru';
+
+          // Cek apakah profil sudah ada
+          final existingProfile = await Supabase.instance.client
+              .from('profil')
+              .select()
+              .eq('id_user', user.id)
+              .maybeSingle();
+
+          if (existingProfile == null) {
+            // Insert ke tabel profil
+            await Supabase.instance.client.from('profil').insert({
+              'id_user': user.id,
+              'nama': nama,
+              'email': user.email,
+              'phone': null,
+              'gambar': null,
+            });
+          }
+
+          // Pindah ke halaman profil
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login gagal. Periksa email dan password.')),
-          );
+          _showSnackbar("Login gagal. Periksa email dan password.");
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login error: ${e.toString()}')),
-        );
+        _showSnackbar("Login error: ${e.toString()}");
       } finally {
-        setState(() {
-          _isLoggingIn = false;
-        });
+        setState(() => _isLoggingIn = false);
       }
     }
   }
 
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   void dispose() {
-    _animationController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -84,125 +90,75 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
+              child: Form(
+                key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Hero(
-                      tag: "logo",
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.green.withOpacity(0.1),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(40),
-                          child: Image.asset(
-                            'assets/bicopi_logo.png',
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                    const SizedBox(height: 20),
+                    const Text("Login",
+                        style: TextStyle(
+                            fontSize: 26, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 30),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: "Email",
+                        prefixIcon: Icon(Icons.email),
                       ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty)
+                          return "Email tidak boleh kosong";
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
+                          return "Masukkan email yang valid";
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      "Welcome Back!",
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Login to continue",
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: !_isPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(_isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () {
+                            setState(
+                                () => _isPasswordVisible = !_isPasswordVisible);
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty)
+                          return "Password tidak boleh kosong";
+                        if (value.length < 6)
+                          return "Password minimal 6 karakter";
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 30),
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: "Email",
-                              prefixIcon: Icon(Icons.email),
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return "Email tidak boleh kosong";
-                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Masukkan email yang valid";
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              labelText: "Password",
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: IconButton(
-                                icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
-                                },
-                              ),
-                            ),
-                            obscureText: !_isPasswordVisible,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) return "Password tidak boleh kosong";
-                              if (value.length < 6) return "Password minimal 6 karakter";
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _isLoggingIn ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                            ),
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          ),
-                        ],
+                    ElevatedButton(
+                      onPressed: _isLoggingIn ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("Forgot Password?", style: TextStyle(color: Colors.green)),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Don't have an account?", style: TextStyle(color: Colors.black)),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const register_screen.SignUpScreen()),
-                            );
-                          },
-                          child: const Text("Sign Up", style: TextStyle(color: Colors.green)),
-                        ),
-                      ],
+                      child:
+                          const Text("Login", style: TextStyle(fontSize: 18)),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-
           if (_isLoggingIn)
             Container(
               color: Colors.black.withOpacity(0.5),
               child: const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
         ],
