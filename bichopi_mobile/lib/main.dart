@@ -180,33 +180,37 @@ class _HomePageState extends State<HomePage> {
     return prices;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: PageView(
-        controller: _pageController,
-        children: [
-          HomeContent(addItemToCart: _addItemToCart), // Pass the callback
-          _pages[1],
-          _pages[2],
-          _pages[3],
-        ],
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-            _focusedIndex = null; // Reset fokus saat halaman berubah
-          });
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onCartButtonTapped,
-        backgroundColor: const Color(0xFF078603),
-        elevation: 4,
-        child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFF5F5F5),
+    body: PageView(
+      controller: _pageController,
+      children: [
+        HomeContent(addItemToCart: _addItemToCart), // Pass the callback
+        _pages[1],
+        _pages[2],
+        _pages[3],
+      ],
+      onPageChanged: (index) {
+        setState(() {
+          _currentIndex = index;
+          _focusedIndex = null; // Reset fokus saat halaman berubah
+        });
+      },
+    ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: _onCartButtonTapped,
+      backgroundColor: const Color(0xFF078603),
+      child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
+      elevation: 4,
+    ),
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    bottomNavigationBar: Material(
+      elevation: 8.0,
+      shadowColor: Colors.black.withOpacity(0.2),
+      child: BottomAppBar(
         color: Colors.white,
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
@@ -253,8 +257,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildNavItem({
     required int index,
@@ -300,7 +305,7 @@ class _HomePageState extends State<HomePage> {
 class HomeContent extends StatelessWidget {
   final Function(String) addItemToCart;
 
-  @override
+
   HomeContent({required this.addItemToCart});
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -420,90 +425,88 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
-
 Widget _buildTopBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
     decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          Color(0xFF078603),
-          Color(0xFF078603),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(20),
-        bottomRight: Radius.circular(20),
-      ),
+      color: Color(0xFF078603), // Tetap dengan latar belakang hijau
+      // Menghapus BorderRadius
     ),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Halo, Carkecor 👋",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+                "Selamat Siang,",
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Mau makan apa hari ini?",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
-              ),
-            ),
-          ],
+              Text(
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold
+                ),
+                "Mamank"
+              )
+            ],
+          ),
         ),
         Row(
+          spacing: 10,
           children: [
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications, color: Colors.white),
-                  onPressed: () {
-                    // Tambahkan navigasi ke halaman notifikasi
-                  },
-                ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Text(
-                      "3",
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ),
-              ],
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white.withOpacity(0.2),
+              ),
+              child: Icon(
+                size: 24,
+                color: Colors.white,
+                Icons.shopping_cart_outlined,
+              ),
             ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: () {
-                // Tambahkan aksi seperti membuka profil
-              },
-              child: AnimatedScale(
-                scale: 1.1,
-                duration: const Duration(milliseconds: 200),
-                child: const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  radius: 22,
-                  backgroundImage: NetworkImage(
-                    "https://randomuser.me/api/portraits/men/1.jpg",
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white.withOpacity(0.2),
+              ),
+              child: Icon(
+                size: 24,
+                color: Colors.white,
+                Icons.email_outlined,
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white.withOpacity(0.2),
+              ),
+              child: Row(
+                spacing: 6,
+                children: [
+                  Icon(
+                    size: 24,
+                    color: Colors.white,
+                    Icons.headset_mic_outlined,
                   ),
-                ),
+                  Text(
+                    "Bantuan",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -514,20 +517,23 @@ Widget _buildTopBar() {
 }
 
 Widget _buildSearchBar() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-    child: TextField(
-      // Saat pengguna mengetik, filter menu
-      decoration: InputDecoration(
-        hintText: "Cari menu...",
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+  return Container(
+    color: Color(0xFF078603), // Tambahkan warna latar belakang hijau di sini
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: TextField(
+        // Saat pengguna mengetik, filter menu
+        decoration: InputDecoration(
+          hintText: "Cari menu...",
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 10),
       ),
     ),
   );

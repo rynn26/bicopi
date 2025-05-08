@@ -82,7 +82,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
         behavior: HitTestBehavior.opaque, // Memastikan GestureDetector menangkap tap di seluruh area modal
         child: Container(
           padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
+          decoration: const BoxDecoration (
             color: Color(0xFF078603), // Warna hijau
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
           ),
