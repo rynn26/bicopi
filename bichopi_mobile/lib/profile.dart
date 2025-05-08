@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'ubah_password.dart';
+import 'ubah_password.dart'; // Pastikan file 
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,6 +24,8 @@ class _ProfilePage extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+
+
       try {
         final response = await Supabase.instance.client
             .from('profil')
@@ -71,10 +73,13 @@ class _ProfilePage extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _logout() async {
-    await Supabase.instance.client.auth.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/login');
+
+      setState(() {
+        _nameController.text = response['username'] ?? '';
+        _emailController.text = response['email'] ?? '';
+        _phoneController.text = response['phone'] ?? '';
+      });
+    }
   }
 
   @override
@@ -86,36 +91,36 @@ class _ProfilePage extends State<ProfileScreen> {
         backgroundColor: const Color(0xFF078603),
         automaticallyImplyLeading: false,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Avatar
+            const Center(
+              child: CircleAvatar(
+                radius: 50,
+                backgroundImage: AssetImage("assets/foto_profile.png"),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Nama & Email
+            Center(
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Center(
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage("assets/foto_profile.png"),
-                    ),
+                  Text(
+                    _nameController.text,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          _nameController.text,
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          _emailController.text,
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
+
+                  Text(
+                    _emailController.text,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+
                   const SizedBox(height: 20),
                   _buildSectionTitle("Informasi Akun"),
                   _buildEditableTextField("Nama Lengkap", _nameController),
@@ -155,10 +160,57 @@ class _ProfilePage extends State<ProfileScreen> {
                         backgroundColor: Colors.red,
                       ),
                     ),
+
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Informasi Akun
+            _buildSectionTitle("Informasi Akun"),
+            _buildEditableTextField("Nama Lengkap", _nameController),
+            _buildEditableTextField("Email", _emailController),
+            _buildEditableTextField("No. Telepon", _phoneController),
+
+            const SizedBox(height: 20),
+
+            // Pengaturan keamanan
+            _buildSectionTitle("Pengaturan Keamanan"),
+            _buildClickableBox("Ubah Password", Icons.lock, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const UbahPasswordScreen()),
+              );
+            }),
+
+            const SizedBox(height: 30),
+
+            // Tombol Logout
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await Supabase.instance.client.auth.signOut();
+                  if (!mounted) return;
+                  Navigator.of(context).pushReplacementNamed('/login'); // Sesuaikan dengan rute login kamu
+                },
+                icon: const Icon(Icons.logout, color: Colors.white),
+                label: const Text("Logout",
+                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF078603),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
