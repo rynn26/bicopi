@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'payment.dart';
+import 'main.dart';
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -12,6 +13,7 @@ class CartPage extends StatefulWidget {
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
+    
   });
 
   @override

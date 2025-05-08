@@ -36,6 +36,8 @@ class HomePage extends StatefulWidget {
 }
 
 class SignUpScreen extends StatelessWidget {
+  const SignUpScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold();
@@ -46,7 +48,8 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   final PageController _pageController = PageController(initialPage: 0);
   int? _focusedIndex; // Menyimpan indeks item yang sedang ditekan
-  Map<String, int> _cart = {}; // Menyimpan item dalam keranjang (nama: jumlah)
+  final Map<String, int> _cart =
+      {}; // Menyimpan item dalam keranjang (nama: jumlah)
 
   @override
   void dispose() {
@@ -177,6 +180,7 @@ class _HomePageState extends State<HomePage> {
     return prices;
   }
 
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -300,6 +304,7 @@ Widget build(BuildContext context) {
 // Bagian HomeContent dan widget lainnya tetap sama seperti sebelumnya.
 class HomeContent extends StatelessWidget {
   final Function(String) addItemToCart;
+
 
   HomeContent({required this.addItemToCart});
   Widget build(BuildContext context) {
