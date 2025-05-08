@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class HasilReservasiScreen extends StatelessWidget {
   final String nama;
@@ -133,7 +135,7 @@ class HasilReservasiScreen extends StatelessWidget {
                 width: double.infinity, // Tombol memenuhi lebar parent
                 child: TextButton(
                   onPressed: () {
-                    // Tambahkan logika untuk menghubungi WhatsApp
+                    _openWhatsApp();
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFF078603),
@@ -176,5 +178,18 @@ class HasilReservasiScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _openWhatsApp() async {
+    const phoneNumber = "6289601480086"; // Ganti dengan nomor WhatsApp tujuan
+    final message = Uri.encodeComponent(
+        "Halo, saya ingin mengkonfirmasi reservasi atas nama $nama pada tanggal $tanggal pukul $waktu.");
+    final url = "https://wa.me/$phoneNumber?text=$message";
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw "Could not launch $url";
+    }
   }
 }

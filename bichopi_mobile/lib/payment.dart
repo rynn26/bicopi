@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'cart_halaman.dart';
 
-class PaymentPagee extends StatefulWidget {
+class PaymentPage extends StatefulWidget {
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
 
-class _PaymentPageState extends State<PaymentPagee> {
+class _PaymentPageState extends State<PaymentPage> {
   bool isCashSelected = true;
 
   @override

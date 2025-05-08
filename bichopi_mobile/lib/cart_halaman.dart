@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'payment.dart';
-import 'main.dart';
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -13,7 +12,6 @@ class CartPage extends StatefulWidget {
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
-    
   });
 
   @override
@@ -91,11 +89,32 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _checkout() async {
-    await _saveCartToSupabase();
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => PaymentPagee()),
+    // Tampilkan dialog konfirmasi sebelum navigasi
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi Checkout"),
+        content: const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Tidak
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), // Ya
+            child: const Text("Lanjutkan"),
+          ),
+        ],
+      ),
     );
+
+    if (shouldProceed == true) {
+      await _saveCartToSupabase();
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PaymentPage()),
+      );
+    }
   }
 
   @override
@@ -109,7 +128,7 @@ class _CartPageState extends State<CartPage> {
             child: cartItems.isEmpty
                 ? const Center(
                     child: Text(
-                      "Keranjangg masih kosong",
+                      "Keranjang masih kosong",
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -162,7 +181,7 @@ class _CartPageState extends State<CartPage> {
                                               style: const TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
-                                                color:  const Color(0xFF078603),
+                                                color: Color(0xFF078603),
                                               ),
                                             ),
                                           ],
@@ -181,7 +200,7 @@ class _CartPageState extends State<CartPage> {
                                           IconButton(
                                             icon: const Icon(
                                                 Icons.add_circle_outline,
-                                                color:  const Color(0xFF078603)),
+                                                color: Color(0xFF078603)),
                                             onPressed: () =>
                                                 _increaseQuantity(itemName),
                                           ),
@@ -214,21 +233,21 @@ class _CartPageState extends State<CartPage> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text("Subtotal"),
-                                    Text("Rp ${_calculateSubtotal()}")
+                                    Text("Rp ${_calculateSubtotal()}"),
                                   ]),
                               Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text("Biaya Layanan"),
-                                    Text("Rp $serviceFee")
+                                    Text("Rp $serviceFee"),
                                   ]),
                               Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text("Total"),
-                                    Text("Rp ${_calculateTotalPrice()}")
+                                    Text("Rp ${_calculateTotalPrice()}"),
                                   ]),
                               const SizedBox(height: 12),
                               SizedBox(
@@ -239,7 +258,7 @@ class _CartPageState extends State<CartPage> {
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),
-                                    backgroundColor:  const Color(0xFF078603),
+                                    backgroundColor: const Color(0xFF078603),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
