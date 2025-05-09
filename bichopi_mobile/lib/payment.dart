@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'cart_halaman.dart';
 
 
-class PaymentPagee extends StatefulWidget {
-  const PaymentPagee({super.key});
+class PaymentPage extends StatefulWidget {
+  const PaymentPage({super.key});
 
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
-
-class _PaymentPageState extends State<PaymentPage> {
+class _PaymentPageState extends State<PaymentPage>
+ {
   bool isCashSelected = true;
 
   @override
