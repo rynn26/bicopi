@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'payment.dart';
-import 'main.dart';
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -13,7 +12,6 @@ class CartPage extends StatefulWidget {
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
-    
   });
 
   @override
@@ -23,11 +21,15 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   late Map<String, int> cartItems;
   int serviceFee = 2000;
+  String? userId;
 
   @override
   void initState() {
     super.initState();
     cartItems = Map.from(widget.cartItems);
+
+    final user = Supabase.instance.client.auth.currentUser;
+    userId = user?.id;
   }
 
   void _increaseQuantity(String itemName) {
@@ -58,40 +60,40 @@ class _CartPageState extends State<CartPage> {
     return _calculateSubtotal() + serviceFee;
   }
 
-  /// ✅ Simpan ke tabel 'keranjang' Supabase
   Future<void> _saveCartToSupabase() async {
     final supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser?.id;
+    final now = DateTime.now();
 
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User belum login')),
-      );
+      print('User belum login.');
       return;
     }
 
-    final now = DateTime.now();
+    try {
+      for (var entry in cartItems.entries) {
+        final itemName = entry.key;
+        final quantity = entry.value;
+        final price =
+            widget.menu_makanan[itemName] ?? widget.menu_minuman[itemName] ?? 0;
 
-    for (var entry in cartItems.entries) {
-      final itemName = entry.key;
-      final quantity = entry.value;
-      final price = widget.menu_makanan[itemName] ??
-          widget.menu_minuman[itemName] ??
-          0;
-
-      await supabase.from('keranjang').insert({
-        'user_id': userId,
-        'item_name': itemName,
-        'quantity': quantity,
-        'price': price,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      });
+        await supabase.from('keranjang').insert([
+          {
+            'user_id': userId,
+            'item_name': itemName,
+            'quantity': quantity,
+            'price': price,
+            'created_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          }
+        ]);
+      }
+      print('Data berhasil disimpan ke Supabase.');
+    } catch (e) {
+      print('Error saat menyimpan ke Supabase: $e');
     }
   }
 
-  void _checkout() async {
-    // Tampilkan dialog konfirmasi sebelum navigasi
+  void _checkout(BuildContext context) async {
     final shouldProceed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -99,11 +101,11 @@ class _CartPageState extends State<CartPage> {
         content: const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false), // Tidak
+            onPressed: () => Navigator.pop(context, false),
             child: const Text("Batal"),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true), // Ya
+            onPressed: () => Navigator.pop(context, true),
             child: const Text("Lanjutkan"),
           ),
         ],
@@ -111,11 +113,17 @@ class _CartPageState extends State<CartPage> {
     );
 
     if (shouldProceed == true) {
-      await _saveCartToSupabase();
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => PaymentPage()),
-      );
+      try {
+        print("Menyimpan data keranjang ke Supabase...");
+        await _saveCartToSupabase();
+        print("Penyimpanan selesai.");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const PaymentPage()),
+        );
+      } catch (e) {
+        print("Error saat menyimpan keranjang ke Supabase: $e");
+      }
     }
   }
 
@@ -136,8 +144,8 @@ class _CartPageState extends State<CartPage> {
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Column(
                       children: [
                         Expanded(
@@ -215,8 +223,6 @@ class _CartPageState extends State<CartPage> {
                             },
                           ),
                         ),
-
-                        /// Detail pembayaran + tombol
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -255,8 +261,9 @@ class _CartPageState extends State<CartPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
-                                  onPressed:
-                                      cartItems.isNotEmpty ? _checkout : null,
+                                  onPressed: cartItems.isNotEmpty
+                                      ? () => _checkout(context)
+                                      : null,
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),

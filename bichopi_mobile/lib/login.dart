@@ -1,7 +1,8 @@
 import 'package:coba3/main.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'profile.dart'; // Halaman profil setelah login
+import 'profile.dart'; // Halaman utama setelah login
+import 'package:coba3/register.dart' as register;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
             });
           }
 
-          // Pindah ke halaman profil
+          // Pindah ke halaman profil/home
           if (mounted) {
             Navigator.pushReplacement(
               context,
@@ -71,8 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -96,9 +96,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
-                    const Text("Login",
-                        style: TextStyle(
-                            fontSize: 26, fontWeight: FontWeight.bold)),
+                    Image.asset(
+                      'assets/bicopi_logo.png',
+                      width: 150,
+                      height: 150,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Login",
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 30),
                     TextFormField(
                       controller: _emailController,
@@ -108,10 +115,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return "Email tidak boleh kosong";
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
-                          return "Masukkan email yang valid";
+                        if (value == null || value.isEmpty) return "Email tidak boleh kosong";
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Masukkan email yang valid";
                         return null;
                       },
                     ),
@@ -127,16 +132,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? Icons.visibility
                               : Icons.visibility_off),
                           onPressed: () {
-                            setState(
-                                () => _isPasswordVisible = !_isPasswordVisible);
+                            setState(() => _isPasswordVisible = !_isPasswordVisible);
                           },
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return "Password tidak boleh kosong";
-                        if (value.length < 6)
-                          return "Password minimal 6 karakter";
+                        if (value == null || value.isEmpty) return "Password tidak boleh kosong";
+                        if (value.length < 6) return "Password minimal 6 karakter";
                         return null;
                       },
                     ),
@@ -146,8 +148,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                       ),
-                      child:
-                          const Text("Login", style: TextStyle(fontSize: 18)),
+                      child: const Text("Login", style: TextStyle(fontSize: 18)),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Belum punya akun?"),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const register.SignUpScreen()),
+                            );
+                          },
+                          child: const Text("Sign Up"),
+                        ),
+                      ],
                     ),
                   ],
                 ),

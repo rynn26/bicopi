@@ -76,8 +76,10 @@ class ReservationScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  child: Padding( // Tambahkan Padding di luar Card untuk memberi ruang shadow
-                    padding: const EdgeInsets.only(bottom: 20), // Tambah sedikit jarak bawah
+                  child: Padding(
+                    // Tambahkan Padding di luar Card untuk memberi ruang shadow
+                    padding: const EdgeInsets.only(
+                        bottom: 20), // Tambah sedikit jarak bawah
                     child: _buildCategoryCard(categories[index]),
                   ),
                 );
@@ -94,7 +96,8 @@ class ReservationScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 8, // Tingkatkan nilai elevasi untuk shadow yang lebih jelas
       shadowColor: Colors.grey.withOpacity(0.5), // Gelapkan warna shadow
-      margin: EdgeInsets.zero, // Hapus margin bawaan Card karena sudah diatur di Padding luar
+      margin: EdgeInsets
+          .zero, // Hapus margin bawaan Card karena sudah diatur di Padding luar
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -137,7 +140,8 @@ class ReservationScreen extends StatelessWidget {
                 top: 8,
                 left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFF078603), // Warna hijau
                     borderRadius: BorderRadius.circular(8),
@@ -174,7 +178,8 @@ class ReservationScreen extends StatelessWidget {
                       category['capacity']!,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    const Icon(Icons.arrow_forward_ios,
+                        size: 16, color: Colors.grey),
                   ],
                 ),
               ],

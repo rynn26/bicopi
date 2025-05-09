@@ -23,7 +23,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController(); // <-- Tambahkan Controller Telepon
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
@@ -52,24 +52,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (user == null) {
         throw Exception('Gagal mendaftar');
       }
-// print(nameController.text.trim());
-// print(emailController.text.trim());
-// print(phoneController.text.trim());
-// print(passwordController.text.trim());
 
       await Supabase.instance.client.from('users').insert({
         'id_user': user.id,
         'username': nameController.text.trim(),
         'email': emailController.text.trim(),
         'password': passwordController.text,
-        'phone': phoneController.text.trim(), // <-- Simpan nomor telepon
+        'phone': phoneController.text.trim(),
         'id_user_level': 2,
         'created_at': DateTime.now().toIso8601String(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pendaftaran berhasil!')),
+        const SnackBar(
+          content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.'),
+        ),
       );
+
+      await Future.delayed(const Duration(seconds: 2));
 
       Navigator.pushReplacement(
         context,
@@ -117,7 +117,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 20),
               _buildTextField(controller: nameController, label: 'Nama Lengkap'),
-              _buildTextField(controller: phoneController, label: 'No Telepon'), // <-- Tambah field input telepon
+              _buildTextField(controller: phoneController, label: 'No Telepon'),
               _buildTextField(controller: emailController, label: 'Email'),
               _buildTextField(controller: passwordController, label: 'Password', isPassword: true),
               _buildTextField(controller: confirmPasswordController, label: 'Konfirmasi Password', isPassword: true),
