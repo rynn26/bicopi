@@ -6,12 +6,16 @@ class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
   final Map<String, int> menu_makanan;
   final Map<String, int> menu_minuman;
+  final Map<String, int> menu_snack;
+  final Map<String, int> menu_paket;
 
   const CartPage({
     super.key,
     required this.cartItems,
     required this.menu_makanan,
     required this.menu_minuman,
+    required this.menu_snack,
+    required this.menu_paket,
   });
 
   @override
@@ -50,8 +54,11 @@ class _CartPageState extends State<CartPage> {
 
   int _calculateSubtotal() {
     return cartItems.entries.fold(0, (sum, entry) {
-      int price =
-          widget.menu_makanan[entry.key] ?? widget.menu_minuman[entry.key] ?? 0;
+      int price = widget.menu_makanan[entry.key] ??
+          widget.menu_minuman[entry.key] ??
+          widget.menu_snack[entry.key] ??
+          widget.menu_paket[entry.key] ??
+          0;
       return sum + (price * entry.value);
     });
   }
@@ -73,8 +80,11 @@ class _CartPageState extends State<CartPage> {
       for (var entry in cartItems.entries) {
         final itemName = entry.key;
         final quantity = entry.value;
-        final price =
-            widget.menu_makanan[itemName] ?? widget.menu_minuman[itemName] ?? 0;
+        final price = widget.menu_makanan[itemName] ??
+            widget.menu_minuman[itemName] ??
+            widget.menu_snack[itemName] ??
+            widget.menu_paket[itemName] ??
+            0;
 
         await supabase.from('keranjang').insert([
           {
@@ -98,7 +108,8 @@ class _CartPageState extends State<CartPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Konfirmasi Checkout"),
-        content: const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
+        content:
+            const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -144,8 +155,8 @@ class _CartPageState extends State<CartPage> {
                     ),
                   )
                 : Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Column(
                       children: [
                         Expanded(
@@ -156,7 +167,10 @@ class _CartPageState extends State<CartPage> {
                               int quantity = cartItems[itemName]!;
                               int itemPrice = widget.menu_makanan[itemName] ??
                                   widget.menu_minuman[itemName] ??
+                                  widget.menu_snack[itemName] ??
+                                  widget.menu_paket[itemName] ??
                                   0;
+
                               int totalPrice = itemPrice * quantity;
 
                               return Card(

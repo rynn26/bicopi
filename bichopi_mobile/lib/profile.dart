@@ -1,3 +1,4 @@
+import 'package:coba3/login.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'ubah_password.dart';
@@ -14,7 +15,6 @@ class _ProfilePage extends State<ProfileScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = true;
-  String? _profileImageUrl;
 
   @override
   void initState() {
@@ -32,20 +32,14 @@ class _ProfilePage extends State<ProfileScreen> {
             .eq('id_user', user.id)
             .single();
 
-        // Debug: Check if data is being fetched
-        print('Response: $response');
-
         setState(() {
-          _nameController.text = response['nama'] ?? 'No Name';
-          _emailController.text = response['email'] ?? 'No Email';
-          _phoneController.text = response['phone']?.toString() ?? 'No Phone';
-          _profileImageUrl =
-              response['profile_image_url']; // Assuming URL is stored here
+          _nameController.text = response['nama'] ?? '';
+          _emailController.text = response['email'] ?? '';
+          _phoneController.text = response['phone']?.toString() ?? '';
           _isLoading = false;
         });
-      } catch (e, stackTrace) {
+      } catch (e) {
         print('Error fetching user data: $e');
-        print(stackTrace);
         setState(() {
           _isLoading = false;
         });
@@ -64,7 +58,7 @@ class _ProfilePage extends State<ProfileScreen> {
         await Supabase.instance.client.from('profil').update({
           'nama': _nameController.text,
           'email': _emailController.text,
-          'phone': _phoneController.text,
+          'phone': int.tryParse(_phoneController.text),
         }).eq('id_user', user.id);
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +75,12 @@ class _ProfilePage extends State<ProfileScreen> {
   Future<void> _logout() async {
     await Supabase.instance.client.auth.signOut();
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/login');
+
+    // Ganti halaman dan hapus semua halaman sebelumnya
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -100,14 +99,10 @@ class _ProfilePage extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  Center(
+                  const Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundImage: _profileImageUrl != null
-                          ? NetworkImage(_profileImageUrl!)
-                          : const AssetImage("assets/foto_profile.png")
-                              as ImageProvider,
+                      backgroundImage: AssetImage("assets/foto_profile.png"),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -147,11 +142,20 @@ class _ProfilePage extends State<ProfileScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _updateUserData,
-                      child: const Text("Simpan Perubahan",
-                          style: TextStyle(fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF078603),
+                        foregroundColor: Colors.white,
+                        elevation: 5,
+                        shadowColor: Colors.greenAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      child: const Text("💾 Simpan Perubahan"),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -160,11 +164,20 @@ class _ProfilePage extends State<ProfileScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _logout,
-                      child:
-                          const Text("Logout", style: TextStyle(fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        elevation: 5,
+                        shadowColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      child: const Text("🚪 Logout"),
                     ),
                   ),
                 ],
