@@ -32,9 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (user != null) {
           // Ambil metadata
-          final metadata = user.userMetadata;
-          final nama = metadata?['nama'] ?? 'Pengguna Baru';
-
+          final nama = user.userMetadata?['nama'] ?? 'Pengguna Baru';
+          final phone = user.userMetadata?['phone'] ?? '';
           // Cek apakah profil sudah ada
           final existingProfile = await Supabase.instance.client
               .from('profil')
@@ -48,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
               'id_user': user.id,
               'nama': nama,
               'email': user.email,
-              'phone': null,
+              'phone': phone,
               'gambar': null,
             });
           }
@@ -72,7 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -104,7 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     const Text(
                       "Login",
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 30),
                     TextFormField(
@@ -115,8 +116,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Email tidak boleh kosong";
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Masukkan email yang valid";
+                        if (value == null || value.isEmpty)
+                          return "Email tidak boleh kosong";
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
+                          return "Masukkan email yang valid";
                         return null;
                       },
                     ),
@@ -132,13 +135,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? Icons.visibility
                               : Icons.visibility_off),
                           onPressed: () {
-                            setState(() => _isPasswordVisible = !_isPasswordVisible);
+                            setState(
+                                () => _isPasswordVisible = !_isPasswordVisible);
                           },
                         ),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "Password tidak boleh kosong";
-                        if (value.length < 6) return "Password minimal 6 karakter";
+                        if (value == null || value.isEmpty)
+                          return "Password tidak boleh kosong";
+                        if (value.length < 6)
+                          return "Password minimal 6 karakter";
                         return null;
                       },
                     ),
@@ -148,7 +154,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
                       ),
-                      child: const Text("Login", style: TextStyle(fontSize: 18)),
+                      child:
+                          const Text("Login", style: TextStyle(fontSize: 18)),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -159,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const register.SignUpScreen()),
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const register.SignUpScreen()),
                             );
                           },
                           child: const Text("Sign Up"),

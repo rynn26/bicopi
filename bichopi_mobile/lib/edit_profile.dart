@@ -8,10 +8,14 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final TextEditingController namaController = TextEditingController(text: "Muzaka Najih");
-  final TextEditingController usernameController = TextEditingController(text: "muzaka86_");
-  final TextEditingController emailController = TextEditingController(text: "muzaka@example.com");
-  final TextEditingController noTeleponController = TextEditingController(text: "+6281234567890");
+  final TextEditingController namaController =
+      TextEditingController(text: "Muzaka Najih");
+  final TextEditingController usernameController =
+      TextEditingController(text: "muzaka86_");
+  final TextEditingController emailController =
+      TextEditingController(text: "muzaka@example.com");
+  final TextEditingController noTeleponController =
+      TextEditingController(text: "+6281234567890");
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +30,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           child: AppBar(
             title: Text(
               'Edit Profile',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
             ),
             backgroundColor: Color(0xFF078603),
             centerTitle: true,
@@ -95,7 +102,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             controller: controller,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             ),
           ),
         ],

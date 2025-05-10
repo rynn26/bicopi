@@ -1,6 +1,7 @@
 import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
+import 'package:coba3/search_menu_page.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
@@ -12,6 +13,7 @@ import 'reedem.dart';
 import 'cart_halaman.dart'; // Import halaman CartPage
 import 'register.dart';
 import 'login.dart';
+import 'menu_list_from_db.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +26,7 @@ Future<void> main() async {
 
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: LoginScreen(), // <-- ini ganti ke HomePage
+    home: SplashScreen(), // <-- ini ganti ke HomePage
   ));
 }
 
@@ -90,6 +92,8 @@ class _HomePageState extends State<HomePage> {
           cartItems: _cart,
           menu_makanan: _getFoodMenuPrices(),
           menu_minuman: _getDrinkMenuPrices(),
+          menu_snack: {},
+          menu_paket: {},
         ),
       ),
     );
@@ -142,14 +146,19 @@ class _HomePageState extends State<HomePage> {
     } else if (categoryName == "Snack") {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
+        MaterialPageRoute(
+            builder: (context) => snack.SnackMenuPage(
+                  categoryName: '3',
+                )),
       );
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                makanan.FoodMenuPage(categoryName: categoryName)),
+            builder: (context) => makanan.FoodMenuPage(
+                  categoryName: categoryName,
+                  categoryId: 2,
+                )),
       );
     }
   }
@@ -180,86 +189,85 @@ class _HomePageState extends State<HomePage> {
     return prices;
   }
 
-
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF5F5F5),
-    body: PageView(
-      controller: _pageController,
-      children: [
-        HomeContent(addItemToCart: _addItemToCart), // Pass the callback
-        _pages[1],
-        _pages[2],
-        _pages[3],
-      ],
-      onPageChanged: (index) {
-        setState(() {
-          _currentIndex = index;
-          _focusedIndex = null; // Reset fokus saat halaman berubah
-        });
-      },
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: _onCartButtonTapped,
-      backgroundColor: const Color(0xFF078603),
-      child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
-      elevation: 4,
-    ),
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    bottomNavigationBar: Material(
-      elevation: 8.0,
-      shadowColor: Colors.black.withOpacity(0.2),
-      child: BottomAppBar(
-        color: Colors.white,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16.0), // Kurangi padding vertikal
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              _buildNavItem(
-                index: 0,
-                icon: Icons.home,
-                label: 'Home',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 0,
-              ),
-              _buildNavItem(
-                index: 1,
-                icon: Icons.chair_sharp,
-                label: 'Reservasi',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 1,
-              ),
-              const SizedBox(width: 48.0), // Spasi untuk FAB
-              _buildNavItem(
-                index: 2,
-                icon: Icons.redeem_rounded,
-                label: 'Redeem',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 2,
-              ),
-              _buildNavItem(
-                index: 3,
-                icon: Icons.person_outline,
-                label: 'Profil',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 3,
-              ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: PageView(
+        controller: _pageController,
+        children: [
+          HomeContent(addItemToCart: _addItemToCart), // Pass the callback
+          _pages[1],
+          _pages[2],
+          _pages[3],
+        ],
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+            _focusedIndex = null; // Reset fokus saat halaman berubah
+          });
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _onCartButtonTapped,
+        backgroundColor: const Color(0xFF078603),
+        child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
+        elevation: 4,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: Material(
+        elevation: 8.0,
+        shadowColor: Colors.black.withOpacity(0.2),
+        child: BottomAppBar(
+          color: Colors.white,
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8.0,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16.0), // Kurangi padding vertikal
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.home,
+                  label: 'Home',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 0,
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.chair_sharp,
+                  label: 'Reservasi',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 1,
+                ),
+                const SizedBox(width: 48.0), // Spasi untuk FAB
+                _buildNavItem(
+                  index: 2,
+                  icon: Icons.redeem_rounded,
+                  label: 'Redeem',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 2,
+                ),
+                _buildNavItem(
+                  index: 3,
+                  icon: Icons.person_outline,
+                  label: 'Profil',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 3,
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildNavItem({
     required int index,
@@ -305,15 +313,14 @@ Widget build(BuildContext context) {
 class HomeContent extends StatelessWidget {
   final Function(String) addItemToCart;
 
-
   HomeContent({required this.addItemToCart});
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <Widget>[
           _buildTopBar(),
-          _buildSearchBar(),
+          _buildSearchBar(context),
           _buildCategoryList(context),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -367,8 +374,11 @@ Widget _buildCategoryList(BuildContext context) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                        makanan.FoodMenuPage(categoryName: "Makanan")),
+                  builder: (_) => makanan.FoodMenuPage(
+                    categoryId: 2,
+                    categoryName: '',
+                  ), // ID kategori makanan
+                ),
               );
             } else if (category["name"] == "Minuman") {
               Navigator.push(
@@ -381,14 +391,18 @@ Widget _buildCategoryList(BuildContext context) {
             } else if (category["name"] == "Snack") {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => snack.SnackMenuPage()),
+                MaterialPageRoute(
+                    builder: (context) => snack.SnackMenuPage(
+                          categoryName: '3',
+                        )),
               );
             } else if (category["name"] == "Paket") {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => PaketMenuPage(
-                          categoryName: '',
+                          categoryName: '4',
+                          categoryId: 4,
                         )), // Navigasi ke PaketMenuPage
               );
             }
@@ -425,12 +439,12 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
+
 Widget _buildTopBar() {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
     decoration: const BoxDecoration(
       color: Color(0xFF078603), // Tetap dengan latar belakang hijau
-      // Menghapus BorderRadius
     ),
     child: Row(
       children: [
@@ -438,101 +452,59 @@ Widget _buildTopBar() {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            children: const [
               Text(
+                "Selamat Siang,",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.white,
                 ),
-                "Selamat Siang,",
               ),
               Text(
+                "Mamank",
                 style: TextStyle(
                   fontSize: 20,
                   color: Colors.white,
-                  fontWeight: FontWeight.bold
+                  fontWeight: FontWeight.bold,
                 ),
-                "Mamank"
-              )
+              ),
             ],
           ),
         ),
-        Row(
-          spacing: 10,
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white.withOpacity(0.2),
-              ),
-              child: Icon(
-                size: 24,
-                color: Colors.white,
-                Icons.shopping_cart_outlined,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white.withOpacity(0.2),
-              ),
-              child: Icon(
-                size: 24,
-                color: Colors.white,
-                Icons.email_outlined,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.white.withOpacity(0.2),
-              ),
-              child: Row(
-                spacing: 6,
-                children: [
-                  Icon(
-                    size: 24,
-                    color: Colors.white,
-                    Icons.headset_mic_outlined,
-                  ),
-                  Text(
-                    "Bantuan",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        // Ikon-ikon telah dihapus dari sini
       ],
     ),
   );
 }
 
-Widget _buildSearchBar() {
+Widget _buildSearchBar(BuildContext context) {
   return Container(
-    color: Color(0xFF078603), // Tambahkan warna latar belakang hijau di sini
+    color: const Color(0xFF078603), // Latar belakang hijau
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: TextField(
-        // Saat pengguna mengetik, filter menu
-        decoration: InputDecoration(
-          hintText: "Cari menu...",
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
+      child: GestureDetector(
+        onTap: () {
+          // Navigasi ke halaman pencarian
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SearchMenuPage()),
+          );
+        },
+        child: AbsorbPointer(
+          // Agar TextField tidak bisa diedit di halaman ini
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: "Cari menu...",
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            ),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
         ),
       ),
     ),
@@ -655,127 +627,9 @@ void _showItemDetails(BuildContext context, Map<String, String> item,
   );
 }
 
-Widget _buildMenuList({required Function(String p1) addItemToCart}) {
-  final menuItems = [
-    {
-      "name": "Boba",
-      "category": "Minuman",
-      "description": "Minuman segar dan manis",
-      "price": "15.000",
-      "image": "assets/boba.png"
-    },
-    {
-      "name": "Nasi Goreng Pedas",
-      "category": "Makanan",
-      "description": "Nasi goreng dengan cita rasa pedas",
-      "price": "18.000",
-      "image": "assets/ricebowl.png"
-    },
-    {
-      "name": "Boba",
-      "category": "Minuman",
-      "description": "Minuman segar dan manis",
-      "price": "15.000",
-      "image": "assets/boba.png"
-    },
-  ];
-
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    child: ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: menuItems.length,
-      itemBuilder: (context, index) {
-        final item = menuItems[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          color: const Color.fromARGB(255, 255, 255, 255),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        item["image"]!,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 80,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _showItemDetails(context, item,
-                              addItemToCart); // Sertakan addItemToCart
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green,
-                          side: const BorderSide(color: Colors.green),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                        ),
-                        child: const Text(
-                          "Tambah",
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item["name"]!,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        item["category"]!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item["description"]!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  "Rp ${item["price"]}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
+Widget _buildMenuList({required Function(String) addItemToCart}) {
+  return MenuListFromDB(
+    addItemToCart: addItemToCart,
+    categoryId: 1, // misal kategori Minuman
   );
 }

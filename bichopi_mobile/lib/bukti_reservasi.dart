@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class HasilReservasiScreen extends StatelessWidget {
   final String nama;
   final String tanggal;
@@ -68,7 +67,8 @@ class HasilReservasiScreen extends StatelessWidget {
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                    borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(16)),
                     child: Image.asset(
                       'assets/reservasi1.png',
                       width: 100, // Lebih besar agar proporsional
@@ -82,7 +82,8 @@ class HasilReservasiScreen extends StatelessWidget {
                     children: [
                       Text(
                         "Kursi Deretan Depan",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 4),
                       Text(
@@ -98,7 +99,8 @@ class HasilReservasiScreen extends StatelessWidget {
 
             // Detail Reservasi dengan Border Radius
             Container(
-              padding: const EdgeInsets.all(16), // Padding lebih besar agar lebih nyaman
+              padding: const EdgeInsets.all(
+                  16), // Padding lebih besar agar lebih nyaman
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -122,7 +124,11 @@ class HasilReservasiScreen extends StatelessWidget {
                   _buildDetailRow("Tanggal", tanggal),
                   _buildDetailRow("Waktu", waktu),
                   _buildDetailRow("Jumlah", jumlah),
-                  _buildDetailRow("Keterangan", keterangan.isNotEmpty ? keterangan : "Tidak ada keterangan"),
+                  _buildDetailRow(
+                      "Keterangan",
+                      keterangan.isNotEmpty
+                          ? keterangan
+                          : "Tidak ada keterangan"),
                 ],
               ),
             ),
@@ -139,8 +145,10 @@ class HasilReservasiScreen extends StatelessWidget {
                   },
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFF078603),
-                    padding: const EdgeInsets.symmetric(vertical: 16), // Tinggi tombol lebih besar
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16), // Tinggi tombol lebih besar
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -153,7 +161,10 @@ class HasilReservasiScreen extends StatelessWidget {
                       const SizedBox(width: 10),
                       const Text(
                         "Hubungi Sekarang",
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -173,8 +184,11 @@ class HasilReservasiScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(value, style: const TextStyle(color: Colors.black, fontSize: 16)),
+          Text(label,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(value,
+              style: const TextStyle(color: Colors.black, fontSize: 16)),
         ],
       ),
     );

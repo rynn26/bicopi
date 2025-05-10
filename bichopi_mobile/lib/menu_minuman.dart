@@ -27,8 +27,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
     try {
       final response = await supabase
           .from('menu')
-          .select('nama_menu, foto_menu, deskripsi_menu, harga_menu');
-          
+          .select('nama_menu, foto_menu, deskripsi_menu, harga_menu')
+          .eq('id_kategori_menu', 1); // Hanya ambil kategori 1 (minuman)
 
       setState(() {
         menuItems = response.map<Map<String, dynamic>>((item) {
@@ -37,8 +37,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
             "foto_menu": item["foto_menu"],
             "deskripsi_menu": item["deskripsi_menu"],
             "harga_menu": (item["harga_menu"] is double)
-                ? item["harga_menu"].toInt() // Konversi double ke int
-                : item["harga_menu"] ?? 0, // Pastikan nilai selalu int
+                ? item["harga_menu"].toInt()
+                : item["harga_menu"] ?? 0,
           };
         }).toList();
         isLoading = false;
@@ -81,6 +81,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                     for (var item in menuItems)
                       item["nama_menu"]: item["harga_menu"]
                   },
+                  menu_snack: {},
+                  menu_paket: {},
                 ),
               ),
             );
@@ -107,8 +109,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                           children: [
                             Text(
                               "Jumlah Pesanan: $quantity",
-                              style:
-                                  const TextStyle(color: Colors.white, fontSize: 10),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 10),
                             ),
                             Text(
                               item["nama_menu"],
@@ -226,8 +228,9 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                           width: 80,
                                           height: 80,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Image.asset(
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Image.asset(
                                             'assets/no_image.png',
                                             width: 80,
                                             height: 80,
@@ -248,8 +251,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                         ),
                                         child: const Text(
                                           "Tambah",
-                                          style:
-                                              TextStyle(color: Color(0xFF078603)),
+                                          style: TextStyle(
+                                              color: Color(0xFF078603)),
                                         ),
                                       ),
                                     ],

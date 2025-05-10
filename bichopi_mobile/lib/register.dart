@@ -2,18 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'login.dart' as login_page;
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://nfafmiaxogrxxwjuyqfs.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
-  );
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: SignUpScreen(),
-  ));
-}
-
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -26,7 +14,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+  final TextEditingController referralCodeController = TextEditingController();
 
   bool isLoading = false;
 
@@ -46,11 +36,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final response = await Supabase.instance.client.auth.signUp(
         email: emailController.text.trim(),
         password: passwordController.text,
+        data: {
+          'nama': nameController.text.trim(),
+          'phone': phoneController.text.trim(),
+        },
       );
 
       final user = response.user;
-      if (user == null) {
-        throw Exception('Gagal mendaftar');
+      if (user == null) throw Exception('Gagal mendaftar');
+
+      final referralCode = referralCodeController.text.trim();
+
+      int idUserLevel = 1; // Default member
+      final afiliasiTable = Supabase.instance.client.from('afiliasi');
+
+      if (referralCode.isNotEmpty) {
+        final referralMatch = await afiliasiTable
+            .select()
+            .eq('kode_referal', 'REF12345') // Correct referral code check
+            .single();
+
+        if (referralMatch != null) {
+          // Afiliasi
+          await afiliasiTable.insert({
+            'id_user_affiliasi': user.id,
+            'kode_referral': referralCode,
+            'id_pelacakan_referral': referralMatch['id_affiliasi'],
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kode referal tidak valid')),
+          );
+          setState(() {
+            isLoading = false;
+          });
+          return;
+        }
       }
 
       await Supabase.instance.client.from('users').insert({
@@ -59,22 +80,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'email': emailController.text.trim(),
         'password': passwordController.text,
         'phone': phoneController.text.trim(),
-        'id_user_level': 2,
+        'id_user_level': idUserLevel, // Set user level based on referral
         'created_at': DateTime.now().toIso8601String(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.'),
-        ),
+            content: Text(
+                'Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.')),
       );
 
       await Future.delayed(const Duration(seconds: 2));
-
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
-      );
+          context,
+          MaterialPageRoute(
+              builder: (context) => const login_page.LoginScreen()));
     } on AuthException catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${error.message}')),
@@ -110,40 +130,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
               const Text(
                 'Daftar Akun',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              _buildTextField(controller: nameController, label: 'Nama Lengkap'),
+              _buildTextField(
+                  controller: nameController, label: 'Nama Lengkap'),
               _buildTextField(controller: phoneController, label: 'No Telepon'),
               _buildTextField(controller: emailController, label: 'Email'),
-              _buildTextField(controller: passwordController, label: 'Password', isPassword: true),
-              _buildTextField(controller: confirmPasswordController, label: 'Konfirmasi Password', isPassword: true),
+              _buildTextField(
+                  controller: passwordController,
+                  label: 'Password',
+                  isPassword: true),
+              _buildTextField(
+                  controller: confirmPasswordController,
+                  label: 'Konfirmasi Password',
+                  isPassword: true),
+              _buildTextField(
+                  controller: referralCodeController,
+                  label: 'Kode Referal (Opsional)'),
               const SizedBox(height: 25),
               ElevatedButton(
                 onPressed: isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: const Color(0xFF078603),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Daftar',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                    ? const CircularProgressIndicator(
+                        color: Color.fromARGB(255, 0, 242, 255))
+                    : const Text('Daftar',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 15),
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const login_page.LoginScreen()),
                   );
                 },
                 child: const Text('Sudah punya akun? Login'),
@@ -165,12 +193,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: TextField(
         controller: controller,
         obscureText: isPassword,
-        keyboardType: label.contains('Telepon') ? TextInputType.phone : TextInputType.text,
+        keyboardType: label.contains('Telepon')
+            ? TextInputType.phone
+            : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Colors.grey.shade100,
         ),

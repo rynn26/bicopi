@@ -1,90 +1,154 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'cart_halaman.dart';
 
 class SnackMenuPage extends StatefulWidget {
-  const SnackMenuPage({super.key});
+  final int categoryId = 3;
+
+  const SnackMenuPage({super.key, required String categoryName});
 
   @override
-  _SnackMenuPageState createState() => _SnackMenuPageState();
+  State<SnackMenuPage> createState() => _SnackMenuPageState();
 }
 
 class _SnackMenuPageState extends State<SnackMenuPage> {
-  final List<Map<String, dynamic>> snackItems = [
-    {
-      "name": "Kentang Goreng",
-      "category": "Snack",
-      "description": "Kentang goreng krispi",
-      "price": "12.000",
-      "image": "assets/kentang.png"
-    },
-    {
-      "name": "Pisang Kipas",
-      "category": "Snack",
-      "description": "pisang manis dan renyah",
-      "price": "12.000",
-      "image": "assets/pisang_kipas.png"
-    },
-    {
-      "name": "Tahu Crispy",
-      "category": "Snack",
-      "description": "Crispy dan tambahan cabai garam",
-      "price": "12.000",
-      "image": "assets/tahu.png"
-    },
-    {
-      "name": "Sempol Ayam",
-      "category": "Snack",
-      "description": "ekstra daging ayam",
-      "price": "10.000",
-      "image": "assets/sempol.png"
-    },
-  ];
+  final supabase = Supabase.instance.client;
+  List<Map<String, dynamic>> menuItems = [];
+  Map<String, int> cartQuantities = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchSnackItems();
+  }
+
+  Future<void> fetchSnackItems() async {
+    try {
+      final response = await supabase
+          .from('menu')
+          .select('nama_menu, foto_menu, deskripsi_menu, harga_menu')
+          .eq('id_kategori_menu', widget.categoryId);
+
+      setState(() {
+        menuItems = List<Map<String, dynamic>>.from(response);
+        menuItems = response.map<Map<String, dynamic>>((item) {
+          return {
+            "nama_menu": item["nama_menu"],
+            "foto_menu": item["foto_menu"],
+            "deskripsi_menu": item["deskripsi_menu"],
+            "harga_menu": (item["harga_menu"] is double)
+                ? item["harga_menu"].toInt()
+                : item["harga_menu"] ?? 0,
+          };
+        }).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Gagal fetch data snack: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  int _parseHarga(dynamic harga) {
+    try {
+      if (harga == null) return 0;
+      return (harga as num).toInt();
+    } catch (e) {
+      debugPrint('Gagal parsing harga: $harga, error: $e');
+      return 0;
+    }
+  }
+
+  void _addToCart(Map<String, dynamic> item) {
+    setState(() {
+      final name = item["nama_menu"];
+      cartQuantities[name] = (cartQuantities[name] ?? 0) + 1;
+    });
+
+    _showAddToCartDialog(context, item);
+  }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
+    int price = item["harga_menu"];
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          height: 80, // Mengurangi ukuran popup
-          decoration: const BoxDecoration(
-            color:  Color(0xFF078603),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.shopping_cart, color: Colors.white),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("1 Pesanan", style: TextStyle(color: Colors.white, fontSize: 12)),
-                      Text(
-                        item["name"],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Text(
-                "${item["price"]}",
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+      builder: (_) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CartPage(
+                  cartItems: cartQuantities,
+                  menu_makanan: {},
+                  menu_minuman: {},
+                  menu_snack: {
+                    for (var item in menuItems)
+                      item["nama_menu"]: _parseHarga(item["harga_menu"])
+                  },
+                  menu_paket: {},
                 ),
               ),
-            ],
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF078603),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.shopping_cart, color: Colors.white),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Jumlah Pesanan: $quantity",
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 10),
+                            ),
+                            Text(
+                              item["nama_menu"],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "Rp ${price * quantity}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         );
       },
@@ -100,7 +164,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color:  Color(0xFF078603),
+              color: Color(0xFF078603),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -145,93 +209,103 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
             ),
           ),
           const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: snackItems.length,
-              itemBuilder: (context, index) {
-                final item = snackItems[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: menuItems.length,
+                    itemBuilder: (context, index) {
+                      final item = menuItems[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Stack(
                           children: [
-                            Column(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    item["image"]!,
-                                    width: 80,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                ElevatedButton(
-                                  onPressed: () => _showAddToCartDialog(context, item),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      side: const BorderSide(color: Colors.green),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    "Tambah",
-                                    style: TextStyle(color:  Color(0xFF078603),),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    item["name"]!,
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.bold),
+                                  Column(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          item["foto_menu"] ?? '',
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Image.asset(
+                                            'assets/no_image.png',
+                                            width: 80,
+                                            height: 80,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      ElevatedButton(
+                                        onPressed: () => _addToCart(item),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            side: const BorderSide(
+                                                color: Color(0xFF078603)),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "Tambah",
+                                          style: TextStyle(
+                                              color: Color(0xFF078603)),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Text(
-                                    item["category"]!,
-                                    style: const TextStyle(
-                                        fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item["nama_menu"],
+                                          style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(item["deskripsi_menu"] ??
+                                            "Tidak ada deskripsi"),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(item["description"]!),
                                 ],
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 8,
+                              right: 12,
+                              child: Text(
+                                "Rp ${item["harga_menu"]}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      Positioned(
-                        bottom: 8,
-                        right: 12,
-                        child: Text(
-                          "Rp ${item["price"]}",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
+                ),
         ],
       ),
     );

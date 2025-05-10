@@ -5,7 +5,11 @@ class PopupPage extends StatelessWidget {
   final int points;
   final String transactionId; // Tambahkan transactionId
 
-  const PopupPage({super.key, required this.title, required this.points, required this.transactionId});
+  const PopupPage(
+      {super.key,
+      required this.title,
+      required this.points,
+      required this.transactionId});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +48,8 @@ class PopupPage extends StatelessWidget {
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text(transactionId, style: const TextStyle(color: Colors.black87)),
+              child: Text(transactionId,
+                  style: const TextStyle(color: Colors.black87)),
             ),
 
             const SizedBox(height: 16),
@@ -80,9 +85,11 @@ class PopupPage extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.green, // Warna teks hijau
-                  side: const BorderSide(color: Colors.green, width: 2), // Border hijau
+                  side: const BorderSide(
+                      color: Colors.green, width: 2), // Border hijau
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text(
                   "Close",

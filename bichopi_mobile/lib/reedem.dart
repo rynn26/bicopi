@@ -40,7 +40,8 @@ class _RewardPageState extends State<RewardPage> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black12, blurRadius: 6, spreadRadius: 1),
+                BoxShadow(
+                    color: Colors.black12, blurRadius: 6, spreadRadius: 1),
               ],
             ),
             child: Column(
@@ -70,7 +71,8 @@ class _RewardPageState extends State<RewardPage> {
               itemCount: rewards.length,
               itemBuilder: (context, index) {
                 final reward = rewards[index];
-                return _buildRewardCard(context, reward["title"], reward["points"]);
+                return _buildRewardCard(
+                    context, reward["title"], reward["points"]);
               },
             ),
           ),
@@ -93,28 +95,35 @@ class _RewardPageState extends State<RewardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text("Dapatkan kopi reguler gratis di lokasi kami", style: TextStyle(color: Colors.black54)),
+          const Text("Dapatkan kopi reguler gratis di lokasi kami",
+              style: TextStyle(color: Colors.black54)),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text("$points Points", style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text("$points Points",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
               ElevatedButton(
                 onPressed: () => showRedeemDialog(context, title, points),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF078603),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
-                child: const Text("Klaim reward", style: TextStyle(color: Colors.white)),
+                child: const Text("Klaim reward",
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

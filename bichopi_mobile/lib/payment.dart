@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'cart_halaman.dart';
 
-
 class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
-
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
-class _PaymentPageState extends State<PaymentPage>
- {
+
+class _PaymentPageState extends State<PaymentPage> {
   bool isCashSelected = true;
 
   @override
@@ -88,7 +86,8 @@ class _PaymentPageState extends State<PaymentPage>
               ),
               child: Text(
                 'Bayar Sekarang',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
