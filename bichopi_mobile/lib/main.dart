@@ -26,7 +26,7 @@ Future<void> main() async {
 
   runApp(const MaterialApp(
     debugShowCheckedModeBanner: false,
-    home: HomePage(), // <-- ini ganti ke HomePage
+    home: SplashScreen(), // <-- ini ganti ke HomePage
   ));
 }
 
