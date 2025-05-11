@@ -89,7 +89,7 @@ class _ProfilePage extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text("Profile", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: const Color(0xFF078603),
+        backgroundColor: const Color(0xFF2E7D32), // Warna hijau utama
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
@@ -99,30 +99,35 @@ class _ProfilePage extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Avatar Profile dengan Border dan Shadow
                   const Center(
                     child: CircleAvatar(
-                      radius: 50,
+                      radius: 55,
                       backgroundImage: AssetImage("assets/foto_profile.png"),
+                      backgroundColor: Colors.transparent,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   Center(
                     child: Column(
                       children: [
                         Text(
                           _nameController.text,
                           style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E7D32), // Hijau pada teks
+                          ),
                         ),
+                        const SizedBox(height: 5),
                         Text(
                           _emailController.text,
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   _buildSectionTitle("Informasi Akun"),
                   _buildEditableTextField("Nama Lengkap", _nameController),
                   _buildEditableTextField("Email", _emailController),
@@ -137,15 +142,16 @@ class _ProfilePage extends State<ProfileScreen> {
                     );
                   }),
                   const SizedBox(height: 30),
+                  // Tombol Simpan Perubahan dengan desain hijau
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _updateUserData,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF078603),
+                        backgroundColor: const Color(0xFF2E7D32), // Warna hijau tombol
                         foregroundColor: Colors.white,
-                        elevation: 5,
+                        elevation: 10,
                         shadowColor: Colors.greenAccent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -159,27 +165,30 @@ class _ProfilePage extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _logout,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        elevation: 5,
-                        shadowColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: const Text("🚪 Logout"),
-                    ),
-                  ),
+                  // Tombol Logout dengan warna merah (tetap)
+                 // Tombol Logout dengan warna hijau
+SizedBox(
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    onPressed: _logout,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF2E7D32), // Warna hijau tombol logout
+      foregroundColor: Colors.white,
+      elevation: 10,
+      shadowColor: Colors.greenAccent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      textStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    child: const Text("🚪 Logout"),
+  ),
+),
+
                 ],
               ),
             ),
@@ -191,7 +200,11 @@ class _ProfilePage extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF2E7D32), // Hijau pada judul
+        ),
       ),
     );
   }
@@ -204,9 +217,12 @@ class _ProfilePage extends State<ProfileScreen> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFF2E7D32)), // Hijau pada label
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF2E7D32)), // Hijau pada border
           ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         ),
       ),
     );
@@ -219,20 +235,23 @@ class _ProfilePage extends State<ProfileScreen> {
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(2, 2)),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.black54),
+                Icon(icon, color: Color(0xFF2E7D32)), // Hijau pada icon
                 const SizedBox(width: 10),
                 Text(text, style: const TextStyle(fontSize: 16)),
               ],
             ),
             const Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.black54),
+                size: 16, color: Color(0xFF2E7D32)), // Hijau pada panah
           ],
         ),
       ),
