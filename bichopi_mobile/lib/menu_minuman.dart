@@ -152,7 +152,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0xFF078603),
+              color: Color(0x4D37DD21),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -164,7 +164,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 0, 0, 0)),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 10),

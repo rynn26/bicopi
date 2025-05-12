@@ -14,6 +14,7 @@ import 'cart_halaman.dart'; // Import halaman CartPage
 import 'register.dart';
 import 'login.dart';
 import 'menu_list_from_db.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -319,15 +320,14 @@ class HomeContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _buildTopBar(),
-          _buildSearchBar(context),
+          _buildTopBar(context),
+
           _buildCategoryList(context),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
               "Paket",
-              style: TextStyle(
-                fontFamily: "Poppins-Light",
+              style: GoogleFonts.poppins(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -339,7 +339,7 @@ class HomeContent extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
               "Favorit",
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -347,7 +347,7 @@ class HomeContent extends StatelessWidget {
             ),
           ),
           const SizedBox(
-              height: 8), // Mengurangi jarak antara "Favorit" dan menu
+              height: 0.1), // Mengurangi jarak antara "Favorit" dan menu
           _buildMenuList(addItemToCart: addItemToCart), // Pass the callback
         ],
       ),
@@ -413,8 +413,9 @@ Widget _buildCategoryList(BuildContext context) {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF078603).withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(10),
+                  color:
+                      const Color.fromARGB(255, 29, 224, 22).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(60),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -440,73 +441,106 @@ Widget _buildCategoryList(BuildContext context) {
   );
 }
 
-Widget _buildTopBar() {
+Widget _buildTopBar(BuildContext context) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-    decoration: const BoxDecoration(
-      color: Color(0xFF078603), // Tetap dengan latar belakang hijau
+    height: 200, // cukup tinggi untuk teks + search bar
+    decoration: BoxDecoration(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(25),
+        bottomRight: Radius.circular(25),
+      ),
     ),
-    child: Row(
+    child: Stack(
       children: [
-        Expanded(
+        // Background image
+        ClipRRect(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(25),
+            bottomRight: Radius.circular(25),
+          ),
+          child: Image.asset(
+            'assets/backgroundb.png',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        ),
+        // Green overlay
+        Container(
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 55, 221, 33).withOpacity(0.3),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(25),
+              bottomRight: Radius.circular(25),
+            ),
+          ),
+        ),
+        // Content: Greeting + Search Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Text(
-                "Selamat Siang,",
-                style: TextStyle(
+                "Selamat Datang Di,",
+                style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: Colors.black87,
                 ),
               ),
               Text(
-                "Mamank",
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
+                "BICOPI",
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: const Color(0xFF028A0F),
+                ),
+              ),
+              const SizedBox(height: 35),
+              // Search Bar
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SearchMenuPage()),
+                  );
+                },
+                child: AbsorbPointer(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Cari menu...",
+                        hintStyle: TextStyle(color: Colors.grey[700]),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFF078603),
+                          size: 28,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        // Ikon-ikon telah dihapus dari sini
       ],
-    ),
-  );
-}
-
-Widget _buildSearchBar(BuildContext context) {
-  return Container(
-    color: const Color(0xFF078603), // Latar belakang hijau
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: GestureDetector(
-        onTap: () {
-          // Navigasi ke halaman pencarian
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SearchMenuPage()),
-          );
-        },
-        child: AbsorbPointer(
-          // Agar TextField tidak bisa diedit di halaman ini
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: "Cari menu...",
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            ),
-          ),
-        ),
-      ),
     ),
   );
 }

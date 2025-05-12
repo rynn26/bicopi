@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-
+  webview_flutter: ^4.2.2
   supabase_flutter: ^1.10.3   
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.0.0
@@ -42,12 +42,16 @@ dependencies:
   lottie: ^3.0.0
   rive: ^0.11.2
   flutter_animate: ^4.5.0
-  intl: ^0.18.1
+  intl: ^0.19.0
   qr_flutter: ^4.1.0
-  http: ^0.13.4
+  http: ^0.13.6
   url_launcher: ^6.3.1
-  shared_preferences: ^2.0.15
   image_picker: ^0.8.5+3
+  shared_preferences: ^2.2.0
+  path_provider: ^2.0.8
+  fluttertoast: ^8.2.1
+  device_preview: ^1.2.0
+  
  
 
 
@@ -92,6 +96,7 @@ flutter:
     - assets/ricebowl.png
     - assets/boba.png
     - assets/chocolatte.png
+    - assets/not.png
     - assets/thai_tea.png
     - assets/nasi_goreng.png
     - assets/mie_goreng.png
@@ -112,6 +117,7 @@ flutter:
     - assets/icon_cash.png
     - assets/icon_qris.png
     - assets/foto_profile.png
+    - assets/backgroundb.png
 
 
 

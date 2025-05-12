@@ -34,6 +34,32 @@ class _CartPageState extends State<CartPage> {
 
     final user = Supabase.instance.client.auth.currentUser;
     userId = user?.id;
+
+    _loadCartFromSupabase();
+  }
+
+  Future<void> _loadCartFromSupabase() async {
+    final supabase = Supabase.instance.client;
+
+    if (userId == null) return;
+
+    try {
+      final response = await supabase
+          .from('keranjang')
+          .select()
+          .eq('user_id', userId);
+
+      if (response != null) {
+        for (var item in response) {
+          String name = item['item_name'];
+          int quantity = item['quantity'];
+          cartItems[name] = quantity;
+        }
+        setState(() {});
+      }
+    } catch (e) {
+      print('Gagal memuat data keranjang: $e');
+    }
   }
 
   void _increaseQuantity(String itemName) {
@@ -86,16 +112,14 @@ class _CartPageState extends State<CartPage> {
             widget.menu_paket[itemName] ??
             0;
 
-        await supabase.from('keranjang').insert([
-          {
-            'user_id': userId,
-            'item_name': itemName,
-            'quantity': quantity,
-            'price': price,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          }
-        ]);
+        await supabase.from('keranjang').upsert({
+          'user_id': userId,
+          'item_name': itemName,
+          'quantity': quantity,
+          'price': price,
+          'created_at': now.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+        });
       }
       print('Data berhasil disimpan ke Supabase.');
     } catch (e) {
@@ -125,9 +149,7 @@ class _CartPageState extends State<CartPage> {
 
     if (shouldProceed == true) {
       try {
-        print("Menyimpan data keranjang ke Supabase...");
         await _saveCartToSupabase();
-        print("Penyimpanan selesai.");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const PaymentPage()),
@@ -170,7 +192,6 @@ class _CartPageState extends State<CartPage> {
                                   widget.menu_snack[itemName] ??
                                   widget.menu_paket[itemName] ??
                                   0;
-
                               int totalPrice = itemPrice * quantity;
 
                               return Card(
