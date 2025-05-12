@@ -14,101 +14,92 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController referralCodeController = TextEditingController();
 
   bool isLoading = false;
 
-  Future<void> _signUp() async {
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password tidak sama!')),
-      );
-      return;
+ Future<void> _signUp() async {
+  if (passwordController.text != confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password tidak sama!')),
+    );
+    return;
+  }
+
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    final response = await Supabase.instance.client.auth.signUp(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+      data: {
+        'nama': nameController.text.trim(),
+        'phone': phoneController.text.trim(),
+      },
+    );
+
+    final user = response.user;
+    if (user == null) throw Exception('Gagal mendaftar');
+
+    final referralCode = referralCodeController.text.trim();
+    int idUserLevel = 1; // Default: customer
+
+    // Cek validitas kode referal
+    if (referralCode.isNotEmpty) {
+      final referralMatch = await Supabase.instance.client
+          .from('afiliasi')
+          .select('id_afiliasi')
+          .eq('kode_referal', referralCode)
+          .maybeSingle();
+
+      if (referralMatch != null) {
+        idUserLevel = 4; // Level 4 = Member Afiliasi
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kode referal tidak valid')),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
     }
 
-    setState(() {
-      isLoading = true;
+    // Simpan data user ke tabel users
+    await Supabase.instance.client.from('users').insert({
+      'id_user': user.id,
+      'username': nameController.text.trim(),
+      'email': emailController.text.trim(),
+      'password': passwordController.text,
+      'phone': phoneController.text.trim(),
+      'id_user_level': idUserLevel,
+      'created_at': DateTime.now().toIso8601String(),
     });
 
-    try {
-      final response = await Supabase.instance.client.auth.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-        data: {
-          'nama': nameController.text.trim(),
-          'phone': phoneController.text.trim(),
-        },
-      );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.')),
+    );
 
-      final user = response.user;
-      if (user == null) throw Exception('Gagal mendaftar');
+    await Future.delayed(const Duration(seconds: 2));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const login_page.LoginScreen()));
 
-      final referralCode = referralCodeController.text.trim();
-
-      int idUserLevel = 1; // Default member
-      final afiliasiTable = Supabase.instance.client.from('afiliasi');
-
-      if (referralCode.isNotEmpty) {
-        final referralMatch = await afiliasiTable
-            .select()
-            .eq('kode_referal', 'REF12345') // Correct referral code check
-            .single();
-
-        if (referralMatch != null) {
-          // Afiliasi
-          await afiliasiTable.insert({
-            'id_user_affiliasi': user.id,
-            'kode_referral': referralCode,
-            'id_pelacakan_referral': referralMatch['id_affiliasi'],
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kode referal tidak valid')),
-          );
-          setState(() {
-            isLoading = false;
-          });
-          return;
-        }
-      }
-
-      await Supabase.instance.client.from('users').insert({
-        'id_user': user.id,
-        'username': nameController.text.trim(),
-        'email': emailController.text.trim(),
-        'password': passwordController.text,
-        'phone': phoneController.text.trim(),
-        'id_user_level': idUserLevel, // Set user level based on referral
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.')),
-      );
-
-      await Future.delayed(const Duration(seconds: 2));
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => const login_page.LoginScreen()));
-    } on AuthException catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${error.message}')),
-      );
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${error.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+  } on AuthException catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${error.message}')),
+    );
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: ${error.toString()}')),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -133,21 +124,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              _buildTextField(
-                  controller: nameController, label: 'Nama Lengkap'),
+              _buildTextField(controller: nameController, label: 'Nama Lengkap'),
               _buildTextField(controller: phoneController, label: 'No Telepon'),
               _buildTextField(controller: emailController, label: 'Email'),
-              _buildTextField(
-                  controller: passwordController,
-                  label: 'Password',
-                  isPassword: true),
-              _buildTextField(
-                  controller: confirmPasswordController,
-                  label: 'Konfirmasi Password',
-                  isPassword: true),
-              _buildTextField(
-                  controller: referralCodeController,
-                  label: 'Kode Referal (Opsional)'),
+              _buildTextField(controller: passwordController, label: 'Password', isPassword: true),
+              _buildTextField(controller: confirmPasswordController, label: 'Konfirmasi Password', isPassword: true),
+              _buildTextField(controller: referralCodeController, label: 'Kode Referal (Opsional)'),
               const SizedBox(height: 25),
               ElevatedButton(
                 onPressed: isLoading ? null : _signUp,
@@ -159,19 +141,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 child: isLoading
-                    ? const CircularProgressIndicator(
-                        color: Color.fromARGB(255, 0, 242, 255))
-                    : const Text('Daftar',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Daftar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 15),
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const login_page.LoginScreen()),
+                    MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
                   );
                 },
                 child: const Text('Sudah punya akun? Login'),
@@ -193,9 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: TextField(
         controller: controller,
         obscureText: isPassword,
-        keyboardType: label.contains('Telepon')
-            ? TextInputType.phone
-            : TextInputType.text,
+        keyboardType: label.contains('Telepon') ? TextInputType.phone : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
