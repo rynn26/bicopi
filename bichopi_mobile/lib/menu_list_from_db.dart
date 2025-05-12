@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'cart_halaman.dart';
 
-class MenuListFromDB extends StatelessWidget {
-  final Function(String) addItemToCart;
+class MenuListFromDB extends StatefulWidget {
   final int categoryId;
 
   const MenuListFromDB({
     Key? key,
-    required this.addItemToCart,
-    required this.categoryId,
+    required this.categoryId, required Function(String p1) addItemToCart,
   }) : super(key: key);
 
-  // Function to fetch data asynchronously from Supabase
+  @override
+  State<MenuListFromDB> createState() => _MenuListFromDBState();
+}
+
+class _MenuListFromDBState extends State<MenuListFromDB> {
+  final Map<String, int> cartQuantities = {};
+  List<Map<String, dynamic>> menuItems = [];
+  Map<String, int> menuMakanan = {};
+  Map<String, int> menuMinuman = {};
+  Map<String, int> menuSnack = {};
+  Map<String, int> menuPaket = {};
+
   Future<List<Map<String, dynamic>>> fetchMenuData(int categoryId) async {
     final supabase = Supabase.instance.client;
     final response = await supabase
@@ -24,14 +34,123 @@ class MenuListFromDB extends StatelessWidget {
       throw Exception('Failed to load data: ${response.error!.message}');
     }
 
-    // Return data as a List<Map<String, dynamic>>
-    return List<Map<String, dynamic>>.from(response.data);
+    final data = List<Map<String, dynamic>>.from(response.data);
+    menuItems = data;
+
+    // Categorize menu items
+    for (var item in data) {
+      final String itemName = item['nama_menu'];
+      final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+      final String category = item['kategori'] ?? '';
+
+      if (category == 'makanan') {
+        menuMakanan[itemName] = price;
+      } else if (category == 'minuman') {
+        menuMinuman[itemName] = price;
+      } else if (category == 'snack') {
+        menuSnack[itemName] = price;
+      } else if (category == 'paket') {
+        menuPaket[itemName] = price;
+      }
+    }
+
+    return data;
+  }
+
+  void addItemToCart(BuildContext context, Map<String, dynamic> item) {
+    final String itemName = item['nama_menu'];
+    final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+
+    final int quantity = cartQuantities[itemName]!;
+
+    // Show notification bottom sheet
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (BuildContext context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.pop(context); // Close the modal
+            // Navigate to CartPage
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CartPage(
+                  cartItems: cartQuantities,
+                  menu_makanan: menuMakanan,
+                  menu_minuman: menuMinuman,
+                  menu_snack: menuSnack,
+                  menu_paket: menuPaket,
+                ),
+              ),
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF078603),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.shopping_cart, color: Colors.white),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Jumlah Pesanan: $quantity",
+                              style: const TextStyle(color: Colors.white, fontSize: 10),
+                            ),
+                            Text(
+                              itemName,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "Rp ${price * quantity}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: fetchMenuData(categoryId), // Fetch data using the async function
+      future: fetchMenuData(widget.categoryId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -50,6 +169,7 @@ class MenuListFromDB extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
+              final itemName = item['nama_menu'];
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 6),
@@ -79,9 +199,7 @@ class MenuListFromDB extends StatelessWidget {
                           SizedBox(
                             width: 80,
                             child: OutlinedButton(
-                              onPressed: () {
-                                addItemToCart(item['nama_menu']);
-                              },
+                              onPressed: () => addItemToCart(context, item),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.green,
                                 side: const BorderSide(color: Colors.green),
@@ -105,7 +223,7 @@ class MenuListFromDB extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item['nama_menu'] ?? '',
+                              itemName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
