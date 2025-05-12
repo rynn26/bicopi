@@ -347,7 +347,7 @@ class HomeContent extends StatelessWidget {
             ),
           ),
           const SizedBox(
-              height: 8), // Mengurangi jarak antara "Favorit" dan menu
+              height: 0.1), // Mengurangi jarak antara "Favorit" dan menu
           _buildMenuList(addItemToCart: addItemToCart), // Pass the callback
         ],
       ),
@@ -413,7 +413,8 @@ Widget _buildCategoryList(BuildContext context) {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 29, 224, 22).withOpacity(0.3),
+                  color:
+                      const Color.fromARGB(255, 29, 224, 22).withOpacity(0.3),
                   borderRadius: BorderRadius.circular(60),
                 ),
                 child: Padding(

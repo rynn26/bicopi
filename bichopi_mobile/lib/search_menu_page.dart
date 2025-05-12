@@ -17,9 +17,13 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   Map<String, int> cartQuantities = {};
   String selectedCategory = 'Semua';
   String selectedSort = '';
-  String searchQuery = '';
 
-  final List<String> categories = ['Semua', 'Makanan', 'Minuman', 'Snack'];
+  final List<String> categories = [
+    'Semua',
+    'Makanan',
+    'Minuman',
+    'Snack',
+  ];
 
   final Map<String, int> categoryIds = {
     'Makanan': 2,
@@ -67,15 +71,6 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
       items = items
           .where((item) => item['id_kategori_menu'] == categoryId)
           .toList();
-    }
-
-    if (searchQuery.isNotEmpty) {
-      items = items.where((item) {
-        final name = item["nama_menu"].toString().toLowerCase();
-        final desc = item["deskripsi_menu"].toString().toLowerCase();
-        return name.contains(searchQuery.toLowerCase()) ||
-            desc.contains(searchQuery.toLowerCase());
-      }).toList();
     }
 
     if (selectedSort == 'Termurah') {
@@ -186,7 +181,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Cari Menu"),
-        backgroundColor: const Color.fromARGB(255, 29, 224, 22).withOpacity(0.3),
+        backgroundColor: const Color(0xFF078603),
       ),
       body: Column(
         children: [
@@ -194,7 +189,16 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               onChanged: (query) {
-                searchQuery = query;
+                allMenuItems = allMenuItems
+                    .where((item) => item["nama_menu"]
+                            .toString()
+                            .toLowerCase()
+                            .contains(query.toLowerCase()) ||
+                        item["deskripsi_menu"]
+                            .toString()
+                            .toLowerCase()
+                            .contains(query.toLowerCase()))
+                    .toList();
                 applyFilters();
               },
               decoration: InputDecoration(
@@ -209,149 +213,123 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
               ),
             ),
           ),
+         SizedBox(
+  height: 50,
+  child: ListView.separated(
+    scrollDirection: Axis.horizontal,
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    itemCount: categories.length,
+    separatorBuilder: (_, __) => const SizedBox(width: 8),
+    itemBuilder: (context, index) {
+      final category = categories[index];
+      final isSelected = selectedCategory == category;
 
-          // Kategori filter
-          SizedBox(
-            height: 50,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final isSelected = selectedCategory == category;
-
-                return ChoiceChip(
-                  label: Text(
-                    category,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  selected: isSelected,
-                  selectedColor: const Color.fromARGB(255, 143, 255, 139),
-                  backgroundColor: Colors.grey[100],
-                  elevation: isSelected ? 3 : 0,
-                  shadowColor: Colors.black26,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  onSelected: (_) {
-                    setState(() {
-                      selectedCategory = category;
-                      applyFilters();
-                    });
-                  },
-                );
-              },
-            ),
+      return ChoiceChip(
+        label: Text(
+          category,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w500,
           ),
+        ),
+        selected: isSelected,
+        selectedColor: const Color(0xFF078603),
+        backgroundColor: Colors.grey[100],
+        elevation: isSelected ? 3 : 0,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        onSelected: (_) {
+          setState(() {
+            selectedCategory = category;
+            applyFilters();
+          });
+        },
+      );
+    },
+  ),
+),
 
-          // Urutan harga
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Urutkan berdasarkan:",
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedSort.isEmpty ? null : selectedSort,
-                      hint: const Text("Pilih"),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedSort = value ?? '';
-                          applyFilters();
-                        });
-                      },
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Termurah',
-                          child: Text("Termurah"),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Termahal',
-                          child: Text("Termahal"),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+         Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      const Text(
+        "Urutkan berdasarkan:",
+        style: TextStyle(fontWeight: FontWeight.w500),
+      ),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: selectedSort.isEmpty ? null : selectedSort,
+            hint: const Text("Pilih"),
+            onChanged: (value) {
+              setState(() {
+                selectedSort = value ?? '';
+                applyFilters();
+              });
+            },
+            items: const [
+              DropdownMenuItem(
+                value: 'Termurah',
+                child: Text("Termurah"),
+              ),
+              DropdownMenuItem(
+                value: 'Termahal',
+                child: Text("Termahal"),
+              ),
+            ],
           ),
+        ),
+      ),
+    ],
+  ),
+),
 
-          // List Menu
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : filteredMenuItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/not.png',
-                              width: 180,
-                              height: 180,
+                : ListView.builder(
+                    itemCount: filteredMenuItems.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemBuilder: (context, index) {
+                      final item = filteredMenuItems[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              item["foto_menu"] ?? '',
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Image.asset('assets/no_image.png',
+                                      width: 60, height: 60),
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              "Oops, tidak ada menu ditemukan!",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                          ),
+                          title: Text(item["nama_menu"] ?? "-"),
+                          subtitle: Text(item["deskripsi_menu"] ??
+                              "Tidak ada deskripsi"),
+                          trailing: Text(
+                            "Rp ${item["harga_menu"]}",
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold),
+                          ),
+                          onTap: () => addToCart(item),
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredMenuItems.length,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemBuilder: (context, index) {
-                          final item = filteredMenuItems[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  item["foto_menu"] ?? '',
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Image.asset('assets/no_image.png',
-                                          width: 60, height: 60),
-                                ),
-                              ),
-                              title: Text(item["nama_menu"] ?? "-"),
-                              subtitle: Text(item["deskripsi_menu"] ??
-                                  "Tidak ada deskripsi"),
-                              trailing: Text(
-                                "Rp ${item["harga_menu"]}",
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              onTap: () => addToCart(item),
-                            ),
-                          );
-                        },
-                      ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

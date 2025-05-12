@@ -52,25 +52,25 @@ class _ProfilePage extends State<ProfileScreen> {
   }
 
   Future<void> _updateUserData() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      try {
-        await Supabase.instance.client.from('profil').update({
-          'nama': _nameController.text,
-          'email': _emailController.text,
-          'phone': int.tryParse(_phoneController.text),
-        }).eq('id_user', user.id);
+  final user = Supabase.instance.client.auth.currentUser;
+  if (user != null) {
+    try {
+      await Supabase.instance.client.from('profil').update({
+        'nama': _nameController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text, // <== Ini sudah benar
+      }).eq('id_user', user.id);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Data berhasil diperbarui")),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal update data: $e")),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Data berhasil diperbarui")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal update data: $e")),
+      );
     }
   }
+}
 
   Future<void> _logout() async {
     await Supabase.instance.client.auth.signOut();
@@ -89,7 +89,7 @@ class _ProfilePage extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text("Profile", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: const Color(0xFF2E7D32), // Warna hijau utama
+        backgroundColor: const Color(0x4D37DD21), // Warna hijau utama
         automaticallyImplyLeading: false,
       ),
       body: _isLoading
@@ -122,7 +122,8 @@ class _ProfilePage extends State<ProfileScreen> {
                         const SizedBox(height: 5),
                         Text(
                           _emailController.text,
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -149,9 +150,10 @@ class _ProfilePage extends State<ProfileScreen> {
                     child: ElevatedButton(
                       onPressed: _updateUserData,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32), // Warna hijau tombol
+                        backgroundColor:
+                            const Color(0xFF2E7D32), // Warna hijau tombol
                         foregroundColor: Colors.white,
-                        elevation: 10,
+                        elevation: 1,
                         shadowColor: Colors.greenAccent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -161,34 +163,34 @@ class _ProfilePage extends State<ProfileScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      child: const Text("💾 Simpan Perubahan"),
+                      child: const Text("Simpan Perubahan"),
                     ),
                   ),
                   const SizedBox(height: 20),
                   // Tombol Logout dengan warna merah (tetap)
-                 // Tombol Logout dengan warna hijau
-SizedBox(
-  width: double.infinity,
-  height: 50,
-  child: ElevatedButton(
-    onPressed: _logout,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF2E7D32), // Warna hijau tombol logout
-      foregroundColor: Colors.white,
-      elevation: 10,
-      shadowColor: Colors.greenAccent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    child: const Text("🚪 Logout"),
-  ),
-),
-
+                  // Tombol Logout dengan warna hijau
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _logout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(
+                            0xFF2E7D32), // Warna hijau tombol logout
+                        foregroundColor: Colors.white,
+                        elevation: 1,
+                        shadowColor: Colors.greenAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: const Text("Logout"),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -217,12 +219,15 @@ SizedBox(
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF2E7D32)), // Hijau pada label
+          labelStyle:
+              const TextStyle(color: Color(0xFF2E7D32)), // Hijau pada label
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2E7D32)), // Hijau pada border
+            borderSide:
+                const BorderSide(color: Color(0xFF2E7D32)), // Hijau pada border
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
         ),
       ),
     );
@@ -237,7 +242,8 @@ SizedBox(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(2, 2)),
+            BoxShadow(
+                color: Colors.black12, blurRadius: 5, offset: Offset(2, 2)),
           ],
         ),
         child: Row(
