@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cart_halaman.dart';
 
 class PaketMenuPage extends StatefulWidget {
-  final int categoryId = 4; // Anggap kategori untuk Paket adalah 4
+  final int categoryId = 4; // Kategori menu paket
 
   const PaketMenuPage({super.key, required String categoryName, required int categoryId});
 
@@ -53,8 +53,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
 
       setState(() {
         cartQuantities = {
-          for (var item in response)
-            item['item_name']: item['quantity'] as int,
+          for (var item in response) item['item_name']: item['quantity'] as int,
         };
       });
     } catch (e) {
@@ -97,7 +96,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
+    int quantity = cartQuantities[item["nama_menu"]] ?? 0;
     int price = _parseHarga(item["harga_menu"]);
 
     showModalBottomSheet(
@@ -124,7 +123,9 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                   },
                 ),
               ),
-            );
+            ).then((_) {
+              _loadCartFromDatabase();
+            });
           },
           behavior: HitTestBehavior.opaque,
           child: Container(
@@ -147,7 +148,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Jumlah Pesanan: $quantity",
+                              quantity > 0 ? "Jumlah Pesanan: $quantity" : "0 Pesanan",
                               style: const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
@@ -242,7 +243,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            "Bichopi, Indonesia",
+                            "Bicopi, Indonesia",
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 16,
@@ -273,47 +274,28 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Stack(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Column(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          item["foto_menu"] ?? '',
-                                          width: 80,
-                                          height: 80,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Image.asset(
-                                            'assets/no_image.png',
-                                            width: 80,
-                                            height: 80,
-                                          ),
-                                        ),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      item["foto_menu"] ?? '',
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Image.asset(
+                                        'assets/no_image.png',
+                                        width: 80,
+                                        height: 80,
                                       ),
-                                      const SizedBox(height: 5),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            _showAddToCartDialog(context, item),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            side: const BorderSide(color: Color(0xFF078603)),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          "Tambah",
-                                          style: TextStyle(color: Color(0xFF078603)),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
@@ -328,41 +310,59 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                         const SizedBox(height: 4),
                                         Text(item["deskripsi_menu"] ?? ''),
                                         const SizedBox(height: 10),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline,
-                                                  color: Colors.red),
-                                              onPressed: () =>
-                                                  _decreaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                            Text('$quantity'),
-                                            IconButton(
-                                              icon: const Icon(Icons.add_circle_outline,
-                                                  color: Color(0xFF078603)),
-                                              onPressed: () =>
-                                                  _increaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                          ],
-                                        ),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              right: 12,
-                              child: Text(
-                                "Rp $harga",
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black),
+                              const SizedBox(height: 10),
+                              ElevatedButton(
+                                onPressed: () => _showAddToCartDialog(context, item),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: const BorderSide(color: Color(0xFF078603)),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Tambah",
+                                  style: TextStyle(color: Color(0xFF078603)),
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove_circle_outline,
+                                            color: Colors.red),
+                                        onPressed: () =>
+                                            _decreaseQuantity(item["nama_menu"], harga),
+                                      ),
+                                      Text('$quantity'),
+                                      IconButton(
+                                        icon: const Icon(Icons.add_circle_outline,
+                                            color: Color(0xFF078603)),
+                                        onPressed: () =>
+                                            _increaseQuantity(item["nama_menu"], harga),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    "Rp $harga",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

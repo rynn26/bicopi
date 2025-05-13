@@ -96,7 +96,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
+    int quantity = cartQuantities[item["nama_menu"]] ?? 0;
     int price = item["harga_menu"];
 
     showModalBottomSheet(
@@ -123,7 +123,10 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                   menu_paket: {},
                 ),
               ),
-            );
+            ).then((_) {
+              // Reload cart data when returning from CartPage
+              _loadCartFromDatabase();
+            });
           },
           behavior: HitTestBehavior.opaque,
           child: Container(
@@ -146,7 +149,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Jumlah Pesanan: $quantity",
+                              quantity > 0 ? "Jumlah Pesanan: $quantity" : "0 Pesanan",
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 10),
                             ),

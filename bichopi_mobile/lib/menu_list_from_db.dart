@@ -3,13 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cart_halaman.dart';
 
 class MenuListFromDB extends StatefulWidget {
-  final int categoryId;
-
-  const MenuListFromDB({
-    Key? key,
-    required this.categoryId,
-    required Function(String p1) addItemToCart,
-  }) : super(key: key);
+  const MenuListFromDB({Key? key, required Function(String p1) addItemToCart, required int categoryId}) : super(key: key);
 
   @override
   State<MenuListFromDB> createState() => _MenuListFromDBState();
@@ -23,12 +17,19 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
   Map<String, int> menuSnack = {};
   Map<String, int> menuPaket = {};
 
-  Future<List<Map<String, dynamic>>> fetchMenuData(int categoryId) async {
+  @override
+  void initState() {
+    super.initState();
+    fetchMenuData(); // Panggil data saat inisialisasi
+    _loadCartFromDatabase(); // Sinkronisasi keranjang dengan tampilan awal
+  }
+
+  Future<void> fetchMenuData() async {
     final supabase = Supabase.instance.client;
     final response = await supabase
         .from('menu')
         .select()
-        .eq('id_kategori_menu', categoryId)
+        .eq('id_kategori_menu', 5) // Ambil data hanya dari kategori ID 5
         .execute();
 
     if (response.error != null) {
@@ -36,26 +37,46 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     }
 
     final data = List<Map<String, dynamic>>.from(response.data);
-    menuItems = data;
+    setState(() {
+      menuItems = data;
 
-    // Categorize menu items
-    for (var item in data) {
-      final String itemName = item['nama_menu'];
-      final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
-      final String category = item['kategori'] ?? '';
+      // Kategorisasi menu
+      for (var item in data) {
+        final String itemName = item['nama_menu'];
+        final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+        final String category = item['kategori'] ?? '';
 
-      if (category == 'makanan') {
-        menuMakanan[itemName] = price;
-      } else if (category == 'minuman') {
-        menuMinuman[itemName] = price;
-      } else if (category == 'snack') {
-        menuSnack[itemName] = price;
-      } else if (category == 'paket') {
-        menuPaket[itemName] = price;
+        if (category == 'makanan') {
+          menuMakanan[itemName] = price;
+        } else if (category == 'minuman') {
+          menuMinuman[itemName] = price;
+        } else if (category == 'snack') {
+          menuSnack[itemName] = price;
+        } else if (category == 'paket') {
+          menuPaket[itemName] = price;
+        }
       }
-    }
+    });
+  }
 
-    return data;
+  Future<void> _loadCartFromDatabase() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final response = await Supabase.instance.client
+        .from('keranjang')
+        .select('item_name, quantity')
+        .eq('user_id', user.id)
+        .execute();
+
+    if (response.error == null) {
+      final data = List<Map<String, dynamic>>.from(response.data);
+      setState(() {
+        for (var item in data) {
+          cartQuantities[item['item_name']] = item['quantity'] as int;
+        }
+      });
+    }
   }
 
   Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
@@ -104,10 +125,10 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     }
   }
 
-  void showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     final String itemName = item['nama_menu'];
     final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
-    final int quantity = cartQuantities[itemName] ?? 1;
+    final int quantity = cartQuantities[itemName] ?? 0;
 
     showModalBottomSheet(
       context: context,
@@ -118,8 +139,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
       builder: (BuildContext context) {
         return GestureDetector(
           onTap: () {
-            Navigator.pop(context); // Close the modal
-            // Navigate to CartPage
+            Navigator.pop(context);
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -131,7 +151,10 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                   menu_paket: menuPaket,
                 ),
               ),
-            );
+            ).then((_) {
+              // Reload cart data when returning from CartPage
+              _loadCartFromDatabase();
+            });
           },
           behavior: HitTestBehavior.opaque,
           child: Container(
@@ -154,7 +177,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Jumlah Pesanan: $quantity",
+                              quantity > 0 ? "Jumlah Pesanan: $quantity" : "0 Pesanan",
                               style: const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
@@ -190,96 +213,66 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: fetchMenuData(widget.categoryId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('Menu tidak ditemukan.'));
-        }
+    return menuItems.isEmpty
+        ? const Center(child: CircularProgressIndicator())
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: menuItems.length,
+              itemBuilder: (context, index) {
+                final item = menuItems[index];
+                final itemName = item['nama_menu'];
+                final harga = int.tryParse(item['harga_menu'].toString()) ?? 0;
+                final quantity = cartQuantities[itemName] ?? 0;
 
-        final items = snapshot.data!;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final itemName = item['nama_menu'];
-              final harga = int.tryParse(item['harga_menu'].toString()) ?? 0;
-              final quantity = cartQuantities[itemName] ?? 0;
-
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                color: const Color.fromARGB(255, 255, 255, 255),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              item['foto_menu'] ?? '',
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.broken_image, size: 80),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: 80,
-                            child: OutlinedButton(
-                              onPressed: () => showAddToCartDialog(context, item),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.green,
-                                side: const BorderSide(color: Colors.green),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                              ),
-                              child: const Text(
-                                "Tambah",
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
                           children: [
-                            Text(
-                              itemName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                item['foto_menu'] ?? '',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image, size: 80),
                               ),
                             ),
-                            Text(
-                              item['deskripsi_menu'] ?? '',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade800,
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: 80,
+                              child: OutlinedButton(
+                                onPressed: () => _showAddToCartDialog(context, item),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.green,
+                                  side: const BorderSide(color: Colors.green),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                ),
+                                child: const Text(
+                                  "Tambah",
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
@@ -294,23 +287,42 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                             ),
                           ],
                         ),
-                      ),
-                      Text(
-                        "Rp $harga",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                itemName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                item['deskripsi_menu'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          "Rp $harga",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
+                );
+              },
+            ),
+          );
   }
 }
 

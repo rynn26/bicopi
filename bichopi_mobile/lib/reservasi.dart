@@ -36,17 +36,32 @@ class ReservationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        title: const Text(
-          "Reservasi",
-          style: TextStyle(color: Colors.white),
+  return Scaffold(
+    backgroundColor: Colors.grey[200],
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(60), // tinggi AppBar
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF078603), // warna hijau
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF078603),
-        automaticallyImplyLeading: false, // Menghilangkan tombol back
+        child: SafeArea(
+          child: Center(
+            child: Text(
+              "Reservasi",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ),
+    ), // Menghilangkan tombol back
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
