@@ -96,7 +96,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
+    int quantity = cartQuantities[item["nama_menu"]] ?? 0;
     int price = _parseHarga(item["harga_menu"]);
 
     showModalBottomSheet(
@@ -123,7 +123,9 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                   menu_paket: {},
                 ),
               ),
-            );
+            ).then((_) {
+              _loadCartFromDatabase();
+            });
           },
           behavior: HitTestBehavior.opaque,
           child: Container(
@@ -272,11 +274,11 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Stack(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            children: [
+                              Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Column(
@@ -311,6 +313,25 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                                           style: TextStyle(color: Color(0xFF078603)),
                                         ),
                                       ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove_circle_outline,
+                                                color: Colors.red),
+                                            onPressed: () =>
+                                                _decreaseQuantity(item["nama_menu"], harga),
+                                          ),
+                                          Text('$quantity'),
+                                          IconButton(
+                                            icon: const Icon(Icons.add_circle_outline,
+                                                color: Color(0xFF078603)),
+                                            onPressed: () =>
+                                                _increaseQuantity(item["nama_menu"], harga),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 10),
@@ -326,41 +347,20 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                                         const SizedBox(height: 4),
                                         Text(item["deskripsi_menu"] ?? ''),
                                         const SizedBox(height: 10),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline,
-                                                  color: Colors.red),
-                                              onPressed: () =>
-                                                  _decreaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                            Text('$quantity'),
-                                            IconButton(
-                                              icon: const Icon(Icons.add_circle_outline,
-                                                  color: Color(0xFF078603)),
-                                              onPressed: () =>
-                                                  _increaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                          ],
+                                        Text(
+                                          "Rp $harga",
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              right: 12,
-                              child: Text(
-                                "Rp $harga",
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },

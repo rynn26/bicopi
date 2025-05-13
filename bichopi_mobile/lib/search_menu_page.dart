@@ -17,6 +17,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   Map<String, int> cartQuantities = {};
   String selectedCategory = 'Semua';
   String selectedSort = '';
+  String searchQuery = ''; // untuk pencarian
 
   final List<String> categories = [
     'Semua',
@@ -60,6 +61,10 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     } catch (e) {
       print("Error: $e");
       setState(() => isLoading = false);
+      // Show error message to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to load menu items")),
+      );
     }
   }
 
@@ -97,6 +102,19 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
           .toList();
     }
 
+    if (searchQuery.isNotEmpty) {
+      items = items.where((item) =>
+        item["nama_menu"]
+            .toString()
+            .toLowerCase()
+            .contains(searchQuery.toLowerCase()) ||
+        item["deskripsi_menu"]
+            .toString()
+            .toLowerCase()
+            .contains(searchQuery.toLowerCase())
+      ).toList();
+    }
+
     if (selectedSort == 'Termurah') {
       items.sort((a, b) => a['harga_menu'].compareTo(b['harga_menu']));
     } else if (selectedSort == 'Termahal') {
@@ -119,9 +137,8 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    final String itemName = item["nama_menu"];
-    final int price = item["harga_menu"];
-    final int quantity = cartQuantities[itemName] ?? 1;
+    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
+    int price = item["harga_menu"];
 
     showModalBottomSheet(
       context: context,
@@ -130,53 +147,75 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: const BoxDecoration(
-            color: Color(0xFF078603),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.shopping_cart, color: Colors.white),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Jumlah Pesanan: $quantity",
-                            style: const TextStyle(color: Colors.white, fontSize: 10),
-                          ),
-                          Text(
-                            itemName,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Text(
-                    "Rp ${price * quantity}",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+        return GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CartPage(
+                  cartItems: cartQuantities,
+                  menu_makanan: {},
+                  menu_minuman: {
+                    for (var item in filteredMenuItems)
+                      item["nama_menu"]: item["harga_menu"]
+                  },
+                  menu_snack: {},
+                  menu_paket: {},
+                ),
               ),
-              const SizedBox(height: 10),
-            ],
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF078603),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.shopping_cart, color: Colors.white),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Jumlah Pesanan: $quantity",
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 10),
+                            ),
+                            Text(
+                              item["nama_menu"],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "Rp ${price * quantity}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         );
       },
@@ -189,6 +228,28 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
       appBar: AppBar(
         title: const Text("Cari Menu"),
         backgroundColor: const Color(0xFF078603),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartPage(
+                    cartItems: cartQuantities,
+                    menu_makanan: {},
+                    menu_minuman: {
+                      for (var item in filteredMenuItems)
+                        item["nama_menu"]: item["harga_menu"]
+                    },
+                    menu_snack: {},
+                    menu_paket: {},
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -196,17 +257,10 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               onChanged: (query) {
-                allMenuItems = allMenuItems
-                    .where((item) => item["nama_menu"]
-                            .toString()
-                            .toLowerCase()
-                            .contains(query.toLowerCase()) ||
-                        item["deskripsi_menu"]
-                            .toString()
-                            .toLowerCase()
-                            .contains(query.toLowerCase()))
-                    .toList();
-                applyFilters();
+                setState(() {
+                  searchQuery = query;
+                  applyFilters();
+                });
               },
               decoration: InputDecoration(
                 hintText: "Cari menu apa saja...",

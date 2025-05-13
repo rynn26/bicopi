@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reedem_up.dart';
 
 class RewardPage extends StatefulWidget {
@@ -10,7 +11,8 @@ class RewardPage extends StatefulWidget {
 }
 
 class _RewardPageState extends State<RewardPage> {
-  int currentPoints = 2500; // Simpan poin pengguna
+  int currentPoints = 0; // Poin yang akan diambil dari Supabase
+  bool isLoading = true; // Menandakan data sedang diambil
 
   final List<Map<String, dynamic>> rewards = [
     {"title": "Gratis Kopi", "points": 150},
@@ -20,15 +22,80 @@ class _RewardPageState extends State<RewardPage> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Reedem Point"),
-        centerTitle: true, // Teks di tengah
-        backgroundColor: const Color(0xFF078603),
-        foregroundColor: Colors.white,
-        automaticallyImplyLeading: false, // Hilangkan tombol kembali
+  void initState() {
+    super.initState();
+    fetchCurrentPoints();
+  }
+
+  // Fungsi untuk mengambil poin dari Supabase
+ Future<void> fetchCurrentPoints() async {
+  try {
+    final supabase = Supabase.instance.client;
+
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception("User belum login.");
+    }
+
+    // Ganti 'order_id' dengan kolom yang sesuai
+    final response = await supabase
+        .from('member_points_log') // Pastikan nama tabel benar
+        .select('points_earned') // Kolom poin yang ingin diambil
+        .eq('member_id', user.id); // Ganti 'order_id' dengan kolom yang sesuai
+
+    if (response == null || response.isEmpty) {
+      throw Exception("Tidak ada data poin.");
+    }
+
+    // Cetak response untuk debugging
+    print("Response: $response");
+
+    int total = 0;
+    for (final row in response) {
+      total += row['points_earned'] as int;  // Pastikan kolom 'points_earned' sesuai
+    }
+
+    setState(() {
+      currentPoints = total;
+      isLoading = false;
+    });
+  } catch (e) {
+    print("Error mengambil poin: $e");
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+
+  @override
+ Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.grey[200],
+    appBar: PreferredSize(
+      preferredSize: const Size.fromHeight(60), // tinggi AppBar
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF078603), // warna hijau
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Text(
+              "Redeem Point",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
       ),
+    ), // Menghilangkan tombol back
       body: Column(
         children: [
           // Kotak "Point Saat Ini"
@@ -52,14 +119,16 @@ class _RewardPageState extends State<RewardPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  "$currentPoints",
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF078603),
-                  ),
-                ),
+                isLoading
+                    ? const CircularProgressIndicator()
+                    : Text(
+                        "$currentPoints",
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF078603),
+                        ),
+                      ),
               ],
             ),
           ),
@@ -132,6 +201,7 @@ class _RewardPageState extends State<RewardPage> {
     );
   }
 
+  // Fungsi untuk menampilkan dialog konfirmasi klaim reward
   void showRedeemDialog(BuildContext context, String title, int points) {
     if (currentPoints < points) {
       ScaffoldMessenger.of(context).showSnackBar(

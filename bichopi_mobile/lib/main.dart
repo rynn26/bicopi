@@ -2,6 +2,8 @@ import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart';
 import 'package:coba3/search_menu_page.dart';
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
@@ -24,13 +26,33 @@ Future<void> main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
   );
-
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: SplashScreen(), // <-- ini ganti ke HomePage
-  ));
+runApp(
+    DevicePreview(
+      enabled: !kReleaseMode, // aktif hanya saat debug
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      useInheritedMediaQuery: true,
+      debugShowCheckedModeBanner: false,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
+      title: 'Bicopi App',
+      theme: ThemeData(
+        primarySwatch: Colors.brown,
+        fontFamily: 'Poppins',
+      ),
+      home: const SplashScreen(), // ganti dengan home page kamu jika sudah login
+    );
+  }
+}
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -210,10 +232,11 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _onCartButtonTapped,
-        backgroundColor: const Color(0xFF078603),
-        child: const Icon(Icons.shopping_cart, color: Colors.white, size: 30),
-        elevation: 4,
+      onPressed: _onCartButtonTapped,
+      backgroundColor: const Color.fromARGB(255, 151, 236, 148),
+      child: const Icon(Icons.shopping_cart, color: Color.fromARGB(255, 8, 126, 4), size: 28),
+      elevation: 4,
+      shape: const CircleBorder(), // <-- pastikan ini membuatnya bulat
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Material(
@@ -443,7 +466,7 @@ Widget _buildCategoryList(BuildContext context) {
 
 Widget _buildTopBar(BuildContext context) {
   return Container(
-    height: 200, // cukup tinggi untuk teks + search bar
+    height: 200,
     decoration: BoxDecoration(
       borderRadius: const BorderRadius.only(
         bottomLeft: Radius.circular(25),
@@ -475,9 +498,33 @@ Widget _buildTopBar(BuildContext context) {
             ),
           ),
         ),
+        // Profile icon di pojok kanan atas
+        Positioned(
+          top: 36,
+          right: 35,
+          child: GestureDetector(
+            onTap: () {
+              // Arahkan ke halaman profil
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+              child: Icon(
+                Icons.person,
+                color: Colors.green[800],
+              ),
+            ),
+          ),
+        ),
         // Content: Greeting + Search Bar
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -664,6 +711,6 @@ void _showItemDetails(BuildContext context, Map<String, String> item,
 Widget _buildMenuList({required Function(String) addItemToCart}) {
   return MenuListFromDB(
     addItemToCart: addItemToCart,
-    categoryId: 1, // misal kategori Minuman
+    categoryId: 5, // misal kategori Minuman
   );
 }
