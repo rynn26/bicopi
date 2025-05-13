@@ -63,6 +63,30 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     }
   }
 
+  Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    final now = DateTime.now().toIso8601String();
+
+    if (quantity > 0) {
+      await supabase.from('keranjang').upsert({
+        'user_id': user.id,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
+    } else {
+      await supabase
+          .from('keranjang')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_name', itemName);
+    }
+  }
+
   void applyFilters() {
     List<Map<String, dynamic>> items = List.from(allMenuItems);
 
@@ -83,16 +107,21 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   }
 
   void addToCart(Map<String, dynamic> item) {
+    final String itemName = item["nama_menu"];
+    final int price = item["harga_menu"];
+
     setState(() {
-      cartQuantities[item["nama_menu"]] =
-          (cartQuantities[item["nama_menu"]] ?? 0) + 1;
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
     });
+
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
     _showAddToCartDialog(context, item);
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
-    int price = item["harga_menu"];
+    final String itemName = item["nama_menu"];
+    final int price = item["harga_menu"];
+    final int quantity = cartQuantities[itemName] ?? 1;
 
     showModalBottomSheet(
       context: context,
@@ -101,75 +130,53 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CartPage(
-                  cartItems: cartQuantities,
-                  menu_makanan: {},
-                  menu_minuman: {
-                    for (var item in filteredMenuItems)
-                      item["nama_menu"]: item["harga_menu"]
-                  },
-                  menu_snack: {},
-                  menu_paket: {},
-                ),
-              ),
-            );
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF078603),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.shopping_cart, color: Colors.white),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Jumlah Pesanan: $quantity",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: const BoxDecoration(
+            color: Color(0xFF078603),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.shopping_cart, color: Colors.white),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Jumlah Pesanan: $quantity",
+                            style: const TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                          Text(
+                            itemName,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            Text(
-                              item["nama_menu"],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "Rp ${price * quantity}",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                          ),
+                        ],
                       ),
+                    ],
+                  ),
+                  Text(
+                    "Rp ${price * quantity}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
           ),
         );
       },
@@ -213,87 +220,85 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
               ),
             ),
           ),
-         SizedBox(
-  height: 50,
-  child: ListView.separated(
-    scrollDirection: Axis.horizontal,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    itemCount: categories.length,
-    separatorBuilder: (_, __) => const SizedBox(width: 8),
-    itemBuilder: (context, index) {
-      final category = categories[index];
-      final isSelected = selectedCategory == category;
+          SizedBox(
+            height: 50,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final category = categories[index];
+                final isSelected = selectedCategory == category;
 
-      return ChoiceChip(
-        label: Text(
-          category,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
-            fontWeight: FontWeight.w500,
+                return ChoiceChip(
+                  label: Text(
+                    category,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: const Color(0xFF078603),
+                  backgroundColor: Colors.grey[100],
+                  elevation: isSelected ? 3 : 0,
+                  shadowColor: Colors.black26,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  onSelected: (_) {
+                    setState(() {
+                      selectedCategory = category;
+                      applyFilters();
+                    });
+                  },
+                );
+              },
+            ),
           ),
-        ),
-        selected: isSelected,
-        selectedColor: const Color(0xFF078603),
-        backgroundColor: Colors.grey[100],
-        elevation: isSelected ? 3 : 0,
-        shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        onSelected: (_) {
-          setState(() {
-            selectedCategory = category;
-            applyFilters();
-          });
-        },
-      );
-    },
-  ),
-),
-
-         Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      const Text(
-        "Urutkan berdasarkan:",
-        style: TextStyle(fontWeight: FontWeight.w500),
-      ),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: selectedSort.isEmpty ? null : selectedSort,
-            hint: const Text("Pilih"),
-            onChanged: (value) {
-              setState(() {
-                selectedSort = value ?? '';
-                applyFilters();
-              });
-            },
-            items: const [
-              DropdownMenuItem(
-                value: 'Termurah',
-                child: Text("Termurah"),
-              ),
-              DropdownMenuItem(
-                value: 'Termahal',
-                child: Text("Termahal"),
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Urutkan berdasarkan:",
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedSort.isEmpty ? null : selectedSort,
+                      hint: const Text("Pilih"),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedSort = value ?? '';
+                          applyFilters();
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Termurah',
+                          child: Text("Termurah"),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Termahal',
+                          child: Text("Termahal"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    ],
-  ),
-),
-
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -318,12 +323,10 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                             ),
                           ),
                           title: Text(item["nama_menu"] ?? "-"),
-                          subtitle: Text(item["deskripsi_menu"] ??
-                              "Tidak ada deskripsi"),
+                          subtitle: Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"),
                           trailing: Text(
                             "Rp ${item["harga_menu"]}",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           onTap: () => addToCart(item),
                         ),

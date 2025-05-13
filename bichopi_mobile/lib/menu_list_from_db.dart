@@ -7,7 +7,8 @@ class MenuListFromDB extends StatefulWidget {
 
   const MenuListFromDB({
     Key? key,
-    required this.categoryId, required Function(String p1) addItemToCart,
+    required this.categoryId,
+    required Function(String p1) addItemToCart,
   }) : super(key: key);
 
   @override
@@ -57,17 +58,57 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     return data;
   }
 
-  void addItemToCart(BuildContext context, Map<String, dynamic> item) {
-    final String itemName = item['nama_menu'];
-    final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+  Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
 
+    final now = DateTime.now().toIso8601String();
+
+    if (quantity > 0) {
+      await Supabase.instance.client.from('keranjang').upsert({
+        'user_id': user.id,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
+    } else {
+      await Supabase.instance.client
+          .from('keranjang')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_name', itemName);
+    }
+  }
+
+  void _increaseQuantity(String itemName, int price) {
     setState(() {
       cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
     });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
 
-    final int quantity = cartQuantities[itemName]!;
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
 
-    // Show notification bottom sheet
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
+  }
+
+  void showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+    final String itemName = item['nama_menu'];
+    final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+    final int quantity = cartQuantities[itemName] ?? 1;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -170,6 +211,8 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
             itemBuilder: (context, index) {
               final item = items[index];
               final itemName = item['nama_menu'];
+              final harga = int.tryParse(item['harga_menu'].toString()) ?? 0;
+              final quantity = cartQuantities[itemName] ?? 0;
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 6),
@@ -199,15 +242,14 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                           SizedBox(
                             width: 80,
                             child: OutlinedButton(
-                              onPressed: () => addItemToCart(context, item),
+                              onPressed: () => showAddToCartDialog(context, item),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.green,
                                 side: const BorderSide(color: Colors.green),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(vertical: 4),
                               ),
                               child: const Text(
                                 "Tambah",
@@ -236,11 +278,25 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                                 color: Colors.grey.shade800,
                               ),
                             ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                  onPressed: () => _decreaseQuantity(itemName, harga),
+                                ),
+                                Text('$quantity'),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                                  onPressed: () => _increaseQuantity(itemName, harga),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
                       Text(
-                        "Rp ${item['harga_menu']}",
+                        "Rp $harga",
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

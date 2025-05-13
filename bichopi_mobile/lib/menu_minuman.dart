@@ -21,6 +21,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
   void initState() {
     super.initState();
     fetchMenu();
+    _loadCartFromDatabase();
   }
 
   Future<void> fetchMenu() async {
@@ -49,12 +50,49 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
     }
   }
 
-  void _addToCart(Map<String, dynamic> item) {
-    setState(() {
-      cartQuantities[item["nama_menu"]] =
-          (cartQuantities[item["nama_menu"]] ?? 0) + 1;
-    });
-    _showAddToCartDialog(context, item);
+  Future<void> _loadCartFromDatabase() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await supabase
+          .from('keranjang')
+          .select('item_name, quantity')
+          .eq('user_id', user.id);
+
+      setState(() {
+        cartQuantities = {
+          for (var item in response)
+            item['item_name']: item['quantity'] as int,
+        };
+      });
+    } catch (e) {
+      print("Error loading cart: $e");
+    }
+  }
+
+  Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final now = DateTime.now().toIso8601String();
+
+    if (quantity > 0) {
+      await supabase.from('keranjang').upsert({
+        'user_id': user.id,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
+    } else {
+      await supabase
+          .from('keranjang')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_name', itemName);
+    }
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
@@ -143,6 +181,28 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
     );
   }
 
+  void _increaseQuantity(String itemName, int price) {
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
+
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
+
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,7 +212,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0x4D37DD21),
+              color: Color(0xFF078603), // Warna hijau untuk AppBar
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -164,7 +224,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 0, 0, 0)),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 10),
@@ -191,8 +251,6 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    // Ikon keranjang dihilangkan di sini
                   ],
                 ),
               ],
@@ -207,6 +265,9 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                     itemCount: menuItems.length,
                     itemBuilder: (context, index) {
                       final item = menuItems[index];
+                      final harga = item["harga_menu"];
+                      final quantity = cartQuantities[item["nama_menu"]] ?? 0;
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
@@ -228,9 +289,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                           width: 80,
                                           height: 80,
                                           fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Image.asset(
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Image.asset(
                                             'assets/no_image.png',
                                             width: 80,
                                             height: 80,
@@ -239,20 +299,18 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                       ),
                                       const SizedBox(height: 5),
                                       ElevatedButton(
-                                        onPressed: () => _addToCart(item),
+                                        onPressed: () =>
+                                            _showAddToCartDialog(context, item),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: const BorderSide(
-                                                color: Color(0xFF078603)),
+                                            borderRadius: BorderRadius.circular(8),
+                                            side: const BorderSide(color: Color(0xFF078603)),
                                           ),
                                         ),
                                         child: const Text(
                                           "Tambah",
-                                          style: TextStyle(
-                                              color: Color(0xFF078603)),
+                                          style: TextStyle(color: Color(0xFF078603)),
                                         ),
                                       ),
                                     ],
@@ -260,22 +318,39 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(item["nama_menu"],
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold)),
                                         Text(
-                                            item["deskripsi_menu"] ??
-                                                "Tidak ada deskripsi",
-                                            style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.grey)),
+                                          item["nama_menu"],
+                                          style: const TextStyle(
+                                              fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
                                         const SizedBox(height: 4),
-                                        // You might want to display more info here if available
+                                        Text(
+                                          item["deskripsi_menu"] ?? "Tidak ada deskripsi",
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove_circle_outline,
+                                                  color: Colors.red),
+                                              onPressed: () =>
+                                                  _decreaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                            Text('$quantity'),
+                                            IconButton(
+                                              icon: const Icon(Icons.add_circle_outline,
+                                                  color: Color(0xFF078603)),
+                                              onPressed: () =>
+                                                  _increaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -286,12 +361,11 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                               bottom: 8,
                               right: 12,
                               child: Text(
-                                "Rp ${item["harga_menu"]}",
+                                "Rp $harga",
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black),
                               ),
                             ),
                           ],
