@@ -83,14 +83,13 @@ class _CartPageState extends State<CartPage> {
 
     if (quantity > 0) {
       await supabase.from('keranjang').upsert({
-  'user_id': userId,
-  'item_name': itemName,
-  'quantity': quantity,
-  'price': price,
-  'created_at': now.toIso8601String(),
-  'updated_at': now.toIso8601String(),
-}, onConflict: 'user_id,item_name');
-
+        'user_id': userId,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
     } else {
       await supabase
           .from('keranjang')
@@ -135,70 +134,22 @@ class _CartPageState extends State<CartPage> {
     return _calculateSubtotal() + serviceFee;
   }
 
-  Future<void> _saveCartToSupabase() async {
-    final supabase = Supabase.instance.client;
-    final now = DateTime.now();
-
-    if (userId == null) return;
-
-    try {
-      for (var entry in cartItems.entries) {
-        final itemName = entry.key;
-        final quantity = entry.value;
-        final price = semuaHargaMenu[itemName] ?? 0;
-
-        if (quantity > 0) {
-          await supabase.from('keranjang').upsert({
-            'user_id': userId,
-            'item_name': itemName,
-            'quantity': quantity,
-            'price': price,
-            'created_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          });
-        }
-      }
-    } catch (e) {
-      print('Error saat menyimpan ke Supabase: $e');
-    }
-  }
-
   void _checkout(BuildContext context) async {
-    final shouldProceed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Konfirmasi Checkout"),
-        content: const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Batal"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Lanjutkan"),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldProceed == true) {
-      setState(() => isLoading = true);
-      try {
-        await _saveCartToSupabase();
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const PaymentPage()),
-        );
-      } catch (e) {
-        print("Error saat checkout: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gagal melakukan checkout.")),
-        );
-      } finally {
-        setState(() => isLoading = false);
-      }
+    setState(() => isLoading = true);
+    try {
+      // Tidak perlu menyimpan ulang keranjang ke database
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const PaymentPage()),
+      );
+    } catch (e) {
+      print("Error saat checkout: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal melakukan checkout.")),
+      );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -255,12 +206,6 @@ class _CartPageState extends State<CartPage> {
     );
   }
 }
-
-extension on String {
-  toIso8601String() {}
-}
-
-// Komponen UI
 
 class CartItemCard extends StatelessWidget {
   final String itemName;

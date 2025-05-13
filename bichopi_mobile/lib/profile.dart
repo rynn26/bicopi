@@ -89,7 +89,7 @@ class _ProfilePage extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text("Profile", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        backgroundColor: const Color(0x4D37DD21), // Warna hijau utama
+        backgroundColor:  Color(0xFF078603), // Warna hijau utama
         automaticallyImplyLeading: false,
       ),
       body: _isLoading

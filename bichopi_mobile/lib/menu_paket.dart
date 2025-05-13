@@ -5,8 +5,7 @@ import 'cart_halaman.dart';
 class PaketMenuPage extends StatefulWidget {
   final int categoryId = 4; // Anggap kategori untuk Paket adalah 4
 
-  const PaketMenuPage(
-      {super.key, required String categoryName, required int categoryId});
+  const PaketMenuPage({super.key, required String categoryName, required int categoryId});
 
   @override
   State<PaketMenuPage> createState() => _PaketMenuPageState();
@@ -22,6 +21,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
   void initState() {
     super.initState();
     fetchPaketItems();
+    _loadCartFromDatabase();
   }
 
   Future<void> fetchPaketItems() async {
@@ -29,26 +29,60 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
       final response = await supabase
           .from('menu')
           .select('nama_menu, foto_menu, deskripsi_menu, harga_menu')
-          .eq('id_kategori_menu',
-              widget.categoryId); // Mengambil kategori Paket
+          .eq('id_kategori_menu', widget.categoryId);
 
       setState(() {
         menuItems = List<Map<String, dynamic>>.from(response);
-        menuItems = response.map<Map<String, dynamic>>((item) {
-          return {
-            "nama_menu": item["nama_menu"],
-            "foto_menu": item["foto_menu"],
-            "deskripsi_menu": item["deskripsi_menu"],
-            "harga_menu": (item["harga_menu"] is double)
-                ? item["harga_menu"].toInt()
-                : (item["harga_menu"] ?? 0),
-          };
-        }).toList();
         isLoading = false;
       });
     } catch (e) {
       debugPrint('Gagal fetch data paket: $e');
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _loadCartFromDatabase() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await supabase
+          .from('keranjang')
+          .select('item_name, quantity')
+          .eq('user_id', user.id);
+
+      setState(() {
+        cartQuantities = {
+          for (var item in response)
+            item['item_name']: item['quantity'] as int,
+        };
+      });
+    } catch (e) {
+      debugPrint('Gagal memuat data keranjang: $e');
+    }
+  }
+
+  Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    final now = DateTime.now().toIso8601String();
+
+    if (quantity > 0) {
+      await supabase.from('keranjang').upsert({
+        'user_id': user.id,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
+    } else {
+      await supabase
+          .from('keranjang')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_name', itemName);
     }
   }
 
@@ -62,18 +96,9 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
     }
   }
 
-  void _addToCart(Map<String, dynamic> item) {
-    setState(() {
-      final name = item["nama_menu"];
-      cartQuantities[name] = (cartQuantities[name] ?? 0) + 1;
-    });
-
-    _showAddToCartDialog(context, item);
-  }
-
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     int quantity = cartQuantities[item["nama_menu"]] ?? 1;
-    int price = item["harga_menu"];
+    int price = _parseHarga(item["harga_menu"]);
 
     showModalBottomSheet(
       context: context,
@@ -123,8 +148,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                           children: [
                             Text(
                               "Jumlah Pesanan: $quantity",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
+                              style: const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
                               item["nama_menu"],
@@ -155,6 +179,28 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
         );
       },
     );
+  }
+
+  void _increaseQuantity(String itemName, int price) {
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
+
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
+
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
   }
 
   @override
@@ -219,6 +265,9 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                     itemCount: menuItems.length,
                     itemBuilder: (context, index) {
                       final item = menuItems[index];
+                      final harga = _parseHarga(item["harga_menu"]);
+                      final quantity = cartQuantities[item["nama_menu"]] ?? 0;
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
@@ -240,9 +289,8 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                           width: 80,
                                           height: 80,
                                           fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Image.asset(
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Image.asset(
                                             'assets/no_image.png',
                                             width: 80,
                                             height: 80,
@@ -251,20 +299,18 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                       ),
                                       const SizedBox(height: 5),
                                       ElevatedButton(
-                                        onPressed: () => _addToCart(item),
+                                        onPressed: () =>
+                                            _showAddToCartDialog(context, item),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: const BorderSide(
-                                                color: Color(0xFF078603)),
+                                            borderRadius: BorderRadius.circular(8),
+                                            side: const BorderSide(color: Color(0xFF078603)),
                                           ),
                                         ),
                                         child: const Text(
                                           "Tambah",
-                                          style: TextStyle(
-                                              color: Color(0xFF078603)),
+                                          style: TextStyle(color: Color(0xFF078603)),
                                         ),
                                       ),
                                     ],
@@ -272,18 +318,33 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item["nama_menu"],
                                           style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold),
+                                              fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(item["deskripsi_menu"] ??
-                                            "Tidak ada deskripsi"),
+                                        Text(item["deskripsi_menu"] ?? ''),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove_circle_outline,
+                                                  color: Colors.red),
+                                              onPressed: () =>
+                                                  _decreaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                            Text('$quantity'),
+                                            IconButton(
+                                              icon: const Icon(Icons.add_circle_outline,
+                                                  color: Color(0xFF078603)),
+                                              onPressed: () =>
+                                                  _increaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -294,12 +355,11 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                               bottom: 8,
                               right: 12,
                               child: Text(
-                                "Rp ${item["harga_menu"]}",
+                                "Rp $harga",
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black),
                               ),
                             ),
                           ],

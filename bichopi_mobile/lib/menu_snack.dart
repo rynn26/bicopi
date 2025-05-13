@@ -21,6 +21,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
   void initState() {
     super.initState();
     fetchSnackItems();
+    _loadCartFromDatabase();
   }
 
   Future<void> fetchSnackItems() async {
@@ -31,7 +32,6 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           .eq('id_kategori_menu', widget.categoryId);
 
       setState(() {
-        menuItems = List<Map<String, dynamic>>.from(response);
         menuItems = response.map<Map<String, dynamic>>((item) {
           return {
             "nama_menu": item["nama_menu"],
@@ -50,23 +50,49 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
     }
   }
 
-  int _parseHarga(dynamic harga) {
+  Future<void> _loadCartFromDatabase() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
     try {
-      if (harga == null) return 0;
-      return (harga as num).toInt();
+      final response = await supabase
+          .from('keranjang')
+          .select('item_name, quantity')
+          .eq('user_id', user.id);
+
+      setState(() {
+        cartQuantities = {
+          for (var item in response)
+            item['item_name']: item['quantity'] as int,
+        };
+      });
     } catch (e) {
-      debugPrint('Gagal parsing harga: $harga, error: $e');
-      return 0;
+      debugPrint('Gagal memuat data keranjang: $e');
     }
   }
 
-  void _addToCart(Map<String, dynamic> item) {
-    setState(() {
-      final name = item["nama_menu"];
-      cartQuantities[name] = (cartQuantities[name] ?? 0) + 1;
-    });
+  Future<void> _updateCartInDatabase(String itemName, int quantity, int price) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
 
-    _showAddToCartDialog(context, item);
+    final now = DateTime.now().toIso8601String();
+
+    if (quantity > 0) {
+      await supabase.from('keranjang').upsert({
+        'user_id': user.id,
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+        'created_at': now,
+        'updated_at': now,
+      }, onConflict: 'user_id,item_name');
+    } else {
+      await supabase
+          .from('keranjang')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_name', itemName);
+    }
   }
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
@@ -92,7 +118,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                   menu_minuman: {},
                   menu_snack: {
                     for (var item in menuItems)
-                      item["nama_menu"]: _parseHarga(item["harga_menu"])
+                      item["nama_menu"]: item["harga_menu"]
                   },
                   menu_paket: {},
                 ),
@@ -153,6 +179,28 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
         );
       },
     );
+  }
+
+  void _increaseQuantity(String itemName, int price) {
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
+
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
+
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
   }
 
   @override
@@ -217,6 +265,9 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                     itemCount: menuItems.length,
                     itemBuilder: (context, index) {
                       final item = menuItems[index];
+                      final harga = item["harga_menu"];
+                      final quantity = cartQuantities[item["nama_menu"]] ?? 0;
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
@@ -238,9 +289,8 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                                           width: 80,
                                           height: 80,
                                           fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  Image.asset(
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Image.asset(
                                             'assets/no_image.png',
                                             width: 80,
                                             height: 80,
@@ -249,20 +299,18 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                                       ),
                                       const SizedBox(height: 5),
                                       ElevatedButton(
-                                        onPressed: () => _addToCart(item),
+                                        onPressed: () =>
+                                            _showAddToCartDialog(context, item),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: const BorderSide(
-                                                color: Color(0xFF078603)),
+                                            borderRadius: BorderRadius.circular(8),
+                                            side: const BorderSide(color: Color(0xFF078603)),
                                           ),
                                         ),
                                         child: const Text(
                                           "Tambah",
-                                          style: TextStyle(
-                                              color: Color(0xFF078603)),
+                                          style: TextStyle(color: Color(0xFF078603)),
                                         ),
                                       ),
                                     ],
@@ -270,18 +318,33 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item["nama_menu"],
                                           style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold),
+                                              fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(item["deskripsi_menu"] ??
-                                            "Tidak ada deskripsi"),
+                                        Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove_circle_outline,
+                                                  color: Colors.red),
+                                              onPressed: () =>
+                                                  _decreaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                            Text('$quantity'),
+                                            IconButton(
+                                              icon: const Icon(Icons.add_circle_outline,
+                                                  color: Color(0xFF078603)),
+                                              onPressed: () =>
+                                                  _increaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -292,12 +355,11 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                               bottom: 8,
                               right: 12,
                               child: Text(
-                                "Rp ${item["harga_menu"]}",
+                                "Rp $harga",
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black),
                               ),
                             ),
                           ],
