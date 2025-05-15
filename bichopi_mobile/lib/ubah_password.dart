@@ -9,9 +9,11 @@ class UbahPasswordScreen extends StatefulWidget {
 }
 
 class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
@@ -34,16 +36,16 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
       _passwordStrengthValue = strength;
       if (strength <= 0.25) {
         _passwordStrengthText = 'Lemah';
-        _passwordStrengthColor = Colors.red;
+        _passwordStrengthColor = Colors.redAccent;
       } else if (strength <= 0.5) {
         _passwordStrengthText = 'Sedang';
-        _passwordStrengthColor = Colors.orange;
+        _passwordStrengthColor = Colors.orangeAccent;
       } else if (strength <= 0.75) {
         _passwordStrengthText = 'Baik';
         _passwordStrengthColor = Colors.yellow[700]!;
       } else {
         _passwordStrengthText = 'Kuat';
-        _passwordStrengthColor = Colors.green;
+        _passwordStrengthColor = Colors.greenAccent[400]!;
       }
     });
   }
@@ -59,7 +61,8 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
     }
 
     if (_passwordStrengthValue < 0.75) {
-      _showMessage("Password belum cukup kuat. Gunakan kombinasi huruf besar, angka, dan simbol.");
+      _showMessage(
+          "Password belum cukup kuat. Gunakan kombinasi huruf besar, angka, dan simbol.");
       return;
     }
 
@@ -79,12 +82,8 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
         return;
       }
 
-      await supabase
-          .from('users')
-          .update({'password': newPassword})
-          .eq('id_user', user.id);
-
       _showMessage("Password berhasil diubah.");
+      Navigator.pop(context);
     } catch (e) {
       _showMessage("Gagal mengubah password: $e");
     }
@@ -98,29 +97,53 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ubah Password"),
+        title: const Text("Ubah Password",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        titleTextStyle: const TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)], // Gradien hijau
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.grey[200]!, Colors.white], // Gradien latar belakang lembut
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              "Keamanan Akun",
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[700],
+                  ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Pastikan password baru Anda kuat dan berbeda dari yang sebelumnya.",
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 30),
             _buildPasswordField(
-              "Password saat ini",
+              "Password Saat Ini",
               _currentPasswordController,
               _obscureCurrentPassword,
               () {
@@ -128,10 +151,11 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
                   _obscureCurrentPassword = !_obscureCurrentPassword;
                 });
               },
+              icon: Icons.lock_outline,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
             _buildPasswordField(
-              "Password baru",
+              "Password Baru",
               _newPasswordController,
               _obscureNewPassword,
               () {
@@ -140,6 +164,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
                 });
               },
               onChanged: _checkPasswordStrength,
+              icon: Icons.lock_open_outlined,
             ),
             if (_passwordStrengthText.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -147,20 +172,21 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
                 value: _passwordStrengthValue,
                 backgroundColor: Colors.grey[300],
                 color: _passwordStrengthColor,
-                minHeight: 8,
+                minHeight: 5,
               ),
               const SizedBox(height: 4),
               Text(
                 'Kekuatan: $_passwordStrengthText',
                 style: TextStyle(
                   color: _passwordStrengthColor,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 15),
             _buildPasswordField(
-              "Konfirmasi Password baru",
+              "Konfirmasi Password Baru",
               _confirmPasswordController,
               _obscureConfirmPassword,
               () {
@@ -168,37 +194,45 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
                   _obscureConfirmPassword = !_obscureConfirmPassword;
                 });
               },
+              icon: Icons.replay_outlined,
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _ubahPassword,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 40),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _ubahPassword,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
                 ),
-              ),
-              child: const Text(
-                "Simpan Perubahan",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                child: const Text(
+                  "Simpan Perubahan",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
               ),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.green[400]!),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: const Text(
-                "Batalkan",
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                child: Text(
+                  "Batalkan",
+                  style: TextStyle(color: Colors.green[700]!, fontSize: 18),
+                ),
               ),
             ),
           ],
@@ -213,6 +247,7 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
     bool obscureText,
     VoidCallback toggleVisibility, {
     void Function(String)? onChanged,
+    IconData? icon,
   }) {
     return TextField(
       controller: controller,
@@ -220,9 +255,11 @@ class _UbahPasswordScreenState extends State<UbahPasswordScreen> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
         suffixIcon: IconButton(
-          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey[600]),
           onPressed: toggleVisibility,
         ),
       ),

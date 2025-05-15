@@ -15,7 +15,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
   List<Map<String, dynamic>> menuItems = [];
   bool isLoading = true;
 
-  Map<String, int> cartQuantities = {}; // Menyimpan jumlah item dalam keranjang
+  Map<String, int> cartQuantities = {};
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
       final response = await supabase
           .from('menu')
           .select('nama_menu, foto_menu, deskripsi_menu, harga_menu')
-          .eq('id_kategori_menu', 1); // Hanya ambil kategori 1 (minuman)
+          .eq('id_kategori_menu', 1);
 
       setState(() {
         menuItems = response.map<Map<String, dynamic>>((item) {
@@ -95,6 +95,28 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
     }
   }
 
+  void _increaseQuantity(String itemName, int price) {
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
+
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
+
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
+  }
+
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     int quantity = cartQuantities[item["nama_menu"]] ?? 0;
     int price = item["harga_menu"];
@@ -124,7 +146,6 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                 ),
               ),
             ).then((_) {
-              // Reload cart data when returning from CartPage
               _loadCartFromDatabase();
             });
           },
@@ -149,9 +170,8 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              quantity > 0 ? "Jumlah Pesanan: $quantity" : "0 Pesanan",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
+                              "Jumlah Pesanan: $quantity",
+                              style: const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
                               item["nama_menu"],
@@ -175,35 +195,13 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                
               ],
             ),
           ),
         );
       },
     );
-  }
-
-  void _increaseQuantity(String itemName, int price) {
-    setState(() {
-      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
-    });
-    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
-  }
-
-  void _decreaseQuantity(String itemName, int price) {
-    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
-
-    setState(() {
-      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
-    });
-
-    if (cartQuantities[itemName]! > 0) {
-      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
-    } else {
-      cartQuantities.remove(itemName);
-      _updateCartInDatabase(itemName, 0, price);
-    }
   }
 
   @override
@@ -215,7 +213,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: Color(0xFF078603), // Warna hijau untuk AppBar
+              color: Color(0xFF078603),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(20),
                 bottomRight: Radius.circular(20),
@@ -316,6 +314,30 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                           style: TextStyle(color: Color(0xFF078603)),
                                         ),
                                       ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove_circle_outline,
+                                                color: Colors.red),
+                                            iconSize: 24,
+                                            onPressed: () =>
+                                                _decreaseQuantity(item["nama_menu"], harga),
+                                          ),
+                                          Text(
+                                            '$quantity',
+                                            style: const TextStyle(fontSize: 16),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.add_circle_outline,
+                                                color: Color(0xFF078603)),
+                                            iconSize: 24,
+                                            onPressed: () =>
+                                                _increaseQuantity(item["nama_menu"], harga),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 10),
@@ -335,24 +357,6 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                               color: Colors.grey),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline,
-                                                  color: Colors.red),
-                                              onPressed: () =>
-                                                  _decreaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                            Text('$quantity'),
-                                            IconButton(
-                                              icon: const Icon(Icons.add_circle_outline,
-                                                  color: Color(0xFF078603)),
-                                              onPressed: () =>
-                                                  _increaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                          ],
                                         ),
                                       ],
                                     ),

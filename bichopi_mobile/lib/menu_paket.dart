@@ -276,64 +276,63 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Stack(
                             children: [
-                              Row(
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      item["foto_menu"] ?? '',
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Image.asset(
-                                        'assets/no_image.png',
-                                        width: 80,
-                                        height: 80,
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          item["foto_menu"] ?? '',
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) =>
+                                              Image.asset(
+                                            'assets/no_image.png',
+                                            width: 80,
+                                            height: 80,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item["nama_menu"],
+                                              style: const TextStyle(
+                                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(item["deskripsi_menu"] ?? ''),
+                                            const SizedBox(height: 10),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ElevatedButton(
+                                    onPressed: () => _showAddToCartDialog(context, item),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: const BorderSide(color: Color(0xFF078603)),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item["nama_menu"],
-                                          style: const TextStyle(
-                                              fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(item["deskripsi_menu"] ?? ''),
-                                        const SizedBox(height: 10),
-                                      ],
+                                    child: const Text(
+                                      "Tambah",
+                                      style: TextStyle(color: Color(0xFF078603)),
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: () => _showAddToCartDialog(context, item),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    side: const BorderSide(color: Color(0xFF078603)),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Tambah",
-                                  style: TextStyle(color: Color(0xFF078603)),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
+                                  const SizedBox(height: 8),
                                   Row(
                                     children: [
                                       IconButton(
@@ -351,15 +350,20 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                       ),
                                     ],
                                   ),
-                                  Text(
-                                    "Rp $harga",
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              // Harga di pojok kanan bawah
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Text(
+                                  "Rp $harga",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
                             ],
                           ),

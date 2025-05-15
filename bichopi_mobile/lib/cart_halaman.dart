@@ -3,7 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'payment.dart';
 
-final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+final formatter =
+    NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
 class CartPage extends StatefulWidget {
   final Map<String, int> cartItems;
@@ -34,8 +35,14 @@ class _CartPageState extends State<CartPage> {
     cartItems = Map.from(widget.cartItems);
     final user = Supabase.instance.client.auth.currentUser;
     userId = user?.id;
+    _initializeCart();
     _loadCartFromSupabase();
     _loadHargaMenu();
+  }
+
+  Future<void> _initializeCart() async {
+    await _loadHargaMenu();
+    await _loadCartFromSupabase();
   }
 
   Future<void> _loadHargaMenu() async {
@@ -43,11 +50,11 @@ class _CartPageState extends State<CartPage> {
         .from('menu')
         .select('nama_menu, harga_menu');
 
-    if (response != null) {
+    if (response != null && response.isNotEmpty) {
       setState(() {
         semuaHargaMenu = {
           for (var item in response)
-            item['nama_menu'].toString(): int.tryParse(item['harga_menu'].toString()) ?? 0,
+            item['nama_menu']: (item['harga_menu'] as num).toInt(),
         };
       });
     }
@@ -58,10 +65,8 @@ class _CartPageState extends State<CartPage> {
     if (userId == null) return;
 
     try {
-      final response = await supabase
-          .from('keranjang')
-          .select()
-          .eq('user_id', userId);
+      final response =
+          await supabase.from('keranjang').select().eq('user_id', userId);
 
       for (var item in response) {
         String name = item['item_name'];
@@ -87,8 +92,8 @@ class _CartPageState extends State<CartPage> {
         'item_name': itemName,
         'quantity': quantity,
         'price': price,
-        'created_at': now,
-        'updated_at': now,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
       }, onConflict: 'user_id,item_name');
     } else {
       await supabase
@@ -134,14 +139,63 @@ class _CartPageState extends State<CartPage> {
     return _calculateSubtotal() + serviceFee;
   }
 
-  void _checkout(BuildContext context) async {
+  Future<void> _saveCartToSupabase() async {
+    final supabase = Supabase.instance.client;
+    final now = DateTime.now();
+
+    if (userId == null) return;
+
+    try {
+      for (var entry in cartItems.entries) {
+        final itemName = entry.key;
+        final quantity = entry.value;
+        final price = semuaHargaMenu[itemName] ?? 0;
+
+        if (quantity > 0) {
+          await supabase.from('keranjang').upsert({
+            'user_id': userId,
+            'item_name': itemName,
+            'quantity': quantity,
+            'price': price,
+            'created_at': now.toIso8601String(),
+            'updated_at': now.toIso8601String(),
+          });
+        }
+      }
+    } catch (e) {
+      print('Error saat menyimpan ke Supabase: $e');
+    }
+  }
+void _checkout(BuildContext context) async {
+  final shouldProceed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Konfirmasi Checkout"),
+      content:
+          const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("Batal"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text("Lanjutkan"),
+        ),
+      ],
+    ),
+  );
+
+  if (shouldProceed == true) {
     setState(() => isLoading = true);
     try {
-      // Tidak perlu menyimpan ulang keranjang ke database
+      await _saveCartToSupabase();
+      final totalPrice = _calculateTotalPrice(); // Hitung total harga
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const PaymentPage()),
+        MaterialPageRoute(
+            builder: (context) => PaymentPage(totalPrice: totalPrice)), // Kirim totalPrice
       );
     } catch (e) {
       print("Error saat checkout: $e");
@@ -152,6 +206,7 @@ class _CartPageState extends State<CartPage> {
       setState(() => isLoading = false);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -165,11 +220,13 @@ class _CartPageState extends State<CartPage> {
                 ? const Center(
                     child: Text(
                       "Keranjang masih kosong",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Column(
                       children: [
                         Expanded(
@@ -207,6 +264,12 @@ class _CartPageState extends State<CartPage> {
   }
 }
 
+extension on String {
+  toIso8601String() {}
+}
+
+// Komponen UI
+
 class CartItemCard extends StatelessWidget {
   final String itemName;
   final int quantity;
@@ -227,43 +290,60 @@ class CartItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalPrice = itemPrice * quantity;
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(itemName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text("${formatter.format(itemPrice)} x $quantity", style: const TextStyle(fontSize: 14)),
-                  Text("Total: ${formatter.format(totalPrice)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF078603))),
-                ],
-              ),
-            ),
-            Row(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F3FB), // Ungu muda
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                  onPressed: onDecrease,
-                ),
-                Text("$quantity"),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, color: Color(0xFF078603)),
-                  onPressed: onIncrease,
-                ),
+                Text(itemName,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text("${formatter.format(itemPrice)} x $quantity",
+                    style: const TextStyle(fontSize: 14)),
+                const SizedBox(height: 4),
+                Text("Total: ${formatter.format(totalPrice)}",
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green)),
               ],
             ),
-          ],
-        ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: onDecrease,
+                icon: const Icon(Icons.remove_circle_outline,
+                    color: Colors.red),
+              ),
+              Text(
+                "$quantity",
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                onPressed: onIncrease,
+                icon: const Icon(Icons.add_circle_outline,
+                    color: Colors.green),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
+
 
 class PaymentSummaryCard extends StatelessWidget {
   final int subtotal;
@@ -285,27 +365,64 @@ class PaymentSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Detail Pembayaran", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text("Subtotal"),
-            Text(formatter.format(subtotal)),
-          ]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text("Biaya Layanan"),
-            Text(formatter.format(serviceFee)),
-          ]),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text("Total"),
-            Text(formatter.format(total)),
-          ]),
+          const Text("Detail Pembayaran",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+
           const SizedBox(height: 12),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Subtotal"),
+              Text(formatter.format(subtotal)),
+            ],
+          ),
+          const SizedBox(height: 4),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Biaya Layanan"),
+              Text(formatter.format(serviceFee)),
+            ],
+          ),
+
+          const Divider(height: 24, thickness: 1),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Total",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                formatter.format(total),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF078603),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -314,11 +431,26 @@ class PaymentSummaryCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 backgroundColor: const Color(0xFF078603),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text("Checkout", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      "Checkout",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -351,8 +483,13 @@ class CustomAppBar extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
-              Text("Keranjang", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              Text("Bichopi, Indonesia", style: TextStyle(color: Colors.white70, fontSize: 14)),
+              Text("Keranjang",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              Text("Bichopi, Indonesia",
+                  style: TextStyle(color: Colors.white70, fontSize: 14)),
             ],
           ),
         ],

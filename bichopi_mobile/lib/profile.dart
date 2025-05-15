@@ -71,43 +71,44 @@ class _ProfilePage extends State<ProfileScreen> {
   }
 
   Future<void> _uploadImageToSupabase(File file) async {
-  final user = Supabase.instance.client.auth.currentUser;
-  if (user == null) return;
-final fileExt = p.extension(file.path);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    final fileExt = p.extension(file.path);
 
-  final filePath = 'profile_pictures/${user.id}$fileExt';
+    final filePath = 'profile_pictures/${user.id}$fileExt';
 
-  try {
-    final fileBytes = await file.readAsBytes(); // convert to Uint8List
+    try {
+      final fileBytes = await file.readAsBytes(); // convert to Uint8List
 
-    await Supabase.instance.client.storage
-        .from('profile_images')
-        .uploadBinary(filePath, fileBytes, fileOptions: const FileOptions(upsert: true));
+      await Supabase.instance.client.storage
+          .from('profileimages')
+          .uploadBinary(filePath, fileBytes,
+              fileOptions: const FileOptions(upsert: true));
 
-    final imageUrl = Supabase.instance.client.storage
-        .from('profile_images')
-        .getPublicUrl(filePath);
+      final imageUrl = Supabase.instance.client.storage
+          .from('profileimages')
+          .getPublicUrl(filePath);
 
-    // Simpan URL ke database
-    await Supabase.instance.client
-        .from('profil')
-        .update({'image_url': imageUrl})
-        .eq('id_user', user.id);
+      // Simpan URL ke database
+      await Supabase.instance.client
+          .from('profil')
+          .update({'image_url': imageUrl})
+          .eq('id_user', user.id);
 
-    setState(() {
-      _imageUrl = imageUrl;
-    });
+      setState(() {
+        _imageUrl = imageUrl;
+      });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Foto profil berhasil diperbarui")),
-    );
-  } catch (e) {
-    print("Upload error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Gagal upload gambar: $e")),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Foto profil berhasil diperbarui")),
+      );
+    } catch (e) {
+      print("Upload error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal upload gambar: $e")),
+      );
+    }
   }
-}
 
   Future<void> _updateUserData() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -139,15 +140,115 @@ final fileExt = p.extension(file.path);
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16, // Ukuran teks diperkecil
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF2E7D32),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoundedTextField(
+      String label, TextEditingController controller, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(fontSize: 14), // Ukuran teks input diperkecil
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontSize: 14), // Ukuran teks label diperkecil
+          prefixIcon: Icon(icon, color: Color(0xFF2E7D32), size: 20), // Ukuran ikon diperkecil
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Padding diperkecil
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClickableRoundedBox(
+      String text, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            const BoxShadow(
+              color: Colors.black12, blurRadius: 3, offset: Offset(1, 1)),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: const Color(0xFF2E7D32), size: 20), // Ukuran ikon diperkecil
+                const SizedBox(width: 10),
+                Text(text, style: const TextStyle(fontSize: 14)), // Ukuran teks diperkecil
+              ],
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                size: 14, color: Color(0xFF2E7D32)), // Ukuran ikon diperkecil
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconButtonWithText(IconData icon, VoidCallback onPressed, String text, {Color? backgroundColor, Color? iconColor, TextStyle? textStyle}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 40, // Ukuran tombol ikon diperkecil
+          height: 40, // Ukuran tombol ikon diperkecil
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor ?? Colors.green,
+              foregroundColor: iconColor ?? Colors.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
+              ),
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(40, 40),
+            ),
+            child: Icon(icon, size: 20), // Ukuran ikon diperkecil
+          ),
+        ),
+        const SizedBox(height: 3), // Jarak diperkecil
+        Text(
+          text,
+          style: textStyle ?? const TextStyle(fontSize: 10, color: Colors.grey), // Ukuran teks diperkecil
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.grey[200], // Warna latar belakang AppBar sebelumnya
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFF078603),
+            color: Color(0xFF078603), // Warna AppBar sebelumnya
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(20),
               bottomRight: Radius.circular(20),
@@ -188,154 +289,130 @@ final fileExt = p.extension(file.path);
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0), // Padding keseluruhan diperkecil
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Center(
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 55,
-                        backgroundImage: _imageFile != null
-                            ? FileImage(_imageFile!)
-                            : (_imageUrl != null
-                                ? NetworkImage(_imageUrl!)
-                                : const AssetImage("assets/foto_profile.png")
-                                    as ImageProvider),
-                        backgroundColor: Colors.transparent,
-                      ),
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50, // Ukuran avatar diperkecil
+                          backgroundImage: _imageFile != null
+                              ? FileImage(_imageFile!)
+                              : (_imageUrl != null
+                                  ? NetworkImage(_imageUrl!)
+                                  : const AssetImage(
+                                          "assets/foto_profile.png")
+                                      as ImageProvider),
+                          backgroundColor: Colors.grey[300],
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: InkWell(
+                            onTap: _pickImage,
+                            borderRadius: BorderRadius.circular(15), // Sudut lebih kecil
+                            child: Container(
+                              padding: const EdgeInsets.all(6.0), // Padding diperkecil
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: Colors.white, width: 1), // Border lebih tipis
+                              ),
+                              child: const Icon(Icons.camera_alt,
+                                  size: 16, color: Colors.white), // Ukuran ikon diperkecil
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 15), // Jarak diperkecil
                   Center(
                     child: Column(
                       children: [
                         Text(
                           _nameController.text,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 18, // Ukuran teks nama diperkecil
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF2E7D32),
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 3), // Jarak diperkecil
                         Text(
                           _emailController.text,
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.grey),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey), // Ukuran teks email diperkecil
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  _buildSectionTitle("Informasi Akun"),
-                  _buildEditableTextField("Nama Lengkap", _nameController),
-                  _buildEditableTextField("Email", _emailController),
-                  _buildEditableTextField("No. Telepon", _phoneController),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle("Pengaturan Keamanan"),
-                  _buildClickableBox("Ubah Password", Icons.lock, () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const UbahPasswordScreen()),
-                    );
-                  }),
-                  const SizedBox(height: 30),
-                  _buildActionButton("Simpan Perubahan", _updateUserData),
-                  const SizedBox(height: 20),
-                  _buildActionButton("Logout", _logout),
+                  const SizedBox(height: 20), // Jarak diperkecil
+                  Container(
+                    padding: const EdgeInsets.all(12.0), // Padding diperkecil
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Informasi Akun"),
+                        _buildRoundedTextField(
+                            "Nama Lengkap", _nameController, Icons.person_outline),
+                        _buildRoundedTextField(
+                            "Email", _emailController, Icons.email_outlined),
+                        _buildRoundedTextField(
+                            "No. Telepon", _phoneController, Icons.phone_outlined),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 15), // Jarak diperkecil
+                  Container(
+                    padding: const EdgeInsets.all(12.0), // Padding diperkecil
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Pengaturan Keamanan"),
+                        _buildClickableRoundedBox(
+                            "Ubah Password", Icons.lock_outline, () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const UbahPasswordScreen()),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Jarak diperkecil
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildIconButtonWithText(
+                        Icons.save_alt,
+                        _updateUserData,
+                        "Simpan",
+                        backgroundColor: Colors.green,
+                        textStyle: const TextStyle(fontSize: 10), // Ukuran teks tombol diperkecil
+                      ),
+                      _buildIconButtonWithText(
+                        Icons.logout,
+                        _logout,
+                        "Logout",
+                        backgroundColor: Colors.redAccent,
+                        textStyle: const TextStyle(fontSize: 10), // Ukuran teks tombol diperkecil
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF2E7D32),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEditableTextField(
-      String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF2E7D32)),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClickableBox(String text, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            const BoxShadow(
-                color: Colors.black12, blurRadius: 5, offset: Offset(2, 2)),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: const Color(0xFF2E7D32)),
-                const SizedBox(width: 10),
-                Text(text, style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: Color(0xFF2E7D32)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String text, VoidCallback onPressed) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2E7D32),
-          foregroundColor: Colors.white,
-          elevation: 1,
-          shadowColor: Colors.greenAccent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        child: Text(text),
-      ),
     );
   }
 }

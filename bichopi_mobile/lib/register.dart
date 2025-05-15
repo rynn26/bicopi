@@ -21,7 +21,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // Function to validate email format
   bool isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final emailRegex =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     return emailRegex.hasMatch(email);
   }
 
@@ -71,34 +72,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
       bool hasReferral = false;
 
       // 2. Validate referral code if present
-      try {
-        final referralMatch = await Supabase.instance.client
-            .from('affiliates')
-            .select('id')
-            .eq('referral_code', referralCode)
-            .maybeSingle();
+      if (referralCode.isNotEmpty) {
+        try {
+          final referralMatch = await Supabase.instance.client
+              .from('affiliates')
+              .select('id')
+              .eq('referral_code', referralCode)
+              .maybeSingle();
 
-        if (referralMatch != null) {
-          idUserLevel = 4; // Affiliate
-          userPoints = 0;
-          referralBonus = 10;
-          referralOwnerId = (referralMatch['id'] as String).trim();
-          hasReferral = true;
-          print('referralOwnerId setelah trim: $referralOwnerId');
-        } else {
+          if (referralMatch != null) {
+            idUserLevel = 4; // Affiliate
+            userPoints = 0;
+            referralBonus = 10;
+            referralOwnerId = (referralMatch['id'] as String).trim();
+            hasReferral = true;
+            print('referralOwnerId setelah trim: $referralOwnerId');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Kode referal tidak valid')),
+            );
+            return;
+          }
+        } catch (e) {
+          print('Error saat memvalidasi kode referal: $e');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Kode referal tidak valid')),
+            const SnackBar(
+                content: Text('Terjadi kesalahan saat memvalidasi kode referal.')),
           );
           return;
         }
-      } catch (e) {
-        print('Error saat memvalidasi kode referal: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Terjadi kesalahan saat memvalidasi kode referal.')),
-        );
-        return;
       }
-
       // 3. Insert into 'users' table
       await Supabase.instance.client.from('users').insert({
         'id_user': user.id,
@@ -124,7 +127,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (hasReferral && referralBonus > 0) {
         print('referralOwnerId sebelum insert affiliate_points_log: $referralOwnerId');
         try {
-          await Supabase.instance.client.from('affiliate_points_log').insert({
+          await Supabase.instance.client
+              .from('affiliate_points_log')
+              .insert({
             'affiliate_id': referralOwnerId,
             'member_id': user.id,
             'order_id': null,
@@ -135,14 +140,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         } catch (e) {
           print('Error saat insert ke affiliate_points_log: $e');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Terjadi kesalahan saat memberikan bonus referal.')),
+            const SnackBar(
+                content:
+                    Text('Terjadi kesalahan saat memberikan bonus referal.')),
           );
         }
       }
 
       // 6. Successful registration
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda.')),
+        const SnackBar(
+            content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda.')),
       );
 
       await Future.delayed(const Duration(seconds: 2));
@@ -150,10 +158,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         context,
         MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
       );
-
     } on AuthException catch (error) {
       print('AuthException caught: ${error.message}'); // Debug log for auth error
-      if (error.message.contains('user already registered') || error.message.contains('email')) {
+      if (error.message.contains('user already registered') ||
+          error.message.contains('email')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Email sudah digunakan.')),
         );
@@ -176,55 +184,82 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100, // Latar belakang lembut
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: ListView(
+        child: SingleChildScrollView( // Membuat layar bisa di-scroll jika konten melebihi layar
+          padding: const EdgeInsets.all(24.0), // Padding lebih besar
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
               Center(
                 child: Image.asset(
                   'assets/bicopi_logo.png',
-                  width: 120,
-                  height: 120,
+                  width: 100, // Ukuran logo sedikit lebih kecil
+                  height: 100,
                 ),
               ),
-              const SizedBox(height: 30),
-              const Text(
-                'Daftar Akun',
+              const SizedBox(height: 32),
+              Text(
+                'Buat Akun Baru',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF078603), // Warna primer yang lebih kuat
+                ),
               ),
-              const SizedBox(height: 20),
-              _buildTextField(controller: nameController, label: 'Nama Lengkap'),
-              _buildTextField(controller: phoneController, label: 'No Telepon'),
-              _buildTextField(controller: emailController, label: 'Email'),
-              _buildTextField(controller: passwordController, label: 'Password', isPassword: true),
-              _buildTextField(controller: confirmPasswordController, label: 'Konfirmasi Password', isPassword: true),
-              _buildTextField(controller: referralCodeController, label: 'Kode Referal (Opsional)'),
-              const SizedBox(height: 25),
+              const SizedBox(height: 24),
+              _buildModernTextField(
+                  controller: nameController, label: 'Nama Lengkap'),
+              _buildModernTextField(
+                  controller: phoneController, label: 'No Telepon', keyboardType: TextInputType.phone),
+              _buildModernTextField(
+                  controller: emailController, label: 'Email', keyboardType: TextInputType.emailAddress),
+              _buildModernTextField(
+                  controller: passwordController, label: 'Password', isPassword: true),
+              _buildModernTextField(
+                  controller: confirmPasswordController,
+                  label: 'Konfirmasi Password',
+                  isPassword: true),
+              _buildModernTextField(
+                  controller: referralCodeController, label: 'Kode Referal (Opsional)'),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF078603),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor:Color(0xFF078603), // Warna tombol lebih menarik
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16), // BorderRadius lebih besar
                   ),
+                  elevation: 3, // Tambahkan sedikit elevasi untuk kesan modern
                 ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Daftar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Daftar',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
               ),
-              const SizedBox(height: 15),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
-                  );
-                },
-                child: const Text('Sudah punya akun? Login'),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Sudah punya akun?', style: TextStyle(fontSize: 16)),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const login_page.LoginScreen()),
+                      );
+                    },
+                    child: const Text('Login',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF078603))),
+                  ),
+                ],
               ),
             ],
           ),
@@ -233,22 +268,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildModernTextField({
     required TextEditingController controller,
     required String label,
     bool isPassword = false,
+    TextInputType? keyboardType,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: TextField(
         controller: controller,
         obscureText: isPassword,
-        keyboardType: label.contains('Telepon') ? TextInputType.phone : TextInputType.text,
+        keyboardType: keyboardType ?? TextInputType.text,
+        style: const TextStyle(fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          filled: true,
-          fillColor: Colors.grey.shade100,
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade400),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Color(0xFF078603), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );

@@ -1,7 +1,6 @@
 import 'package:coba3/main.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'profile.dart';
 import 'package:coba3/register.dart' as register;
 
 class LoginScreen extends StatefulWidget {
@@ -24,19 +23,18 @@ class _LoginScreenState extends State<LoginScreen> {
     _checkLoginStatus();
   }
 
-void _checkLoginStatus() async {
-  final user = Supabase.instance.client.auth.currentUser;
-  if (user != null && mounted) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
-    });
+  void _checkLoginStatus() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      });
+    }
   }
-}
-
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
@@ -77,10 +75,10 @@ void _checkLoginStatus() async {
             MaterialPageRoute(builder: (context) => const HomePage()),
           );
         } else {
-          _showSnackbar("Login gagal. Periksa email dan password.");
+          _showSnackbar("Login gagal. Periksa email dan password Anda.");
         }
       } catch (e) {
-        _showSnackbar("Login error: ${e.toString()}");
+        _showSnackbar("Terjadi kesalahan saat login: ${e.toString()}");
       } finally {
         if (mounted) {
           setState(() => _isLoggingIn = false);
@@ -91,8 +89,7 @@ void _checkLoginStatus() async {
 
   void _showSnackbar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -105,6 +102,7 @@ void _checkLoginStatus() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100, // Latar belakang lembut
       body: Stack(
         children: [
           Center(
@@ -114,24 +112,42 @@ void _checkLoginStatus() async {
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     Image.asset(
                       'assets/bicopi_logo.png',
-                      width: 150,
-                      height: 150,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Login",
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                      width: 120,
+                      height: 120,
                     ),
                     const SizedBox(height: 30),
+                    Text(
+                      "Selamat Datang",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF078603),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Email",
-                        prefixIcon: Icon(Icons.email),
+                        hintText: "Masukkan alamat email Anda",
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide:
+                              BorderSide(color:Color(0xFF078603), width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 16),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
@@ -150,12 +166,24 @@ void _checkLoginStatus() async {
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(
                         labelText: "Password",
-                        prefixIcon: const Icon(Icons.lock),
+                        hintText: "Masukkan password Anda",
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade400),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide:
+                              BorderSide(color: Color(0xFF078603), width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 16),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                           ),
                           onPressed: () {
                             setState(() => _isPasswordVisible = !_isPasswordVisible);
@@ -176,17 +204,23 @@ void _checkLoginStatus() async {
                     ElevatedButton(
                       onPressed: _isLoggingIn ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
+                        backgroundColor:Color(0xFF078603),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
                       ),
                       child: _isLoggingIn
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Login", style: TextStyle(fontSize: 18)),
+                          : const Text("Login",
+                              style: TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Belum punya akun?"),
+                        const Text("Belum punya akun?", style: TextStyle(fontSize: 16)),
                         TextButton(
                           onPressed: () {
                             Navigator.push(
@@ -197,7 +231,13 @@ void _checkLoginStatus() async {
                               ),
                             );
                           },
-                          child: const Text("Sign Up"),
+                          child: const Text(
+                            "Sign Up",
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green), // Warna diubah menjadi hijau
+                          ),
                         ),
                       ],
                     ),

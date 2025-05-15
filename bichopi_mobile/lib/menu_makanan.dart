@@ -276,88 +276,99 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Column(
+                          child: Stack(
                             children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Column(
                                 children: [
-                                  Column(
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          item["foto_menu"] ?? '',
-                                          width: 80,
-                                          height: 80,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Image.asset(
-                                            'assets/no_image.png',
-                                            width: 80,
-                                            height: 80,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                      ElevatedButton(
-                                        onPressed: () => _showAddToCartDialog(context, item),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            side: const BorderSide(color: Color(0xFF078603)),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          "Tambah",
-                                          style: TextStyle(color: Color(0xFF078603)),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                      Column(
                                         children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove_circle_outline,
-                                                color: Colors.red),
-                                            onPressed: () =>
-                                                _decreaseQuantity(item["nama_menu"], harga),
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.network(
+                                              item["foto_menu"] ?? '',
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) =>
+                                                  Image.asset(
+                                                'assets/no_image.png',
+                                                width: 80,
+                                                height: 80,
+                                              ),
+                                            ),
                                           ),
-                                          Text('$quantity'),
-                                          IconButton(
-                                            icon: const Icon(Icons.add_circle_outline,
-                                                color: Color(0xFF078603)),
-                                            onPressed: () =>
-                                                _increaseQuantity(item["nama_menu"], harga),
+                                          const SizedBox(height: 5),
+                                          ElevatedButton(
+                                            onPressed: () => _showAddToCartDialog(context, item),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                side: const BorderSide(color: Color(0xFF078603)),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              "Tambah",
+                                              style: TextStyle(color: Color(0xFF078603)),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove_circle_outline,
+                                                    color: Colors.red),
+                                                onPressed: () =>
+                                                    _decreaseQuantity(item["nama_menu"], harga),
+                                              ),
+                                              Text('$quantity'),
+                                              IconButton(
+                                                icon: const Icon(Icons.add_circle_outline,
+                                                    color: Color(0xFF078603)),
+                                                onPressed: () =>
+                                                    _increaseQuantity(item["nama_menu"], harga),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item["nama_menu"],
+                                              style: const TextStyle(
+                                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(item["deskripsi_menu"] ?? ''),
+                                            const SizedBox(height: 10),
+                                            // Hapus Row harga di sini
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item["nama_menu"],
-                                          style: const TextStyle(
-                                              fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(item["deskripsi_menu"] ?? ''),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          "Rp $harga",
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              // Harga di pojok kanan bawah
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Text(
+                                  "Rp $harga",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
