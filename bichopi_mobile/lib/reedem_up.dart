@@ -1,103 +1,131 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class PopupPage extends StatelessWidget {
   final String title;
   final int points;
-  final String transactionId; // Tambahkan transactionId
+  final String transactionId;
 
-  const PopupPage(
-      {super.key,
-      required this.title,
-      required this.points,
-      required this.transactionId});
+  const PopupPage({
+    super.key,
+    required this.title,
+    required this.points,
+    required this.transactionId,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      backgroundColor: Colors.grey.shade50, // Warna latar belakang
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.receipt_long, size: 50, color: Colors.black),
-            const SizedBox(height: 12),
-
-            // Judul
-            const Text(
-              "Tanda Terima Penukaran",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Garis panjang pemisah setelah judul
-            const Divider(thickness: 1.2, color: Colors.black38),
-
-            const SizedBox(height: 12),
-
-            // ID Penukaran
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "ID Penukaran",
-                style: TextStyle(fontWeight: FontWeight.bold),
+    return WillPopScope(
+      onWillPop: () async =>
+          false, // Mencegah menutup dialog dengan tombol kembali fisik selama animasi
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(
+                parent: ModalRoute.of(context)!.animation!,
+                curve: Curves.easeInOutCubic,
               ),
             ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(transactionId,
-                  style: const TextStyle(color: Colors.black87)),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Penukaran Poin
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Penukaran Point",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.sync, size: 18),
-                const SizedBox(width: 6),
-                Text("$points POIN", style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Garis panjang sebelum tombol Close
-            const Divider(thickness: 1.2, color: Colors.black38),
-
-            const SizedBox(height: 12),
-
-            // Tombol Close (Lebar lebih pendek)
-            SizedBox(
-              width: 120, // Lebar tombol lebih pendek
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green, // Warna teks hijau
-                  side: const BorderSide(
-                      color: Colors.green, width: 2), // Border hijau
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text(
-                  "Close",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
+                CurvedAnimation(
+                  parent: ModalRoute.of(context)!.animation!,
+                  curve: Curves.easeInOutCubic,
                 ),
               ),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Align(
+                      alignment: Alignment.center,
+                      child: Icon(Icons.receipt_long,
+                          size: 60, color: Colors.green[400]),
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        "Tanda Terima Penukaran",
+                        style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(thickness: 1, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      "ID Penukaran",
+                      style: GoogleFonts.nunitoSans(
+                          fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      transactionId,
+                      style: GoogleFonts.nunitoSans(
+                          color: Colors.black87, fontSize: 16),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Penukaran Point",
+                      style: GoogleFonts.nunitoSans(
+                          fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.sync, size: 20, color: Colors.green[400]),
+                        const SizedBox(width: 8),
+                        Text("$points POIN",
+                            style: GoogleFonts.poppins(
+                                fontSize: 18, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[400],
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          "Close",
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

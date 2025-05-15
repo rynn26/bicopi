@@ -17,6 +17,7 @@ import 'register.dart';
 import 'login.dart';
 import 'menu_list_from_db.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,33 +27,12 @@ Future<void> main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mYWZtaWF4b2dyeHh3anV5cWZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAyNTIzMDcsImV4cCI6MjA1NTgyODMwN30.tsapVtnxkicRa-eTQLhKTBQtm7H9U1pfwBBdGdqryW0',
   );
-runApp(
-    DevicePreview(
-      enabled: !kReleaseMode, // aktif hanya saat debug
-      builder: (context) => const MyApp(),
-    ),
-  );
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: SplashScreen(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      useInheritedMediaQuery: true,
-      debugShowCheckedModeBanner: false,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
-      title: 'Bicopi App',
-      theme: ThemeData(
-        primarySwatch: Colors.brown,
-        fontFamily: 'Poppins',
-      ),
-      home: const SplashScreen(), // ganti dengan home page kamu jika sudah login
-    );
-  }
-}
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -232,11 +212,12 @@ class _HomePageState extends State<HomePage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-      onPressed: _onCartButtonTapped,
-      backgroundColor: const Color.fromARGB(255, 151, 236, 148),
-      child: const Icon(Icons.shopping_cart, color: Color.fromARGB(255, 8, 126, 4), size: 28),
-      elevation: 4,
-      shape: const CircleBorder(), // <-- pastikan ini membuatnya bulat
+        onPressed: _onCartButtonTapped,
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        child: const Icon(Icons.shopping_cart,
+            color: Color.fromARGB(255, 131, 222, 127), size: 28),
+        elevation: 19,
+        shape: const CircleBorder(), // <-- pastikan ini membuatnya bulat
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: Material(
@@ -465,132 +446,135 @@ Widget _buildCategoryList(BuildContext context) {
 }
 
 Widget _buildTopBar(BuildContext context) {
-  return Container(
-    height: 200,
-    decoration: BoxDecoration(
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(25),
-        bottomRight: Radius.circular(25),
-      ),
-    ),
-    child: Stack(
-      children: [
-        // Background image
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(25),
-            bottomRight: Radius.circular(25),
-          ),
-          child: Image.asset(
-            'assets/backgroundb.png',
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
+  return SafeArea(
+    child: Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(25),
+          bottomRight: Radius.circular(25),
         ),
-        // Green overlay
-        Container(
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 55, 221, 33).withOpacity(0.3),
+      ),
+      child: Stack(
+        children: [
+          // Background image
+          ClipRRect(
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(25),
               bottomRight: Radius.circular(25),
             ),
+            child: Image.asset(
+              'assets/backgroundb.png',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
           ),
-        ),
-        // Profile icon di pojok kanan atas
-        Positioned(
-          top: 36,
-          right: 35,
-          child: GestureDetector(
-            onTap: () {
-              // Arahkan ke halaman profil
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-            },
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-              child: Icon(
-                Icons.person,
-                color: Colors.green[800],
+          // Green overlay
+          Container(
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 55, 221, 33).withOpacity(0.3),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
               ),
             ),
           ),
-        ),
-        // Content: Greeting + Search Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Selamat Datang Di,",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.black87,
+          // Profile icon di pojok kanan atas
+          Positioned(
+            top: 36,
+            right: 35,
+            child: GestureDetector(
+              onTap: () {
+                // Arahkan ke halaman profil
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.green[800],
                 ),
               ),
-              Text(
-                "BICOPI",
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF028A0F),
+            ),
+          ),
+          // Content: Greeting + Search Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Selamat Datang Di,",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 35),
-              // Search Bar
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SearchMenuPage()),
-                  );
-                },
-                child: AbsorbPointer(
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
+                Text(
+                  "BICOPI",
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF028A0F),
+                  ),
+                ),
+                const SizedBox(height: 35),
+                // Search Bar
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SearchMenuPage()),
+                    );
+                  },
+                  child: AbsorbPointer(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: "Cari menu...",
+                          hintStyle: TextStyle(color: Colors.grey[700]),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Color(0xFF078603),
+                            size: 28,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Cari menu...",
-                        hintStyle: TextStyle(color: Colors.grey[700]),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Color(0xFF078603),
-                          size: 28,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
+
 
 Widget _buildCarousel() {
   final List<String> imageList = [

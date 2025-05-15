@@ -17,7 +17,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   Map<String, int> cartQuantities = {};
   String selectedCategory = 'Semua';
   String selectedSort = '';
-  String searchQuery = ''; // untuk pencarian
+  String searchQuery = '';
 
   final List<String> categories = [
     'Semua',
@@ -61,7 +61,6 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     } catch (e) {
       print("Error: $e");
       setState(() => isLoading = false);
-      // Show error message to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to load menu items")),
       );
@@ -226,11 +225,18 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cari Menu"),
         backgroundColor: const Color(0xFF078603),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Cari Menu",
+          style: TextStyle(color: Colors.white), // Teks putih
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart),
+            icon: const Icon(Icons.shopping_cart, color: Colors.white),
             onPressed: () {
               Navigator.push(
                 context,
@@ -262,11 +268,14 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                   applyFilters();
                 });
               },
+              // Bagian search tidak diubah, tetap seperti sebelumnya
+              style: const TextStyle(color: Color.fromARGB(255, 58, 57, 57)),
               decoration: InputDecoration(
                 hintText: "Cari menu apa saja...",
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: const TextStyle(color: Color.fromARGB(179, 83, 81, 81)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF078603),),
                 filled: true,
-                fillColor: Colors.grey[200],
+                fillColor: const Color.fromARGB(255, 254, 255, 254),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,

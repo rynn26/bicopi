@@ -43,7 +43,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
       // Kategorisasi menu
       for (var item in data) {
         final String itemName = item['nama_menu'];
-        final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+        final int price = _parsePrice(item['harga_menu']);
         final String category = item['kategori'] ?? '';
 
         if (category == 'makanan') {
@@ -57,6 +57,17 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
         }
       }
     });
+  }
+
+  int _parsePrice(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      final cleaned = value.replaceAll('.', '').replaceAll(',', '');
+      return int.tryParse(cleaned) ?? 0;
+    }
+    return 0;
   }
 
   Future<void> _loadCartFromDatabase() async {
@@ -127,7 +138,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
 
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     final String itemName = item['nama_menu'];
-    final int price = int.tryParse(item['harga_menu'].toString()) ?? 0;
+    final int price = _parsePrice(item['harga_menu']);
     final int quantity = cartQuantities[itemName] ?? 0;
 
     showModalBottomSheet(
@@ -152,8 +163,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                 ),
               ),
             ).then((_) {
-              // Reload cart data when returning from CartPage
-              _loadCartFromDatabase();
+              _loadCartFromDatabase(); // Reload cart data
             });
           },
           behavior: HitTestBehavior.opaque,
@@ -224,7 +234,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
               itemBuilder: (context, index) {
                 final item = menuItems[index];
                 final itemName = item['nama_menu'];
-                final harga = int.tryParse(item['harga_menu'].toString()) ?? 0;
+                final harga = _parsePrice(item['harga_menu']);
                 final quantity = cartQuantities[itemName] ?? 0;
 
                 return Card(

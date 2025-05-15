@@ -95,6 +95,28 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
     }
   }
 
+  void _increaseQuantity(String itemName, int price) {
+    setState(() {
+      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+    });
+    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+  }
+
+  void _decreaseQuantity(String itemName, int price) {
+    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
+
+    setState(() {
+      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
+    });
+
+    if (cartQuantities[itemName]! > 0) {
+      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
+    } else {
+      cartQuantities.remove(itemName);
+      _updateCartInDatabase(itemName, 0, price);
+    }
+  }
+
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     int quantity = cartQuantities[item["nama_menu"]] ?? 0;
     int price = item["harga_menu"];
@@ -105,7 +127,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
-      builder: (_) {
+      builder: (BuildContext context) {
         return GestureDetector(
           onTap: () {
             Navigator.pop(context);
@@ -124,7 +146,6 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                 ),
               ),
             ).then((_) {
-              // Reload cart data when returning from CartPage
               _loadCartFromDatabase();
             });
           },
@@ -149,9 +170,8 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              quantity > 0 ? "Jumlah Pesanan: $quantity" : "0 Pesanan",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 10),
+                              "Jumlah Pesanan: $quantity",
+                              style: const TextStyle(color: Colors.white, fontSize: 10),
                             ),
                             Text(
                               item["nama_menu"],
@@ -182,28 +202,6 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
         );
       },
     );
-  }
-
-  void _increaseQuantity(String itemName, int price) {
-    setState(() {
-      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
-    });
-    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
-  }
-
-  void _decreaseQuantity(String itemName, int price) {
-    if (cartQuantities[itemName] == null || cartQuantities[itemName]! <= 0) return;
-
-    setState(() {
-      cartQuantities[itemName] = cartQuantities[itemName]! - 1;
-    });
-
-    if (cartQuantities[itemName]! > 0) {
-      _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
-    } else {
-      cartQuantities.remove(itemName);
-      _updateCartInDatabase(itemName, 0, price);
-    }
   }
 
   @override
@@ -276,96 +274,104 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Stack(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Stack(
+                            children: [
+                              Column(
                                 children: [
-                                  Column(
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          item["foto_menu"] ?? '',
-                                          width: 80,
-                                          height: 80,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Image.asset(
-                                            'assets/no_image.png',
-                                            width: 80,
-                                            height: 80,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 5),
-                                      ElevatedButton(
-                                        onPressed: () =>
-                                            _showAddToCartDialog(context, item),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
+                                      Column(
+                                        children: [
+                                          ClipRRect(
                                             borderRadius: BorderRadius.circular(8),
-                                            side: const BorderSide(color: Color(0xFF078603)),
+                                            child: Image.network(
+                                              item["foto_menu"] ?? '',
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) =>
+                                                  Image.asset(
+                                                'assets/no_image.png',
+                                                width: 80,
+                                                height: 80,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                        child: const Text(
-                                          "Tambah",
-                                          style: TextStyle(color: Color(0xFF078603)),
+                                          const SizedBox(height: 5),
+                                          ElevatedButton(
+                                            onPressed: () => _showAddToCartDialog(context, item),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                side: const BorderSide(color: Color(0xFF078603)),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              "Tambah",
+                                              style: TextStyle(color: Color(0xFF078603)),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove_circle_outline,
+                                                    color: Colors.red),
+                                                onPressed: () =>
+                                                    _decreaseQuantity(item["nama_menu"], harga),
+                                              ),
+                                              Text('$quantity'),
+                                              IconButton(
+                                                icon: const Icon(Icons.add_circle_outline,
+                                                    color: Color(0xFF078603)),
+                                                onPressed: () =>
+                                                    _increaseQuantity(item["nama_menu"], harga),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item["nama_menu"],
+                                              style: const TextStyle(
+                                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(item["deskripsi_menu"] ?? ''),
+                                            const SizedBox(height: 10),
+                                            // Hapus Row harga di sini
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item["nama_menu"],
-                                          style: const TextStyle(
-                                              fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"),
-                                        const SizedBox(height: 10),
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline,
-                                                  color: Colors.red),
-                                              onPressed: () =>
-                                                  _decreaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                            Text('$quantity'),
-                                            IconButton(
-                                              icon: const Icon(Icons.add_circle_outline,
-                                                  color: Color(0xFF078603)),
-                                              onPressed: () =>
-                                                  _increaseQuantity(item["nama_menu"], harga),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ],
                               ),
-                            ),
-                            Positioned(
-                              bottom: 8,
-                              right: 12,
-                              child: Text(
-                                "Rp $harga",
-                                style: const TextStyle(
+                              // Harga di pojok kanan bawah
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Text(
+                                  "Rp $harga",
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black),
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },
