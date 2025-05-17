@@ -166,47 +166,91 @@ class _CartPageState extends State<CartPage> {
       print('Error saat menyimpan ke Supabase: $e');
     }
   }
-void _checkout(BuildContext context) async {
-  final shouldProceed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Konfirmasi Checkout"),
-      content:
-          const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text("Batal"),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text("Lanjutkan"),
-        ),
-      ],
-    ),
-  );
+Future<String?> _fetchMemberIdFromProfiles() async {
+  final supabase = Supabase.instance.client;
+  final userId = supabase.auth.currentUser?.id;
+  print("Mencoba mendapatkan member ID untuk user: $userId"); // Tambahkan ini
+  if (userId == null) {
+    print("User ID null, mengembalikan null"); // Tambahkan ini
+    return null;
+  }
+  try {
+    final response = await supabase
+        .from('profil')
+        .select('id_user')
+        .eq('id_user', userId)
+        .single();
 
-  if (shouldProceed == true) {
-    setState(() => isLoading = true);
-    try {
-      await _saveCartToSupabase();
-      final totalPrice = _calculateTotalPrice(); // Hitung total harga
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) => PaymentPage(totalPrice: totalPrice)), // Kirim totalPrice
-      );
-    } catch (e) {
-      print("Error saat checkout: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal melakukan checkout.")),
-      );
-    } finally {
-      setState(() => isLoading = false);
+    print("Respon dari Supabase: $response"); // Tambahkan ini
+    if (response == null) {
+      print("Respon null, mengembalikan null"); // Tambahkan ini
+      return null;
     }
+    final memberId = response['id_user'] as String?;
+    print("Member ID ditemukan: $memberId"); // Tambahkan ini
+    return memberId;
+  } catch (e) {
+    print('Error fetching member ID: $e'); // Pastikan ini ada
+    return null;
   }
 }
+void _checkout(BuildContext context) async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi Checkout"),
+        content:
+            const Text("Apakah Anda yakin ingin melanjutkan ke pembayaran?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Lanjutkan"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldProceed == true) {
+      setState(() => isLoading = true);
+      print("Checkout dimulai"); // Tambahkan ini
+      try {
+        print("Mencoba menyimpan keranjang"); // Tambahkan ini
+        await _saveCartToSupabase();
+        print("Keranjang berhasil disimpan"); // Tambahkan ini
+        final totalPrice = _calculateTotalPrice();
+        print("Total harga: $totalPrice"); // Tambahkan ini
+        if (!mounted) {
+          print("Widget tidak lagi mounted, membatalkan navigasi"); // Tambahkan ini
+          return;
+        }
+        print("Navigasi ke PaymentPage"); // Tambahkan ini
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentPage(
+              totalPrice: totalPrice,
+              getMemberId: _fetchMemberIdFromProfiles,
+            ),
+          ),
+        );
+        print("Navigasi selesai"); // Tambahkan ini
+      } catch (e) {
+        print("Error saat checkout: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal melakukan checkout.")),
+        );
+      } finally {
+        setState(() => isLoading = false);
+        print("Checkout selesai (loading diatur ke false)"); // Tambahkan ini
+      }
+    } else {
+      print("Pengguna membatalkan checkout"); // Tambahkan ini
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
