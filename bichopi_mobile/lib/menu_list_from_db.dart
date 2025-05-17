@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cart_halaman.dart';
 
 class MenuListFromDB extends StatefulWidget {
-  const MenuListFromDB({Key? key, required Function(String p1) addItemToCart, required int categoryId}) : super(key: key);
+  final int categoryId;
+
+  const MenuListFromDB({
+    Key? key,
+    required this.categoryId, required Function(String p1) addItemToCart,
+  }) : super(key: key);
 
   @override
   State<MenuListFromDB> createState() => _MenuListFromDBState();
@@ -17,11 +23,13 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
   Map<String, int> menuSnack = {};
   Map<String, int> menuPaket = {};
 
+  final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
   @override
   void initState() {
     super.initState();
-    fetchMenuData(); // Panggil data saat inisialisasi
-    _loadCartFromDatabase(); // Sinkronisasi keranjang dengan tampilan awal
+    fetchMenuData();
+    _loadCartFromDatabase();
   }
 
   Future<void> fetchMenuData() async {
@@ -29,7 +37,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     final response = await supabase
         .from('menu')
         .select()
-        .eq('id_kategori_menu', 5) // Ambil data hanya dari kategori ID 5
+        .eq('id_kategori_menu', widget.categoryId)
         .execute();
 
     if (response.error != null) {
@@ -37,10 +45,9 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     }
 
     final data = List<Map<String, dynamic>>.from(response.data);
+    if (!mounted) return;
     setState(() {
       menuItems = data;
-
-      // Kategorisasi menu
       for (var item in data) {
         final String itemName = item['nama_menu'];
         final int price = _parsePrice(item['harga_menu']);
@@ -82,6 +89,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
 
     if (response.error == null) {
       final data = List<Map<String, dynamic>>.from(response.data);
+      if (!mounted) return;
       setState(() {
         for (var item in data) {
           cartQuantities[item['item_name']] = item['quantity'] as int;
@@ -163,7 +171,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                 ),
               ),
             ).then((_) {
-              _loadCartFromDatabase(); // Reload cart data
+              _loadCartFromDatabase();
             });
           },
           behavior: HitTestBehavior.opaque,
@@ -203,7 +211,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                       ],
                     ),
                     Text(
-                      "Rp ${price * quantity}",
+                      formatter.format(price * quantity),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -223,116 +231,118 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
 
   @override
   Widget build(BuildContext context) {
-    return menuItems.isEmpty
-        ? const Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: menuItems.length,
-              itemBuilder: (context, index) {
-                final item = menuItems[index];
-                final itemName = item['nama_menu'];
-                final harga = _parsePrice(item['harga_menu']);
-                final quantity = cartQuantities[itemName] ?? 0;
+    if (menuItems.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: menuItems.length,
+        itemBuilder: (context, index) {
+          final item = menuItems[index];
+          final itemName = item['nama_menu'];
+          final harga = _parsePrice(item['harga_menu']);
+          final quantity = cartQuantities[itemName] ?? 0;
+
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          item['foto_menu'] ?? '',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, size: 80),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 80,
+                        child: OutlinedButton(
+                          onPressed: () => _showAddToCartDialog(context, item),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            side: const BorderSide(color: Colors.green),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                          ),
+                          child: const Text(
+                            "Tambah",
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                            onPressed: () => _decreaseQuantity(itemName, harga),
+                          ),
+                          Text('$quantity'),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                            onPressed: () => _increaseQuantity(itemName, harga),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  color: const Color.fromARGB(255, 255, 255, 255),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                item['foto_menu'] ?? '',
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image, size: 80),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: 80,
-                              child: OutlinedButton(
-                                onPressed: () => _showAddToCartDialog(context, item),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.green,
-                                  side: const BorderSide(color: Colors.green),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                ),
-                                child: const Text(
-                                  "Tambah",
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                                  onPressed: () => _decreaseQuantity(itemName, harga),
-                                ),
-                                Text('$quantity'),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                                  onPressed: () => _increaseQuantity(itemName, harga),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                itemName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              Text(
-                                item['deskripsi_menu'] ?? '',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade800,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          itemName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
                           ),
                         ),
                         Text(
-                          "Rp $harga",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                          item['deskripsi_menu'] ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
+                  Text(
+                    formatter.format(harga),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
+        },
+      ),
+    );
   }
 }
 

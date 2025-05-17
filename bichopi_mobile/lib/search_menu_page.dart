@@ -48,7 +48,9 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
           "nama_menu": item["nama_menu"],
           "foto_menu": item["foto_menu"],
           "deskripsi_menu": item["deskripsi_menu"],
-          "harga_menu": (item["harga_menu"] ?? 0).toInt(),
+          "harga_menu": (item["harga_menu"] is int)
+              ? item["harga_menu"]
+              : (item["harga_menu"] as num?)?.toInt() ?? 0,
           "id_kategori_menu": item["id_kategori_menu"],
         };
       }).toList();
@@ -103,15 +105,14 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
 
     if (searchQuery.isNotEmpty) {
       items = items.where((item) =>
-        item["nama_menu"]
-            .toString()
-            .toLowerCase()
-            .contains(searchQuery.toLowerCase()) ||
-        item["deskripsi_menu"]
-            .toString()
-            .toLowerCase()
-            .contains(searchQuery.toLowerCase())
-      ).toList();
+          item["nama_menu"]
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
+          item["deskripsi_menu"]
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase())).toList();
     }
 
     if (selectedSort == 'Termurah') {
@@ -135,6 +136,14 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     _showAddToCartDialog(context, item);
   }
 
+  Map<String, int> getItemsByCategory(int kategoriId) {
+    return {
+      for (var item in filteredMenuItems)
+        if (item['id_kategori_menu'] == kategoriId)
+          item['nama_menu']: item['harga_menu']
+    };
+  }
+
   void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
     int quantity = cartQuantities[item["nama_menu"]] ?? 1;
     int price = item["harga_menu"];
@@ -154,12 +163,9 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
               MaterialPageRoute(
                 builder: (context) => CartPage(
                   cartItems: cartQuantities,
-                  menu_makanan: {},
-                  menu_minuman: {
-                    for (var item in filteredMenuItems)
-                      item["nama_menu"]: item["harga_menu"]
-                  },
-                  menu_snack: {},
+                  menu_makanan: getItemsByCategory(2),
+                  menu_minuman: getItemsByCategory(1),
+                  menu_snack: getItemsByCategory(3),
                   menu_paket: {},
                 ),
               ),
@@ -232,7 +238,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
         ),
         title: const Text(
           "Cari Menu",
-          style: TextStyle(color: Colors.white), // Teks putih
+          style: TextStyle(color: Colors.white),
         ),
         actions: [
           IconButton(
@@ -243,12 +249,9 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                 MaterialPageRoute(
                   builder: (context) => CartPage(
                     cartItems: cartQuantities,
-                    menu_makanan: {},
-                    menu_minuman: {
-                      for (var item in filteredMenuItems)
-                        item["nama_menu"]: item["harga_menu"]
-                    },
-                    menu_snack: {},
+                    menu_makanan: getItemsByCategory(2),
+                    menu_minuman: getItemsByCategory(1),
+                    menu_snack: getItemsByCategory(3),
                     menu_paket: {},
                   ),
                 ),
@@ -268,12 +271,12 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                   applyFilters();
                 });
               },
-              // Bagian search tidak diubah, tetap seperti sebelumnya
               style: const TextStyle(color: Color.fromARGB(255, 58, 57, 57)),
               decoration: InputDecoration(
                 hintText: "Cari menu apa saja...",
-                hintStyle: const TextStyle(color: Color.fromARGB(179, 83, 81, 81)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF078603),),
+                hintStyle: const TextStyle(
+                    color: Color.fromARGB(179, 83, 81, 81)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF078603)),
                 filled: true,
                 fillColor: const Color.fromARGB(255, 254, 255, 254),
                 border: OutlineInputBorder(
@@ -386,10 +389,12 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                             ),
                           ),
                           title: Text(item["nama_menu"] ?? "-"),
-                          subtitle: Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"),
+                          subtitle: Text(item["deskripsi_menu"] ??
+                              "Tidak ada deskripsi"),
                           trailing: Text(
                             "Rp ${item["harga_menu"]}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           onTap: () => addToCart(item),
                         ),
