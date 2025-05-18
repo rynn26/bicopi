@@ -76,7 +76,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.20:3000/create-transaction'), // Ganti dengan URL server Anda
+        Uri.parse('http://172.16.1.177:3000/create-transaction'), // Ganti dengan URL server Anda
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'order_id': 'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString(),
