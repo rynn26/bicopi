@@ -73,35 +73,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // 2. Validate referral code if present
       if (referralCode.isNotEmpty) {
-        try {
-          final referralMatch = await Supabase.instance.client
-              .from('affiliates')
-              .select('id')
-              .eq('referral_code', referralCode)
-              .maybeSingle();
+  try {
+    final referralMatch = await Supabase.instance.client
+        .from('affiliates')
+        .select('id_user, referral_code')
+        .ilike('referral_code', referralCode.trim())
+        .maybeSingle();
 
-          if (referralMatch != null) {
-            idUserLevel = 4; // Affiliate
-            userPoints = 0;
-            referralBonus = 10;
-            referralOwnerId = (referralMatch['id'] as String).trim();
-            hasReferral = true;
-            print('referralOwnerId setelah trim: $referralOwnerId');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Kode referal tidak valid')),
-            );
-            return;
-          }
-        } catch (e) {
-          print('Error saat memvalidasi kode referal: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Terjadi kesalahan saat memvalidasi kode referal.')),
-          );
-          return;
-        }
-      }
+    if (referralMatch != null && referralMatch['id_user'] != null) {
+      idUserLevel = 4; // Affiliate
+      userPoints = 0;
+      referralBonus = 10;
+      referralOwnerId = referralMatch['id_user'].toString().trim(); // aman
+      hasReferral = true;
+      print('referralOwnerId setelah trim: $referralOwnerId');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kode referal tidak valid')),
+      );
+      return;
+    }
+         } catch (e) {
+    print('Error saat memvalidasi kode referal: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Terjadi kesalahan saat memvalidasi kode referal.')),
+    );
+    return;
+  }
+}
       // 3. Insert into 'users' table
       await Supabase.instance.client.from('users').insert({
         'id_user': user.id,
@@ -111,6 +111,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'id_user_level': idUserLevel,
         'created_at': DateTime.now().toIso8601String(),
       });
+
+      if (!hasReferral) {
+      await Supabase.instance.client.from('members').insert({
+      'id_user': user.id,
+      'affiliate_id': null,
+      'total_points': userPoints,
+     'joined_at': DateTime.now().toIso8601String(),
+     });
+    }
 
       // 4. Insert user points log
       await Supabase.instance.client.from('member_points_log').insert({
