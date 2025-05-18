@@ -109,7 +109,7 @@ flutter:
     - assets/sempol.png
     - assets/pisang_kipas.png
     - assets/tahu.png
-    - assets/paketramadhan.jpg
+    - assets/paketramadhan.png
     - assets/paketb.jpg
     - assets/bicopi.jpg
     - assets/animasi.json
@@ -126,10 +126,12 @@ flutter:
 
 
 
+
     - assets/icon_miee.png
     - assets/icon_minuman1.png
     - assets/icon_snack1.png
     - assets/icon_paket1.png
+    - assets/pakethebat.png
 
 
 

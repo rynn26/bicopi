@@ -578,9 +578,9 @@ Widget _buildTopBar(BuildContext context) {
 
 Widget _buildCarousel() {
   final List<String> imageList = [
-    "assets/paketramadhan.jpg",
-    "assets/paketb.jpg",
-    "assets/bicopi.jpg",
+    "assets/paketramadhan.png",
+    "assets/pakethebat.png",
+    
   ];
 
   return Padding(
