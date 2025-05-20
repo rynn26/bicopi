@@ -7,12 +7,16 @@ import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+// Global formatter for currency
 final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
+// --- PaymentPage Class ---
 class PaymentPage extends StatefulWidget {
   final int totalPrice;
   final Future<String?> Function() getMemberId;
-  const PaymentPage({super.key, required this.totalPrice, required this.getMemberId});
+
+  const PaymentPage(
+      {super.key, required this.totalPrice, required this.getMemberId});
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
@@ -29,7 +33,7 @@ class _PaymentPageState extends State<PaymentPage> {
   @override
   void initState() {
     super.initState();
-    print("PaymentPage initState() dipanggil");
+    print("PaymentPage initState() called");
     _fetchMemberId();
   }
 
@@ -37,172 +41,317 @@ class _PaymentPageState extends State<PaymentPage> {
     setState(() {
       _isMemberIdLoading = true;
     });
-    print("PaymentPage memanggil getMemberId()");
+    print("PaymentPage calling getMemberId()");
     _memberId = await widget.getMemberId();
     setState(() {
       _isMemberIdLoading = false;
     });
-    print("PaymentPage menerima memberId: $_memberId");
+    print("PaymentPage received memberId: $_memberId");
     if (_memberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal mendapatkan ID pengguna.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal mendapatkan ID pengguna.')),
+        );
+      }
     }
   }
 
   Future<void> createTransaction() async {
     if (_memberId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ID pengguna belum tersedia.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID Pengguna tidak tersedia.')),
+        );
+      }
       return;
     }
 
-    String name = _nameController.text;
-    String tableNumber = _tableNumberController.text;
+    String name = _nameController.text.trim();
+    String tableNumber = _tableNumberController.text.trim();
     int totalPrice = widget.totalPrice;
 
     if (name.isEmpty || tableNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Harap isi semua kolom'),
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Silakan isi semua kolom'),
+        ));
+      }
       return;
     }
 
     setState(() {
       _isLoading = true;
     });
-    print("PaymentPage memulai createTransaction()");
+    print("PaymentPage starting createTransaction()");
 
-    try {
-      final response = await http.post(
-        Uri.parse('http://172.16.1.177:3000/create-transaction'), // Ganti dengan URL server Anda
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'order_id': 'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString(),
-          'gross_amount': totalPrice,
-          'first_name': name,
-          'email': 'example@mail.com', // Ganti dengan data pengguna
-          'phone': '08123456789', // Ganti dengan data pengguna
-        }),
-      );
-      print("PaymentPage menerima response dari createTransaction(): ${response.statusCode} - ${response.body}");
-
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        String snapToken = data['snapToken'];
-        print("PaymentPage menerima snapToken: $snapToken");
-
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MidtransWebViewPage(snapToken: snapToken),
-          ),
+    if (!isCashSelected) {
+      try {
+        final response = await http.post(
+          Uri.parse(
+              'http://172.14.2.85:3000/create-transaction'), // Replace with your server URL
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'order_id':
+                'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString(),
+            'gross_amount': totalPrice,
+            'first_name': name,
+            'email': 'example@mail.com', // Replace with user data
+            'phone': '08123456789', // Replace with user data
+          }),
         );
-        print("PaymentPage menerima hasil dari MidtransWebViewPage: $result");
+        print(
+            "PaymentPage received response from createTransaction(): ${response.statusCode} - ${response.body}");
 
-        if (result == true) {
-          Navigator.pushReplacement(
+        if (response.statusCode == 200) {
+          var data = jsonDecode(response.body);
+          String snapToken = data['snapToken'];
+          print("PaymentPage received snapToken: $snapToken");
+
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PaymentSuccessPage(memberId: _memberId!, totalPrice: widget.totalPrice),
+              builder: (context) => MidtransWebViewPage(snapToken: snapToken),
             ),
           );
-          print("PaymentPage navigasi ke PaymentSuccessPage");
-        } else if (result == false) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pembayaran Gagal!'),
-              duration: Duration(seconds: 3),
-            ),
-          );
+          print(
+              "PaymentPage received result from MidtransWebViewPage: $result");
+
+          if (result == true) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PaymentSuccessPage(
+                    memberId: _memberId!,
+                    totalPrice: widget.totalPrice,
+                    namaPelanggan: name,
+                    nomorMeja: tableNumber,
+                  ),
+                ),
+              );
+            }
+            print("PaymentPage navigating to PaymentSuccessPage");
+          } else if (result == false) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Pembayaran Gagal!'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }
+        } else {
+          throw Exception('Gagal membuat transaksi: ${response.body}');
         }
-      } else {
-        throw Exception('Gagal membuat transaksi: ${response.body}');
+      } catch (error) {
+        print("PaymentPage error during createTransaction(): $error");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Terjadi kesalahan: $error'),
+          ));
+        }
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+        print("PaymentPage createTransaction() finished");
       }
-    } catch (error) {
-      print("PaymentPage error saat createTransaction(): $error");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Terjadi kesalahan: $error'),
-      ));
-    } finally {
+    } else {
+      // If Cash payment, directly go to PaymentSuccessPage
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentSuccessPage(
+              memberId: _memberId!,
+              totalPrice: widget.totalPrice,
+              namaPelanggan: name,
+              nomorMeja: tableNumber,
+            ),
+          ),
+        );
+      }
       setState(() {
         _isLoading = false;
       });
-      print("PaymentPage createTransaction() selesai");
+      print(
+          "PaymentPage directly navigating to PaymentSuccessPage for Cash payment");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print("PaymentPage build() dipanggil");
+    print("PaymentPage build() called");
     return Scaffold(
+      backgroundColor: Colors.grey[50], // Background yang lebih lembut
       appBar: AppBar(
-        title: const Text('Pembayaran'),
+        title: const Text(
+          'Pembayaran',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w600, // Lebih tebal
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+        elevation: 1, // Sedikit shadow
+        iconTheme: const IconThemeData(color: Colors.black87),
+        shape: const RoundedRectangleBorder(
+          // Sudut membulat
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
       body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                const Text('Masukan Data',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Pemesan',
-                    border: OutlineInputBorder(),
+          // Wrap the Padding with SingleChildScrollView to prevent overflow
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Masukkan Detail',
+                    style: TextStyle(
+                      fontSize: 20, // Ukuran font lebih besar
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800, // Warna teks lebih gelap
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _tableNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nomor Meja',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: 15),
+                  _buildTextField(
+                      _nameController, 'Nama Pelanggan', Icons.person),
+                  const SizedBox(height: 15),
+                  _buildTextField(
+                      _tableNumberController, 'Nomor Meja', Icons.table_chart),
+                  const SizedBox(height: 30),
+                  Text(
+                    'Metode Pembayaran',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                const Text('Metode Pembayaran',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                _buildPaymentOption('Cash', 'assets/icon_cash.png', true),
-                _buildPaymentOption('QRIS', 'assets/icon_qris.png', false),
-                const Spacer(),
-                Text(
-                  'Total Pembayaran: ${formatter.format(widget.totalPrice)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 15),
+                  _buildPaymentOption('Tunai', 'assets/icon_cash.png', true),
+                  const SizedBox(height: 10),
+                  _buildPaymentOption('QRIS', 'assets/icon_qris.png', false),
+                  // Removed Spacer here as SingleChildScrollView handles the overflow
+                  // Add a SizedBox for consistent spacing before the total
+                  const SizedBox(height: 30),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Pembayaran:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600, // Lebih tebal
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          formatter.format(widget.totalPrice),
+                          style: const TextStyle(
+                            fontSize: 22, // Ukuran font lebih besar
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isLoading || _isMemberIdLoading ? null : createTransaction,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading || _isMemberIdLoading
+                          ? null
+                          : createTransaction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        elevation: 2, // Sedikit shadow
+                        textStyle: const TextStyle(
+                          // Style teks
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Text(
+                        _isLoading || _isMemberIdLoading
+                            ? 'Memproses...'
+                            : 'Bayar Sekarang',
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    _isLoading || _isMemberIdLoading ? 'Memproses...' : 'Bayar Sekarang',
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                )
-              ],
+                  const SizedBox(height: 20), // Added bottom space
+                ],
+              ),
             ),
           ),
-          if (_isLoading || _isMemberIdLoading) const Center(child: CircularProgressIndicator()),
+          if (_isLoading || _isMemberIdLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller, String labelText, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white, // Warna latar belakang putih
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2), // Shadow lebih halus
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+          prefixIcon: Icon(icon, color: Colors.green.shade700),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.green, width: 2),
+          ),
+        ),
       ),
     );
   }
@@ -214,25 +363,48 @@ class _PaymentPageState extends State<PaymentPage> {
           isCashSelected = isCash;
         });
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(vertical: 5),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
+          color: isCashSelected == isCash ? Colors.green.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: isCashSelected == isCash ? Colors.green : Colors.grey),
-          borderRadius: BorderRadius.circular(8),
+              color: isCashSelected == isCash
+                  ? Colors.green
+                  : Colors.grey.shade300,
+              width: isCashSelected == isCash ? 2 : 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2), // Shadow lebih halus
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Image.asset(iconPath, width: 24, height: 24),
-            const SizedBox(width: 10),
-            Text(title),
+            Image.asset(iconPath, width: 30, height: 30),
+            const SizedBox(width: 15),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600, // Lebih tebal
+                color: Colors.black87,
+              ),
+            ),
             const Spacer(),
             Icon(
               isCashSelected == isCash
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_off,
-              color: isCashSelected == isCash ? Colors.green : Colors.grey,
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked,
+              color: isCashSelected == isCash
+                  ? Colors.green
+                  : Colors.grey.shade400,
+              size: 24,
             )
           ],
         ),
@@ -241,6 +413,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 }
 
+// --- MidtransWebViewPage Class ---
 class MidtransWebViewPage extends StatefulWidget {
   final String snapToken;
   const MidtransWebViewPage({super.key, required this.snapToken});
@@ -255,7 +428,8 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
   @override
   void initState() {
     super.initState();
-    print("MidtransWebViewPage initState() dipanggil dengan snapToken: ${widget.snapToken}");
+    print(
+        "MidtransWebViewPage initState() called with snapToken: ${widget.snapToken}");
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -265,11 +439,15 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
             print('MidtransWebViewPage URL Loaded: $url');
 
             if (url.contains('finish') || url.contains('success')) {
-              print('MidtransWebViewPage: Pembayaran selesai atau sukses');
-              Navigator.of(context).pop(true);
+              print('MidtransWebViewPage: Payment finished or succeeded');
+              if (mounted) {
+                Navigator.of(context).pop(true);
+              }
             } else if (url.contains('error') || url.contains('failed')) {
-              print('MidtransWebViewPage: Pembayaran error atau gagal');
-              Navigator.of(context).pop(false);
+              print('MidtransWebViewPage: Payment error or failed');
+              if (mounted) {
+                Navigator.of(context).pop(false);
+              }
             }
           },
         ),
@@ -280,18 +458,40 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    print("MidtransWebViewPage build() dipanggil");
+    print("MidtransWebViewPage build() called");
     return Scaffold(
-      appBar: AppBar(title: const Text("Pembayaran")),
+      appBar: AppBar(
+        title: const Text(
+          "Pembayaran",
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
       body: WebViewWidget(controller: _controller),
     );
   }
 }
 
+// --- PaymentSuccessPage Class ---
 class PaymentSuccessPage extends StatefulWidget {
   final String memberId;
   final int totalPrice;
-  const PaymentSuccessPage({super.key, required this.memberId, required this.totalPrice});
+  final String namaPelanggan;
+  final String nomorMeja;
+
+  const PaymentSuccessPage({
+    super.key,
+    required this.memberId,
+    required this.totalPrice,
+    required this.namaPelanggan,
+    required this.nomorMeja,
+  });
 
   @override
   State<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
@@ -301,28 +501,161 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _isAddingPoints = false;
+  bool _isProcessingOrder = false;
 
   @override
   void initState() {
     super.initState();
-    print("PaymentSuccessPage initState() dipanggil dengan memberId: ${widget.memberId}, totalPrice: ${widget.totalPrice}");
+    print(
+        "PaymentSuccessPage initState() called with memberId: ${widget.memberId}, totalPrice: ${widget.totalPrice}, name: ${widget.namaPelanggan}, table: ${widget.nomorMeja}");
     _controller = AnimationController(vsync: this);
 
-    _controller.addStatusListener((status) {
+    _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed) {
-        _addPointsToMember();
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            print("PaymentSuccessPage: Kembali ke beranda");
-          }
-        });
+        await _processOrderAndPoints();
       }
     });
   }
 
+  Future<List<Map<String, dynamic>>?> _fetchCartItems() async {
+    try {
+      final supabase = Supabase.instance.client;
+      print(
+          'PaymentSuccessPage: Fetching cart items for user ID: ${widget.memberId}');
+      final response = await supabase
+          .from('keranjang') // Replace with your cart table name
+          .select()
+          .eq('user_id',
+              widget.memberId); // Using 'user_id' as per table structure
+      print('PaymentSuccessPage: Fetch cart items response: $response');
+      if (response is List) {
+        print('PaymentSuccessPage: Found ${response.length} items in cart.');
+        return response.cast<Map<String, dynamic>>();
+      } else {
+        print(
+            'PaymentSuccessPage: No cart items found or response is not a List.');
+        return null;
+      }
+    } catch (error) {
+      print('PaymentSuccessPage: Error fetching cart items: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengambil item keranjang: $error')),
+        );
+      }
+      return null;
+    }
+  }
+
+  Future<void> _processOrderAndPoints() async {
+    setState(() {
+      _isProcessingOrder = true;
+    });
+    final cartItems = await _fetchCartItems();
+    if (cartItems != null && cartItems.isNotEmpty) {
+      await _saveOrderHistory(cartItems);
+      await _clearShoppingCart();
+    } else {
+      print('PaymentSuccessPage: No items to process in cart.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak ada item di keranjang.')),
+        );
+      }
+    }
+    await _addPointsToMember(); // Always try to add points after attempting to save the order
+    setState(() {
+      _isProcessingOrder = false;
+    });
+    // Delay navigation so animation completes and message is visible
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        print("PaymentSuccessPage: Returning to home after process completes");
+      }
+    });
+  }
+
+  Future<void> _saveOrderHistory(List<Map<String, dynamic>> cartItems) async {
+    try {
+      final supabase = Supabase.instance.client;
+      const uuid = Uuid();
+      final String orderNo =
+          'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString();
+
+      final response = await supabase.from('orderkasir_history').insert({
+        'order_no': orderNo,
+        'nomor_meja': widget.nomorMeja,
+        'nama_pelanggan': widget.namaPelanggan,
+        'catatan': '', // Can add notes if available
+        'items': cartItems,
+        'total_item': cartItems.length,
+        'total_harga': widget.totalPrice,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select();
+
+      print('PaymentSuccessPage: Save order history response: $response');
+      if (response != null) {
+        print(
+            'PaymentSuccessPage: Successfully saved order to orderkasir_history: $response');
+      } else {
+        print(
+            'PaymentSuccessPage: Failed to save order to orderkasir_history: ${supabase.from('orderkasir_history').select().toString()}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal menyimpan riwayat pesanan.')),
+          );
+        }
+      }
+    } catch (error) {
+      print('PaymentSuccessPage: Error saving order: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Terjadi kesalahan saat menyimpan riwayat pesanan: $error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearShoppingCart() async {
+    try {
+      final supabase = Supabase.instance.client;
+      print(
+          'PaymentSuccessPage: Attempting to clear cart for user ID: ${widget.memberId}');
+      final response = await supabase
+          .from('keranjang')
+          .delete()
+          .eq('user_id', widget.memberId); // Using 'user_id'
+      print('PaymentSuccessPage: Delete cart response: $response');
+      if (response == null) {
+        // Supabase delete returns null on success
+        print('PaymentSuccessPage: Successfully cleared items from cart');
+      } else {
+        // This else block might indicate an actual error based on Supabase client's behavior
+        print(
+            'PaymentSuccessPage: Failed to clear cart: ${response.toString()}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal menghapus keranjang.')),
+          );
+        }
+      }
+    } catch (error) {
+      print('PaymentSuccessPage: Error clearing cart items: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Terjadi kesalahan saat menghapus item keranjang: $error')),
+        );
+      }
+    }
+  }
+
   int _calculatePoints(int totalPrice) {
-    print("PaymentSuccessPage: Poin yang dihitung (DIUBAH KE 10)");
+    print("PaymentSuccessPage: Points calculated (CHANGED TO 10)");
     return 10;
   }
 
@@ -331,47 +664,52 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     setState(() {
       _isAddingPoints = true;
     });
-    print("PaymentSuccessPage: Memulai _addPointsToMember()");
+    print("PaymentSuccessPage: Starting _addPointsToMember()");
     try {
       final supabase = Supabase.instance.client;
-      final int pointsEarned = _calculatePoints(widget.totalPrice); // Sekarang selalu 10
+      final int pointsEarned =
+          _calculatePoints(widget.totalPrice); // Now always 10
       const uuid = Uuid();
       final String orderId = uuid.v4(); // Generate UUID v4
 
-      final response = await supabase
-          .from('member_points_log') // Ganti dengan nama tabel log poin Anda
-          .insert({
+      final response = await supabase.from('member_points_log').insert({
         'member_id': widget.memberId,
         'points_earned': pointsEarned,
-        'description': 'Poin ditambahkan setelah pembayaran berhasil untuk order $orderId',
+        'description':
+            'Points added after successful payment for order $orderId',
         'created_at': DateTime.now().toIso8601String(),
         'order_id': orderId,
       }).select();
 
-      print("PaymentSuccessPage: Response dari insert member_points_log: $response");
+      print(
+          "PaymentSuccessPage: Response from insert member_points_log: $response");
 
       if (response != null) {
-        print('PaymentSuccessPage: Poin ($pointsEarned) berhasil ditambahkan ke log untuk member: ${widget.memberId} (Order ID: $orderId)');
+        print(
+            'PaymentSuccessPage: Points ($pointsEarned) successfully added to log for member: ${widget.memberId} (Order ID: $orderId)');
       } else {
-        print('PaymentSuccessPage: Gagal menambahkan poin ke log: ${response?.error?.message}');
+        print(
+            'PaymentSuccessPage: Failed to add points to log: ${supabase.from('member_points_log').select().toString()}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menambahkan poin: ${response?.error?.message}')),
+            const SnackBar(content: Text('Gagal menambahkan poin.')),
           );
         }
       }
     } catch (error) {
-      print('PaymentSuccessPage: Terjadi kesalahan saat menambahkan poin: $error');
+      print(
+          'PaymentSuccessPage: An error occurred while adding points: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan saat menambahkan poin: $error')),
+          SnackBar(
+              content: Text('Terjadi kesalahan saat menambahkan poin: $error')),
         );
       }
     } finally {
       setState(() {
         _isAddingPoints = false;
       });
-      print("PaymentSuccessPage: _addPointsToMember() selesai");
+      print("PaymentSuccessPage: _addPointsToMember() finished");
     }
   }
 
@@ -383,7 +721,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
   @override
   Widget build(BuildContext context) {
-    print("PaymentSuccessPage build() dipanggil");
+    print("PaymentSuccessPage build() called");
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -398,27 +736,67 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   ..duration = composition.duration
                   ..forward();
               },
-              width: 200,
-              height: 200,
+              width: 250,
+              height: 250,
               repeat: false,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             const Text(
               'Pembayaran Berhasil!',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-                print("PaymentSuccessPage: Tombol Kembali ke Beranda ditekan");
-              },
-              child: const Text('Kembali ke Beranda'),
-            )
+            const SizedBox(height: 10),
+            Text(
+              'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey.shade700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            _isProcessingOrder
+                ? const Column(
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Memproses pesanan...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  )
+                : ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      print("PaymentSuccessPage: Back to Home button pressed");
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 3,
+                    ),
+                    child: const Text(
+                      'Kembali ke Beranda',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
           ],
         ),
       ),

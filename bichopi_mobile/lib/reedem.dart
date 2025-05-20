@@ -30,43 +30,44 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   // Fungsi untuk mengambil poin dari Supabase
-  Future<void> fetchCurrentPoints() async {
-    try {
-      final supabase = Supabase.instance.client;
+ Future<void> fetchCurrentPoints() async {
+  try {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        throw Exception("User belum login.");
-      }
-
-      final response = await supabase
-          .from('member_points_log') // Pastikan nama tabel benar
-          .select('points_earned') // Kolom poin yang ingin diambil
-          .eq('member_id', user.id); // Ganti 'member_id' dengan kolom yang sesuai
-
-      if (response == null || response.isEmpty) {
-        throw Exception("Tidak ada data poin.");
-      }
-
-      // Cetak response untuk debugging
-      print("Response: $response");
-
-      int total = 0;
-      for (final row in response) {
-        total += row['points_earned'] as int;   // Pastikan kolom 'points_earned' sesuai
-      }
-
-      setState(() {
-        currentPoints = total;
-        isLoading = false;
-      });
-    } catch (e) {
-      print("Error mengambil poin: $e");
-      setState(() {
-        isLoading = false;
-      });
+    if (user == null) {
+      throw Exception("User belum login.");
     }
+
+    final response = await supabase
+        .from('member_points_log')
+        .select('points_earned')
+        .eq('member_id', user.id);
+
+    if (response == null || response.isEmpty) {
+      throw Exception("Tidak ada data poin.");
+    }
+
+    int total = 0;
+    for (final row in response) {
+      total += row['points_earned'] as int;
+    }
+
+    if (!mounted) return; // Tambahkan ini untuk mencegah error
+
+    setState(() {
+      currentPoints = total;
+      isLoading = false;
+    });
+  } catch (e) {
+    print("Error mengambil poin: $e");
+    if (!mounted) return; // Tambahkan ini juga
+    setState(() {
+      isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

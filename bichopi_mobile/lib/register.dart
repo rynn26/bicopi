@@ -14,29 +14,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController referralCodeController = TextEditingController();
 
   bool isLoading = false;
 
-  // Function to validate email format
-  bool isValidEmail(String email) {
-    final emailRegex =
-        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    return emailRegex.hasMatch(email);
-  }
-
   Future<void> _signUp() async {
-    // Validate email format
-    final email = emailController.text.trim();
-    if (!isValidEmail(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email tidak valid!')),
-      );
-      return;
-    }
-
-    // Check if passwords match
     if (passwordController.text != confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password tidak sama!')),
@@ -48,13 +32,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       isLoading = true;
     });
 
-    final password = passwordController.text;
-
     try {
-      // 1. Try to register the user
       final response = await Supabase.instance.client.auth.signUp(
-        email: email,
-        password: password,
+        email: emailController.text.trim(),
+        password: passwordController.text,
         data: {
           'nama': nameController.text.trim(),
           'phone': phoneController.text.trim(),
@@ -64,93 +45,220 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final user = response.user;
       if (user == null) throw Exception('Gagal mendaftar');
 
+      int newUserLevel = 1; // Default user level
+      String? affiliateId;
       final referralCode = referralCodeController.text.trim();
-      int idUserLevel = 1; // Default Customer
-      int userPoints = 100;
-      int referralBonus = 0;
-      String referralOwnerId = '';
-      bool hasReferral = false;
+      int initialPoints =
+          10; // Poin referral untuk pendaftar saat menggunakan kode
 
-      // 2. Validate referral code if present
       if (referralCode.isNotEmpty) {
-        try {
-          final referralMatch = await Supabase.instance.client
-              .from('affiliates')
-              .select('id')
-              .eq('referral_code', referralCode)
-              .maybeSingle();
+        final referralMatch = await Supabase.instance.client
+            .from('affiliates')
+            .select('id_user')
+            .eq('referral_code', referralCode)
+            .maybeSingle();
 
-          if (referralMatch != null) {
-            idUserLevel = 4; // Affiliate
-            userPoints = 0;
-            referralBonus = 10;
-            referralOwnerId = (referralMatch['id'] as String).trim();
-            hasReferral = true;
-            print('referralOwnerId setelah trim: $referralOwnerId');
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Kode referal tidak valid')),
-            );
-            return;
-          }
-        } catch (e) {
-          print('Error saat memvalidasi kode referal: $e');
+        if (referralMatch != null &&
+            referralMatch.containsKey('id_user') &&
+            referralMatch['id_user'] != null) {
+          affiliateId = referralMatch['id_user'];
+          newUserLevel = 4; // Set user level menjadi 4 jika referral valid
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Terjadi kesalahan saat memvalidasi kode referal.')),
+            const SnackBar(content: Text('Kode referal tidak valid')),
           );
+          setState(() {
+            isLoading = false;
+          });
           return;
         }
+      } else {
+        initialPoints = 100; // Poin awal jika tidak ada kode referral
       }
-      // 3. Insert into 'users' table
-      await Supabase.instance.client.from('users').insert({
-        'id_user': user.id,
-        'username': nameController.text.trim(),
-        'email': email,
-        'phone': phoneController.text.trim(),
-        'id_user_level': idUserLevel,
-        'created_at': DateTime.now().toIso8601String(),
-      });
 
-      // 4. Insert user points log
-      await Supabase.instance.client.from('member_points_log').insert({
-        'member_id': user.id,
-        'order_id': null,
-        'points_earned': userPoints,
-        'description': hasReferral
-            ? 'Pendaftaran dengan referal'
-            : 'Pendaftaran tanpa referal',
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      // 1. Insert data user ke tabel "users" *TERLEBIH DAHULU*
+      try {
+        await Supabase.instance.client.from('users').insert({
+          'id_user': user.id,
+          'username': nameController.text.trim(),
+          'email': emailController.text.trim(),
+          'password': passwordController.text,
+          'phone': phoneController.text.trim(),
+          'id_user_level': newUserLevel, // Menggunakan nilai newUserLevel
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        print(
+            'Berhasil memasukkan data ke tabel "users" dengan ID: ${user.id}');
+        await Future.delayed(const Duration(seconds: 2)); // Jeda lebih lama
+      } catch (usersError) {
+        print('Error saat memasukkan data ke tabel "users": $usersError');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Terjadi kesalahan saat mendaftarkan pengguna.')),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
 
-      // 5. Insert affiliate points log (if referral exists)
-      if (hasReferral && referralBonus > 0) {
-        print('referralOwnerId sebelum insert affiliate_points_log: $referralOwnerId');
+      // 2. Insert data member ke tabel "members" dengan affiliate_id
+      try {
+        double? parsedPhoneNumber;
         try {
-          await Supabase.instance.client
-              .from('affiliate_points_log')
-              .insert({
-            'affiliate_id': referralOwnerId,
-            'member_id': user.id,
-            'order_id': null,
-            'points_earned': referralBonus,
-            'description': 'Bonus referal dari ${nameController.text.trim()}',
+          parsedPhoneNumber = double.tryParse(phoneController.text.trim());
+        } catch (e) {
+          print('Gagal mem-parse nomor telepon: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Format nomor telepon tidak valid.')),
+          );
+          setState(() {
+            isLoading = false;
+          });
+          return;
+        }
+
+        await Supabase.instance.client.from('members').insert({
+          'id': user
+              .id, // Menggunakan user.id sebagai primary key 'id' di tabel 'members'
+          'id_user': user
+              .id, // Tetap simpan id_user untuk referensi ke tabel users (jika diperlukan)
+          'joined_at': DateTime.now().toIso8601String(),
+          'nama_lengkap': nameController.text.trim(),
+          'nomor_telepon': parsedPhoneNumber,
+          'affiliate_id':
+              affiliateId, // Menggunakan affiliateId yang didapatkan
+          'total_points': 0, // Poin awal member (bisa disesuaikan)
+          'kelipatan': 0,
+          'presentase': 0,
+          'created_at': DateTime.now().toIso8601String(),
+        });
+        print(
+            'Berhasil memasukkan data ke tabel "members" dengan id: ${user.id} dan affiliate_id: $affiliateId');
+        await Future.delayed(const Duration(seconds: 1)); // Tambahkan jeda
+      } catch (membersError) {
+        print('Error saat memasukkan data ke tabel "members": $membersError');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Terjadi kesalahan saat membuat profil member.')),
+        );
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
+      // 3. Tambahkan poin referral untuk *pendaftar* jika ada referral
+      if (referralCodeController.text.trim().isNotEmpty &&
+          affiliateId != null) {
+        try {
+          await Supabase.instance.client.from('member_points_log').insert({
+            'member_id': user
+                .id, // Mereferensikan 'id' dari tabel 'members' (yang sama dengan user.id)
+            'points_earned': initialPoints,
+            'description': 'Poin referral dari pendaftaran',
             'created_at': DateTime.now().toIso8601String(),
           });
-        } catch (e) {
-          print('Error saat insert ke affiliate_points_log: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Terjadi kesalahan saat memberikan bonus referal.')),
-          );
+          print('Berhasil menambahkan poin referral untuk pendaftar (log).');
+
+          // Update total poin pendaftar
+          final currentPointsPendaftar = await Supabase.instance.client
+              .from('members')
+              .select('total_points')
+              .eq('id', user.id)
+              .single()
+              .then((data) => data['total_points'] as int? ?? 0);
+          await Supabase.instance.client.from('members').update({
+            'total_points': currentPointsPendaftar + initialPoints
+          }).eq('id', user.id);
+          print('Berhasil memperbarui total poin pendaftar.');
+        } catch (pointsError) {
+          print(
+              'Error saat menambahkan poin referral untuk pendaftar: $pointsError');
+        }
+
+        // 4. Tambahkan poin untuk user yang *memberikan* referral ke tabel 'affiliates'
+        try {
+          print(
+              'Mencari affiliate pemberi referral dengan id_user: $affiliateId');
+          final referrerAffiliate = await Supabase.instance.client
+              .from('affiliates')
+              .select(
+                  'total_points') // Asumsikan ada kolom 'total_points' di tabel 'affiliates'
+              .eq('id_user', affiliateId)
+              .maybeSingle();
+          print(
+              'Hasil pencarian affiliate pemberi referral: $referrerAffiliate');
+
+          const referralPointsPemberi = 90;
+
+          if (referrerAffiliate != null &&
+              referrerAffiliate.containsKey('total_points')) {
+            final currentPointsPemberi =
+                referrerAffiliate['total_points'] as int? ?? 0;
+            await Supabase.instance.client.from('affiliates').update({
+              'total_points': currentPointsPemberi + referralPointsPemberi
+            }).eq('id_user', affiliateId);
+            print(
+                'Berhasil menambahkan poin referral pemberi ke tabel "affiliates".');
+
+            // Optional: Log poin pemberi di member_points_log juga
+            final referrerMember = await Supabase.instance.client
+                .from('members')
+                .select('id')
+                .eq('id_user', affiliateId)
+                .maybeSingle();
+
+            if (referrerMember != null && referrerMember.containsKey('id')) {
+              final referrerMemberId = referrerMember['id'];
+              await Supabase.instance.client.from('member_points_log').insert({
+                'member_id': referrerMemberId,
+                'points_earned': referralPointsPemberi,
+                'description':
+                    'Mendapatkan referral dari pendaftaran ${user.id} (poin tercatat di afiliasi)',
+                'created_at': DateTime.now().toIso8601String(),
+              });
+              print('Berhasil menambahkan log poin untuk pemberi referral.');
+            }
+          } else {
+            print(
+                'Error: ID user pemberi referral tidak ditemukan di tabel "affiliates".');
+          }
+        } catch (pointsError) {
+          print(
+              'Error saat menambahkan poin untuk pemberi referral: $pointsError');
+        }
+      } else {
+        // Tambahkan poin awal untuk pendaftar jika tidak ada referral
+        try {
+          await Supabase.instance.client.from('member_points_log').insert({
+            'member_id': user.id,
+            'points_earned': initialPoints,
+            'description': 'Poin pendaftaran awal',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          print('Berhasil menambahkan poin awal untuk pendaftar (log).');
+
+          final currentPointsPendaftar = await Supabase.instance.client
+              .from('members')
+              .select('total_points')
+              .eq('id', user.id)
+              .single()
+              .then((data) => data['total_points'] as int? ?? 0);
+          await Supabase.instance.client.from('members').update({
+            'total_points': currentPointsPendaftar + initialPoints
+          }).eq('id', user.id);
+          print('Berhasil memperbarui total poin pendaftar.');
+        } catch (pointsError) {
+          print('Error saat menambahkan poin awal: $pointsError');
         }
       }
 
-      // 6. Successful registration
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Pendaftaran berhasil! Silakan verifikasi email Anda.')),
+          content: Text(
+              'Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.'),
+        ),
       );
 
       await Future.delayed(const Duration(seconds: 2));
@@ -159,20 +267,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
         MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
       );
     } on AuthException catch (error) {
-      print('AuthException caught: ${error.message}'); // Debug log for auth error
-      if (error.message.contains('user already registered') ||
-          error.message.contains('email')) {
+      if (error.message.contains('users_email_key')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email sudah digunakan.')),
+          const SnackBar(
+              content: Text(
+                  'Email ini sudah terdaftar. Silakan coba login atau gunakan email lain.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Auth error: ${error.message}')),
+          SnackBar(content: Text('Error otentikasi: ${error.message}')),
         );
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${error.toString()}')),
+        SnackBar(content: Text('Terjadi kesalahan: ${error.toString()}')),
       );
     } finally {
       setState(() {
@@ -184,82 +292,78 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100, // Latar belakang lembut
       body: SafeArea(
-        child: SingleChildScrollView( // Membuat layar bisa di-scroll jika konten melebihi layar
-          padding: const EdgeInsets.all(24.0), // Padding lebih besar
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: ListView(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               Center(
                 child: Image.asset(
                   'assets/bicopi_logo.png',
-                  width: 100, // Ukuran logo sedikit lebih kecil
-                  height: 100,
+                  width: 120,
+                  height: 120,
                 ),
               ),
-              const SizedBox(height: 32),
-              Text(
-                'Buat Akun Baru',
+              const SizedBox(height: 30),
+              const Text(
+                'Daftar Akun',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF078603), // Warna primer yang lebih kuat
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 24),
-              _buildModernTextField(
+              const SizedBox(height: 20),
+              _buildTextField(
                   controller: nameController, label: 'Nama Lengkap'),
-              _buildModernTextField(
-                  controller: phoneController, label: 'No Telepon', keyboardType: TextInputType.phone),
-              _buildModernTextField(
-                  controller: emailController, label: 'Email', keyboardType: TextInputType.emailAddress),
-              _buildModernTextField(
-                  controller: passwordController, label: 'Password', isPassword: true),
-              _buildModernTextField(
+              _buildTextField(controller: phoneController, label: 'No Telepon'),
+              _buildTextField(controller: emailController, label: 'Email'),
+              _buildTextField(
+                  controller: passwordController,
+                  label: 'Password',
+                  isPassword: true),
+              _buildTextField(
                   controller: confirmPasswordController,
                   label: 'Konfirmasi Password',
                   isPassword: true),
-              _buildModernTextField(
-                  controller: referralCodeController, label: 'Kode Referal (Opsional)'),
-              const SizedBox(height: 30),
+              _buildTextField(
+                  controller: referralCodeController,
+                  label: 'Kode Referal (Opsional)'),
+              const SizedBox(height: 25),
               ElevatedButton(
                 onPressed: isLoading ? null : _signUp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:Color(0xFF078603), // Warna tombol lebih menarik
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  backgroundColor: const Color(0xFF078603),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16), // BorderRadius lebih besar
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 3, // Tambahkan sedikit elevasi untuk kesan modern
                 ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Daftar',
+                    : const Text('Daftar',
                         style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 15),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const login_page.LoginScreen()),
+                  );
+                },
+                child: const Text('Sudah punya akun? Login'),
               ),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Sudah punya akun?', style: TextStyle(fontSize: 16)),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const login_page.LoginScreen()),
-                      );
-                    },
-                    child: const Text('Login',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF078603))),
-                  ),
-                ],
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const MemberPointsLogScreen()),
+                  );
+                },
+                child: const Text('Lihat Log Poin Member'),
               ),
             ],
           ),
@@ -268,32 +372,103 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildModernTextField({
+  Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     bool isPassword = false,
-    TextInputType? keyboardType,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         obscureText: isPassword,
-        keyboardType: keyboardType ?? TextInputType.text,
-        style: const TextStyle(fontSize: 16),
+        keyboardType: label.contains('Telepon')
+            ? TextInputType.phone
+            : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey.shade400),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Color(0xFF078603), width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          filled: true,
+          fillColor: Colors.grey.shade100,
         ),
+      ),
+    );
+  }
+}
+
+class MemberPointsLogScreen extends StatefulWidget {
+  const MemberPointsLogScreen({super.key});
+
+  @override
+  State<MemberPointsLogScreen> createState() => _MemberPointsLogScreenState();
+}
+
+class _MemberPointsLogScreenState extends State<MemberPointsLogScreen> {
+  late final Stream<List<Map<String, dynamic>>> _memberPointsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _memberPointsStream = Supabase.instance.client
+        .from('member_points_log')
+        .stream(primaryKey: ['id']);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Log Poin Member'),
+      ),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _memberPointsStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final memberPointsList = snapshot.data!;
+
+          if (memberPointsList.isEmpty) {
+            return const Center(child: Text('Tidak ada data log poin member.'));
+          }
+
+          return ListView.builder(
+            itemBuilder: (context, index) {
+              final pointsLog = memberPointsList[index];
+              return Card(
+                margin: const EdgeInsets.all(8.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ID: ${pointsLog['id']}',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('Member ID: ${pointsLog['member_id']}'),
+                      if (pointsLog['order_id'] != null)
+                        Text('Order ID: ${pointsLog['order_id']}'),
+                      Text('Poin Didapatkan: ${pointsLog['points_earned']}'),
+                      if (pointsLog['description'] != null)
+                        Text('Deskripsi: ${pointsLog['description']}'),
+                      Text(
+                          'Dibuat pada: ${DateTime.parse(pointsLog['created_at']).toLocal()}'),
+                      if (pointsLog['reward_id'] != null)
+                        Text('ID Reward: ${pointsLog['reward_id']}'),
+                      if (pointsLog['redeemed_at'] != null)
+                        Text(
+                            'Redeem pada: ${DateTime.parse(pointsLog['redeemed_at']).toLocal()}'),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

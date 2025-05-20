@@ -1,5 +1,30 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+
+// Konstanta untuk string
+const String appTitle = 'Asisten Bot Bicopi';
+const String botAvatarText = 'B';
+const String userAvatarText = 'A';
+const String defaultMessage = 'Tanyakan sesuatu tentang minuman!';
+const String botTypingMessage = 'Bot sedang mengetik... 💬';
+const String searchErrorMessage = 'Oops! Ada masalah saat aku cari datanya: ';
+const String noMatchMessage = 'Belum ketemu yang cocok dengan "';
+const String tryOtherKeywordsMessage = '", tapi kamu bisa coba kata lain seperti "dingin", "manis", atau "kopi"! 😉';
+const String recommendationPrefix = 'Aku punya beberapa rekomendasi nih buat kamu yang suka "';
+const String recommendationSuffix = '":\n\nMau cari yang lain juga boleh kok! 😊';
+const String aiErrorMessagePrefix = 'Maaf, terjadi kesalahan AI: ';
+const String technicalErrorMessagePrefix = 'Terjadi kesalahan teknis: ';
+const String textFieldHint = 'Tanya tentang minuman...';
+
+// Konstanta untuk warna
+const Color primaryColor = Color(0xFF078603);
+const Color backgroundColor = Color(0xFFF0F2F5);
+const Color userMessageColor = Color(0xFFDFFFD6);
+const Color textFieldBackgroundColor = Color(0xFFF1F1F1);
+const Color whiteColor = Colors.white;
+const Color greyColor = Colors.grey;
 
 class ChatbotRekomendasi extends StatefulWidget {
   const ChatbotRekomendasi({super.key});
@@ -15,21 +40,24 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
   bool _isBotTyping = false;
 
   void _handleSubmitted(String text) async {
-    _textController.clear();
-    setState(() {
-      _messages.insert(0, ChatMessage(text: text, isUser: true));
-      _isBotTyping = true;
-    });
+    final trimmedText = text.trim();
+    if (trimmedText.isNotEmpty) {
+      _textController.clear();
+      setState(() {
+        _messages.insert(0, ChatMessage(text: trimmedText, isUser: true));
+        _isBotTyping = true;
+      });
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    String botResponse = await _generateBotResponse(text);
+      await Future.delayed(const Duration(milliseconds: 500));
+      String botResponse = await _generateBotResponse(trimmedText);
 
-    setState(() {
-      _messages.insert(0, ChatMessage(text: botResponse, isUser: false));
-      _isBotTyping = false;
-    });
+      setState(() {
+        _messages.insert(0, ChatMessage(text: botResponse, isUser: false));
+        _isBotTyping = false;
+      });
 
-    _scrollToBottom();
+      _scrollToBottom();
+    }
   }
 
   void _scrollToBottom() {
@@ -73,49 +101,81 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
       }
     }
 
-    if (translatedKeyword == null) {
-      return 'Hmm... aku belum paham maksud kamu. Bisa jelaskan lagi dengan kata seperti "manis", "kopi", atau "segar"? 😊';
+    if (translatedKeyword != null) {
+      try {
+        final response = await Supabase.instance.client
+            .from('menu')
+            .select('nama_menu, deskripsi_menu')
+            .ilike('deskripsi_menu', '%$translatedKeyword%')
+            .execute();
+
+        if (response.error != null) {
+          return '$searchErrorMessage${response.error!.message} 😓';
+        }
+
+        final data = response.data as List<dynamic>?;
+
+        if (data == null || data.isEmpty) {
+          return '$noMatchMessage"$matchedKeyword"$tryOtherKeywordsMessage';
+        }
+
+        List<String> rekomendasi = data.map<String>((item) {
+          final nama = item['nama_menu'] ?? 'Minuman';
+          return '• $nama';
+        }).toList();
+
+        return '$recommendationPrefix"$matchedKeyword"$recommendationSuffix\n\n${rekomendasi.take(3).join('\n')}';
+      } catch (e) {
+        return '$technicalErrorMessagePrefix$e';
+      }
     }
 
-    final response = await Supabase.instance.client
-        .from('menu')
-        .select('nama_menu, deskripsi_menu')
-        .ilike('deskripsi_menu', '%$translatedKeyword%')
-        .execute();
+    // Jika tidak ada keyword cocok → tanya ke AI (OpenRouter)
+    try {
+      final aiResponse = await http.post(
+        Uri.parse("https://openrouter.ai/api/v1/chat/completions"),
+        headers: {
+          'Authorization':
+              'Bearer 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',
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://bicopi.app', // Ganti sesuai domain kamu
+          'X-Title': 'Bicopi Chatbot'
+        },
+        body: jsonEncode({
+          "model": "mistralai/mistral-7b-instruct",
+          "messages": [
+            {"role": "user", "content": userInput}
+          ]
+        }),
+      );
 
-    if (response.error != null) {
-      return 'Oops! Ada masalah saat aku cari datanya: ${response.error!.message} 😓';
+      if (aiResponse.statusCode == 200) {
+        final decoded = jsonDecode(aiResponse.body);
+        final content = decoded['choices'][0]['message']['content'];
+        return content.trim();
+      } else {
+        return '$aiErrorMessagePrefix${aiResponse.statusCode}';
+      }
+    } catch (e) {
+      return '$technicalErrorMessagePrefix$e';
     }
-
-    final data = response.data as List<dynamic>?;
-
-    if (data == null || data.isEmpty) {
-      return 'Belum ketemu yang cocok dengan "$matchedKeyword", tapi kamu bisa coba kata lain seperti "dingin", "manis", atau "kopi"! 😉';
-    }
-
-    List<String> rekomendasi = data.map<String>((item) {
-      final nama = item['nama_menu'] ?? 'Minuman';
-      return '• $nama';
-    }).toList();
-
-    return 'Aku punya beberapa rekomendasi nih buat kamu yang suka "$matchedKeyword":\n\n${rekomendasi.take(3).join('\n')}\n\nMau cari yang lain juga boleh kok! 😊';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Asisten Bot Bicopi'),
-        backgroundColor: const Color(0xFF078603),
-        foregroundColor: Colors.white,
+        title: const Text(appTitle),
+        backgroundColor: primaryColor,
+        foregroundColor: whiteColor,
         elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: _messages.isEmpty
-                ? const Center(child: Text('Tanyakan sesuatu tentang minuman!'))
+                ? const Center(child: Text(defaultMessage))
                 : ListView.builder(
                     controller: _scrollController,
                     reverse: true,
@@ -127,7 +187,7 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
                           padding: EdgeInsets.all(8.0),
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: Text('Bot sedang mengetik... 💬'),
+                            child: Text(botTypingMessage),
                           ),
                         );
                       }
@@ -146,7 +206,7 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: whiteColor,
       ),
       child: SafeArea(
         child: Row(
@@ -155,14 +215,14 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F1F1),
+                  color: textFieldBackgroundColor,
                   borderRadius: BorderRadius.circular(25.0),
                 ),
                 child: TextField(
                   controller: _textController,
                   onSubmitted: _handleSubmitted,
                   decoration: const InputDecoration(
-                    hintText: 'Tanya tentang minuman...',
+                    hintText: textFieldHint,
                     border: InputBorder.none,
                   ),
                 ),
@@ -170,14 +230,10 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
             ),
             const SizedBox(width: 8.0),
             CircleAvatar(
-              backgroundColor: const Color(0xFF078603),
+              backgroundColor: primaryColor,
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: () {
-                  if (_textController.text.trim().isNotEmpty) {
-                    _handleSubmitted(_textController.text.trim());
-                  }
-                },
+                icon: const Icon(Icons.send, color: whiteColor),
+                onPressed: () => _handleSubmitted(_textController.text),
               ),
             ),
           ],
@@ -188,7 +244,7 @@ class _ChatbotRekomendasiState extends State<ChatbotRekomendasi> {
 }
 
 extension on PostgrestResponse {
-  get error => null;
+  get error => null; // This extension seems unnecessary as PostgrestResponse already has an 'error' property.
 }
 
 class ChatMessage extends StatelessWidget {
@@ -203,7 +259,7 @@ class ChatMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isUser ? const Color(0xFFDFFFD6) : Colors.white;
+    final bgColor = isUser ? userMessageColor : whiteColor;
     final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final radius = isUser
         ? const BorderRadius.only(
@@ -222,14 +278,15 @@ class ChatMessage extends StatelessWidget {
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start, // Align avatar to the top
         children: [
           if (!isUser)
             const CircleAvatar(
-              backgroundColor: Colors.grey,
-              child: Text('B', style: TextStyle(color: Colors.white)),
+              backgroundColor: greyColor,
+              child: Text(botAvatarText, style: TextStyle(color: whiteColor)),
             ),
           const SizedBox(width: 8.0),
-          Flexible(
+          Expanded(
             child: Column(
               crossAxisAlignment: align,
               children: [
@@ -247,8 +304,8 @@ class ChatMessage extends StatelessWidget {
           const SizedBox(width: 8.0),
           if (isUser)
             const CircleAvatar(
-              backgroundColor: const Color(0xFF078603),
-              child: Text('A', style: TextStyle(color: Colors.white)),
+              backgroundColor: primaryColor,
+              child: Text(userAvatarText, style: TextStyle(color: whiteColor)),
             ),
         ],
       ),
