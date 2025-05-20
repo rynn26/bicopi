@@ -24,42 +24,47 @@ class _RewardPageState extends State<RewardPage> {
     fetchRewards();
   }
 
-  Future<void> fetchCurrentPoints() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        throw Exception("User belum login.");
-      }
 
-      final response = await supabase
-          .from('member_points_log')
-          .select('points_earned')
-          .eq('member_id', user.id);
+  // Fungsi untuk mengambil poin dari Supabase
+ Future<void> fetchCurrentPoints() async {
+  try {
+    final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
-      if (response == null || response.isEmpty) {
-        setState(() {
-          currentPoints = 0;
-        });
-        return;
-      }
-
-      int total = 0;
-      for (final row in response) {
-        total += row['points_earned'] as int;
-      }
-
-      setState(() {
-        currentPoints = total;
-      });
-    } catch (e) {
-      print("Error mengambil poin: $e");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+    if (user == null) {
+      throw Exception("User belum login.");
     }
+
+    final response = await supabase
+        .from('member_points_log')
+        .select('points_earned')
+        .eq('member_id', user.id);
+
+    if (response == null || response.isEmpty) {
+      throw Exception("Tidak ada data poin.");
+    }
+
+    int total = 0;
+    for (final row in response) {
+      total += row['points_earned'] as int;
+    }
+
+    if (!mounted) return; // Tambahkan ini untuk mencegah error
+
+    setState(() {
+      currentPoints = total;
+      isLoading = false;
+    });
+  } catch (e) {
+    print("Error mengambil poin: $e");
+    if (!mounted) return; // Tambahkan ini juga
+    setState(() {
+      isLoading = false;
+    });
+
   }
+}
+
 
   Future<void> deductPoints(int points, String rewardTitle, String rewardId) async {
     try {
