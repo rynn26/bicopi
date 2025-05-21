@@ -7,10 +7,8 @@ import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-// Global formatter for currency
 final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
 
-// --- PaymentPage Class ---
 class PaymentPage extends StatefulWidget {
   final int totalPrice;
   final Future<String?> Function() getMemberId;
@@ -88,7 +86,7 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         final response = await http.post(
           Uri.parse(
-              'http://172.14.2.85:3000/create-transaction'), // Replace with your server URL
+              'http://172.14.8.230:3000/create-transaction'), // Replace with your server URL
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
@@ -216,7 +214,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   Text(
                     'Masukkan Detail',
                     style: TextStyle(
-                      fontSize: 20, // Ukuran font lebih besar
+                      fontSize: 18, // Ukuran font agak kecil
                       fontWeight: FontWeight.bold,
                       color: Colors.grey.shade800, // Warna teks lebih gelap
                     ),
@@ -231,7 +229,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   Text(
                     'Metode Pembayaran',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 18, // Ukuran font agak kecil
                       fontWeight: FontWeight.bold,
                       color: Colors.grey.shade800,
                     ),
@@ -257,17 +255,21 @@ class _PaymentPageState extends State<PaymentPage> {
                         Text(
                           'Total Pembayaran:',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600, // Lebih tebal
+                            fontSize: 14, // Ukuran font agak kecil
+                            fontWeight: FontWeight.w600,
                             color: Colors.grey.shade800,
                           ),
                         ),
-                        Text(
-                          formatter.format(widget.totalPrice),
-                          style: const TextStyle(
-                            fontSize: 22, // Ukuran font lebih besar
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                        // Wrap the price Text with Expanded
+                        Expanded(
+                          child: Text(
+                            formatter.format(widget.totalPrice),
+                            textAlign: TextAlign.right, // Align text to the right
+                            style: const TextStyle(
+                              fontSize: 14, // Ukuran font agak kecil
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
                           ),
                         ),
                       ],
@@ -289,7 +291,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         textStyle: const TextStyle(
                           // Style teks
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 16, // Ukuran font agak kecil
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -327,6 +329,7 @@ class _PaymentPageState extends State<PaymentPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
+            // Perbaikan: 'BoxShadow'
             color: Colors.grey.withOpacity(0.2), // Shadow lebih halus
             spreadRadius: 1,
             blurRadius: 5,
@@ -338,11 +341,11 @@ class _PaymentPageState extends State<PaymentPage> {
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle: TextStyle(color: Colors.grey.shade600),
-          prefixIcon: Icon(icon, color: Colors.green.shade700),
+          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14), // Ukuran font agak kecil
+          prefixIcon: Icon(icon, color: Colors.green.shade700, size: 20), // Ukuran icon agak kecil
           border: InputBorder.none,
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 15), // Padding agak kecil
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -377,6 +380,7 @@ class _PaymentPageState extends State<PaymentPage> {
               width: isCashSelected == isCash ? 2 : 1),
           boxShadow: [
             BoxShadow(
+              // Perbaikan: 'BoxShadow'
               color: Colors.grey.withOpacity(0.2), // Shadow lebih halus
               spreadRadius: 1,
               blurRadius: 5,
@@ -386,12 +390,12 @@ class _PaymentPageState extends State<PaymentPage> {
         ),
         child: Row(
           children: [
-            Image.asset(iconPath, width: 30, height: 30),
+            Image.asset(iconPath, width: 25, height: 25), // Ukuran icon agak kecil
             const SizedBox(width: 15),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Ukuran font agak kecil
                 fontWeight: FontWeight.w600, // Lebih tebal
                 color: Colors.black87,
               ),
@@ -404,7 +408,7 @@ class _PaymentPageState extends State<PaymentPage> {
               color: isCashSelected == isCash
                   ? Colors.green
                   : Colors.grey.shade400,
-              size: 24,
+              size: 20, // Ukuran icon agak kecil
             )
           ],
         ),
@@ -480,7 +484,7 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
 
 // --- PaymentSuccessPage Class ---
 class PaymentSuccessPage extends StatefulWidget {
-  final String memberId;
+  final String memberId; // Pastikan ini tidak nullable
   final int totalPrice;
   final String namaPelanggan;
   final String nomorMeja;
@@ -500,7 +504,6 @@ class PaymentSuccessPage extends StatefulWidget {
 class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  bool _isAddingPoints = false;
   bool _isProcessingOrder = false;
 
   @override
@@ -523,10 +526,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       print(
           'PaymentSuccessPage: Fetching cart items for user ID: ${widget.memberId}');
       final response = await supabase
-          .from('keranjang') // Replace with your cart table name
+          .from('keranjang')
           .select()
-          .eq('user_id',
-              widget.memberId); // Using 'user_id' as per table structure
+          .eq('user_id', widget.memberId);
       print('PaymentSuccessPage: Fetch cart items response: $response');
       if (response is List) {
         print('PaymentSuccessPage: Found ${response.length} items in cart.');
@@ -548,64 +550,228 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   }
 
   Future<void> _processOrderAndPoints() async {
+    if (_isProcessingOrder) return;
     setState(() {
       _isProcessingOrder = true;
     });
-    final cartItems = await _fetchCartItems();
-    if (cartItems != null && cartItems.isNotEmpty) {
-      await _saveOrderHistory(cartItems);
-      await _clearShoppingCart();
-    } else {
-      print('PaymentSuccessPage: No items to process in cart.');
+    print("PaymentSuccessPage: Starting _processOrderAndPoints()");
+
+    try {
+      // Fetch cart items
+      final cartItems = await _fetchCartItems();
+      if (cartItems != null && cartItems.isNotEmpty) {
+        await _saveOrderHistory(cartItems);
+        await _clearShoppingCart();
+      } else {
+        print('PaymentSuccessPage: No items to process in cart.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tidak ada item di keranjang.')),
+          );
+        }
+      }
+
+      // --- LOGIC TO ADD POINTS BASED ON USER LEVEL ---
+      final supabase = Supabase.instance.client;
+      final String orderId = const Uuid().v4();
+
+      // 1. Get user level and affiliate_id from members
+      // Perhatikan: Anda mengambil id_user_level dari tabel 'users',
+      // tapi points dari 'members'
+      final memberData = await supabase
+          .from('members')
+          .select(
+              'total_points, affiliate_id') // affiliate_id here MUST store affiliates.id
+          .eq('id', widget.memberId)
+          .single();
+
+      // Pastikan 'users' adalah tabel yang benar untuk id_user_level
+      final int currentUserLevel = await supabase
+          .from('users')
+          .select('id_user_level')
+          .eq('id_user', widget.memberId) // id_user harus match dengan memberId
+          .single()
+          .then((data) => data['id_user_level'] as int? ?? 1);
+
+      int currentMemberTotalPoints = memberData['total_points'] as int? ?? 0;
+      // This affiliateIdOfCurrentMember is expected to be the 'id' from the affiliates table
+      final String? affiliateIdOfCurrentMember =
+          memberData['affiliate_id'] as String?;
+
+      // Poin yang diterima oleh *member yang melakukan pembelian*
+      const int pointsForPurchasingMember = 10;
+
+      // Update total_points untuk member yang melakukan pembelian
+      await supabase.from('members').update({
+        'total_points': currentMemberTotalPoints + pointsForPurchasingMember
+      }).eq('id', widget.memberId);
+      print(
+          'PaymentSuccessPage: Berhasil memperbarui total poin member yang membeli.');
+
+      // Log poin untuk member yang melakukan pembelian
+      await supabase.from('member_points_log').insert({
+        'member_id': widget.memberId,
+        'points_earned': pointsForPurchasingMember,
+        'description': 'Poin dari pembelian (ID Order: $orderId)',
+        'created_at': DateTime.now().toIso8601String(),
+        'order_id': orderId,
+      });
+      print(
+          'PaymentSuccessPage: Berhasil menambahkan log poin untuk member yang membeli.');
+
+      // Logic untuk menambahkan poin ke AFILIASI (jika ada dan user level 4)
+      if (currentUserLevel == 4 && affiliateIdOfCurrentMember != null) {
+        print(
+            'PaymentSuccessPage: Member level 4, akan menambahkan poin ke afiliasi.');
+        const int affiliatePoints = 90;
+
+        try {
+          // Ketika mencari atau memperbarui, kita akan menggunakan 'id' sebagai primary key.
+          // Ini berarti affiliateIdOfCurrentMember sekarang adalah ID dari tabel affiliates.
+          final affiliateData = await supabase
+              .from('affiliates')
+              .select('id, total_points') // Select 'id' as well
+              .eq('id', affiliateIdOfCurrentMember) // Match against 'id' column
+              .maybeSingle();
+
+          int existingAffiliatePoints = 0;
+
+          if (affiliateData == null) {
+            // Ini adalah skenario di mana `members.affiliate_id` tidak valid
+            // (tidak ada di `affiliates.id`).
+            // Karena Anda ingin mempertahankan foreign key dan tidak membuat entri baru di sini,
+            // kita akan me-log peringatan dan tidak melanjutkan penambahan poin afiliasi.
+            print(
+                'PaymentSuccessPage: ERROR: Affiliate with ID $affiliateIdOfCurrentMember from members.affiliate_id NOT FOUND in affiliates.id.');
+            print(
+                'PaymentSuccessPage: Please verify data consistency in members.affiliate_id and affiliates.id.');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text(
+                        'Peringatan: Data afiliasi tidak konsisten. Poin afiliasi tidak ditambahkan.')),
+              );
+            }
+            setState(() {
+              _isProcessingOrder = false;
+            }); // Stop loading
+            return; // Hentikan proses poin afiliasi jika ID tidak ditemukan
+          } else {
+            // Afiliasi sudah ada, perbarui poinnya menggunakan 'id'
+            existingAffiliatePoints =
+                affiliateData['total_points'] as int? ?? 0;
+            await supabase.from('affiliates').update({
+              'total_points': existingAffiliatePoints + affiliatePoints
+            }).eq(
+                'id', affiliateIdOfCurrentMember); // Match against 'id' column
+            print(
+                'PaymentSuccessPage: Successfully updated total points for existing affiliate.');
+          }
+
+          // Tambahkan penundaan singkat (optional, tapi bisa membantu dengan latensi)
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Setelah memastikan afiliasi ada dan poinnya diperbarui, baru tambahkan log.
+          await supabase.from('affiliate_points_log').insert({
+            'affiliate_id':
+                affiliateIdOfCurrentMember, // Gunakan ID yang diambil dari members, yang diasumsikan valid
+            'member_id': widget.memberId,
+            'order_id': orderId,
+            'points_earned': affiliatePoints,
+            'description':
+                'Poin referral dari pembelian member ${widget.namaPelanggan} (ID Order: $orderId)',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          print(
+              'PaymentSuccessPage: Berhasil menambahkan log poin untuk afiliasi ($affiliateIdOfCurrentMember).');
+        } on PostgrestException catch (e) {
+          print(
+              'PaymentSuccessPage: PostgrestException during affiliate points processing: ${e.message}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error database afiliasi: ${e.message}')),
+            );
+          }
+        } catch (e) {
+          print(
+              'PaymentSuccessPage: General error during affiliate points processing: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Terjadi kesalahan tidak terduga pada afiliasi: $e')),
+            );
+          }
+        }
+      } else {
+        print(
+            'PaymentSuccessPage: User level bukan 4 atau tidak memiliki afiliasi, tidak ada poin afiliasi yang ditambahkan.');
+      }
+    } catch (error) {
+      print(
+          'PaymentSuccessPage: Error during _processOrderAndPoints (outer catch): $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak ada item di keranjang.')),
+          SnackBar(
+              content: Text(
+                  'Terjadi kesalahan saat memproses pesanan dan poin: $error')),
         );
       }
+    } finally {
+      setState(() {
+        _isProcessingOrder = false;
+      });
+      print("PaymentSuccessPage: _processOrderAndPoints() finished");
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          print(
+              "PaymentSuccessPage: Returning to home after process completes");
+        }
+      });
     }
-    await _addPointsToMember(); // Always try to add points after attempting to save the order
-    setState(() {
-      _isProcessingOrder = false;
-    });
-    // Delay navigation so animation completes and message is visible
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        print("PaymentSuccessPage: Returning to home after process completes");
-      }
-    });
   }
 
   Future<void> _saveOrderHistory(List<Map<String, dynamic>> cartItems) async {
     try {
       final supabase = Supabase.instance.client;
-      const uuid = Uuid();
       final String orderNo =
           'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString();
 
+      // === PERBAIKAN DI SINI: Tambahkan 'member_id' ===
       final response = await supabase.from('orderkasir_history').insert({
         'order_no': orderNo,
         'nomor_meja': widget.nomorMeja,
         'nama_pelanggan': widget.namaPelanggan,
-        'catatan': '', // Can add notes if available
+        'catatan': '',
         'items': cartItems,
         'total_item': cartItems.length,
         'total_harga': widget.totalPrice,
         'created_at': DateTime.now().toIso8601String(),
+        'member_id': widget.memberId, // <<< PASTIKAN INI ADA DAN MEMBER_ID TIDAK NULL
       }).select();
 
       print('PaymentSuccessPage: Save order history response: $response');
-      if (response != null) {
+      if (response != null && response.isNotEmpty) {
         print(
             'PaymentSuccessPage: Successfully saved order to orderkasir_history: $response');
       } else {
         print(
-            'PaymentSuccessPage: Failed to save order to orderkasir_history: ${supabase.from('orderkasir_history').select().toString()}');
+            'PaymentSuccessPage: Failed to save order to orderkasir_history (empty response or null).');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Gagal menyimpan riwayat pesanan.')),
           );
         }
+      }
+    } on PostgrestException catch (e) {
+      // Tambahkan PostgrestException catch
+      print(
+          'PaymentSuccessPage: PostgrestException saving order history: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error database riwayat pesanan: ${e.message}')),
+        );
       }
     } catch (error) {
       print('PaymentSuccessPage: Error saving order: $error');
@@ -627,13 +793,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       final response = await supabase
           .from('keranjang')
           .delete()
-          .eq('user_id', widget.memberId); // Using 'user_id'
+          .eq('user_id', widget.memberId);
       print('PaymentSuccessPage: Delete cart response: $response');
       if (response == null) {
-        // Supabase delete returns null on success
+        // Supabase delete returns null on success if no rows were returned
         print('PaymentSuccessPage: Successfully cleared items from cart');
       } else {
-        // This else block might indicate an actual error based on Supabase client's behavior
+        // If response is not null, it might indicate an error object or unexpected data
         print(
             'PaymentSuccessPage: Failed to clear cart: ${response.toString()}');
         if (mounted) {
@@ -641,6 +807,15 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
             const SnackBar(content: Text('Gagal menghapus keranjang.')),
           );
         }
+      }
+    } on PostgrestException catch (e) {
+      // Tambahkan PostgrestException catch
+      print(
+          'PaymentSuccessPage: PostgrestException clearing cart items: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error database keranjang: ${e.message}')),
+        );
       }
     } catch (error) {
       print('PaymentSuccessPage: Error clearing cart items: $error');
@@ -651,65 +826,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   'Terjadi kesalahan saat menghapus item keranjang: $error')),
         );
       }
-    }
-  }
-
-  int _calculatePoints(int totalPrice) {
-    print("PaymentSuccessPage: Points calculated (CHANGED TO 10)");
-    return 10;
-  }
-
-  Future<void> _addPointsToMember() async {
-    if (_isAddingPoints) return;
-    setState(() {
-      _isAddingPoints = true;
-    });
-    print("PaymentSuccessPage: Starting _addPointsToMember()");
-    try {
-      final supabase = Supabase.instance.client;
-      final int pointsEarned =
-          _calculatePoints(widget.totalPrice); // Now always 10
-      const uuid = Uuid();
-      final String orderId = uuid.v4(); // Generate UUID v4
-
-      final response = await supabase.from('member_points_log').insert({
-        'member_id': widget.memberId,
-        'points_earned': pointsEarned,
-        'description':
-            'Points added after successful payment for order $orderId',
-        'created_at': DateTime.now().toIso8601String(),
-        'order_id': orderId,
-      }).select();
-
-      print(
-          "PaymentSuccessPage: Response from insert member_points_log: $response");
-
-      if (response != null) {
-        print(
-            'PaymentSuccessPage: Points ($pointsEarned) successfully added to log for member: ${widget.memberId} (Order ID: $orderId)');
-      } else {
-        print(
-            'PaymentSuccessPage: Failed to add points to log: ${supabase.from('member_points_log').select().toString()}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal menambahkan poin.')),
-          );
-        }
-      }
-    } catch (error) {
-      print(
-          'PaymentSuccessPage: An error occurred while adding points: $error');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Terjadi kesalahan saat menambahkan poin: $error')),
-        );
-      }
-    } finally {
-      setState(() {
-        _isAddingPoints = false;
-      });
-      print("PaymentSuccessPage: _addPointsToMember() finished");
     }
   }
 
@@ -736,45 +852,45 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                   ..duration = composition.duration
                   ..forward();
               },
-              width: 250,
-              height: 250,
+              width: 200, // Ukuran animasi agak kecil
+              height: 200, // Ukuran animasi agak kecil
               repeat: false,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20), // Spasi agak kecil
             const Text(
               'Pembayaran Berhasil!',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 22, // Ukuran font agak kecil
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8), // Spasi agak kecil
             Text(
               'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16, // Ukuran font agak kecil
                 color: Colors.grey.shade700,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20), // Spasi agak kecil
             _isProcessingOrder
                 ? const Column(
                     children: [
                       CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 8), // Spasi agak kecil
                       Text(
-                        'Memproses pesanan...',
+                        'Memproses pesanan dan poin...',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14, // Ukuran font agak kecil
                           color: Colors.black54,
                         ),
                       ),
                     ],
-                  )
+                )
                 : ElevatedButton(
                     onPressed: () {
                       Navigator.of(context).popUntil((route) => route.isFirst);

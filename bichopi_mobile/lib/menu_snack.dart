@@ -4,8 +4,9 @@ import 'cart_halaman.dart';
 
 class SnackMenuPage extends StatefulWidget {
   final int categoryId = 3;
+  final String categoryName; // Tambahkan categoryName ke constructor
 
-  const SnackMenuPage({super.key, required String categoryName});
+  const SnackMenuPage({super.key, required this.categoryName}); // Sesuaikan constructor
 
   @override
   State<SnackMenuPage> createState() => _SnackMenuPageState();
@@ -16,12 +17,23 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
   List<Map<String, dynamic>> menuItems = [];
   Map<String, int> cartQuantities = {};
   bool isLoading = true;
+  int _totalCartItems = 0; // Tambahkan ini untuk FloatingActionButton
 
   @override
   void initState() {
     super.initState();
     fetchSnackItems();
     _loadCartFromDatabase();
+  }
+
+  void _calculateTotalCartItems() {
+    int total = 0;
+    cartQuantities.forEach((key, value) {
+      total += value;
+    });
+    setState(() {
+      _totalCartItems = total;
+    });
   }
 
   Future<void> fetchSnackItems() async {
@@ -36,7 +48,9 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           return {
             "nama_menu": item["nama_menu"],
             "foto_menu": item["foto_menu"],
-            "deskripsi_menu": item["deskripsi_menu"],
+            "deskripsi_menu": (item["deskripsi_menu"] is String && item["deskripsi_menu"].isNotEmpty)
+                ? item["deskripsi_menu"]
+                : "Tidak ada deskripsi", // Menangani deskripsi kosong
             "harga_menu": (item["harga_menu"] is double)
                 ? item["harga_menu"].toInt()
                 : item["harga_menu"] ?? 0,
@@ -52,7 +66,10 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
 
   Future<void> _loadCartFromDatabase() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _calculateTotalCartItems(); // Panggil ini juga di sini
+      return;
+    }
 
     try {
       final response = await supabase
@@ -66,6 +83,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
             item['item_name']: item['quantity'] as int,
         };
       });
+      _calculateTotalCartItems(); // Panggil ini setelah memuat keranjang
     } catch (e) {
       debugPrint('Gagal memuat data keranjang: $e');
     }
@@ -93,6 +111,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
           .eq('user_id', user.id)
           .eq('item_name', itemName);
     }
+    _calculateTotalCartItems(); // Panggil ini setelah update database
   }
 
   void _increaseQuantity(String itemName, int price) {
@@ -117,92 +136,15 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
     }
   }
 
-  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 0;
-    int price = item["harga_menu"];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
-      builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CartPage(
-                  cartItems: cartQuantities,
-                  menu_makanan: {},
-                  menu_minuman: {},
-                  menu_snack: {
-                    for (var item in menuItems)
-                      item["nama_menu"]: item["harga_menu"]
-                  },
-                  menu_paket: {},
-                ),
-              ),
-            ).then((_) {
-              _loadCartFromDatabase();
-            });
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0xFF078603),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.shopping_cart, color: Colors.white),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Jumlah Pesanan: $quantity",
-                              style: const TextStyle(color: Colors.white, fontSize: 10),
-                            ),
-                            Text(
-                              item["nama_menu"],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "Rp ${price * quantity}",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Fungsi _showAddToCartDialog ini tidak diperlukan lagi jika kita menggunakan tombol langsung di Card
+  // Jika Anda ingin mempertahankan fungsionalitas bottom sheet untuk detail item,
+  // maka fungsi ini perlu disesuaikan agar sesuai dengan struktur baru.
+  // Untuk saat ini, saya akan menghapus pemanggilan fungsi ini dari ElevatedButton
+  // dan membuat tombol tambah langsung di Card seperti di DrinkMenuPage.
+  // Jika Anda ingin fungsi ini tetap ada, beri tahu saya.
+  // void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
+  //   // ... (kode dialog Anda)
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -232,17 +174,17 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Menu Snack",
-                            style: TextStyle(
+                        children: [
+                          Text( // Menggunakan widget.categoryName
+                            "Menu ${widget.categoryName}",
+                            style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 4),
+                          const Text(
                             "Bichopi, Indonesia",
                             style: TextStyle(
                               color: Colors.white70,
@@ -274,100 +216,130 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 3,
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Stack(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start, // Penting agar rata atas
                             children: [
-                              Column(
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Column(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              item["foto_menu"] ?? '',
-                                              width: 80,
-                                              height: 80,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  Image.asset(
-                                                'assets/no_image.png',
-                                                width: 80,
-                                                height: 80,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          ElevatedButton(
-                                            onPressed: () => _showAddToCartDialog(context, item),
+                              // Gambar Menu
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  item["foto_menu"] ?? '',
+                                  width: 90, // Ukuran disamakan dengan Food/Drink
+                                  height: 90, // Ukuran disamakan dengan Food/Drink
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Image.asset(
+                                    'assets/no_image.png',
+                                    width: 90,
+                                    height: 90,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12), // Spasi setelah gambar
+
+                              // Detail Nama, Deskripsi (di sisi kiri)
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item["nama_menu"],
+                                      style: const TextStyle(
+                                        fontSize: 17, // Ukuran disamakan
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item["deskripsi_menu"],
+                                      style: const TextStyle(
+                                        fontSize: 13, // Ukuran disamakan
+                                        color: Colors.grey,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    // Tidak ada harga di sini, karena akan dipindahkan ke kanan
+                                  ],
+                                ),
+                              ),
+
+                              // Harga dan Tombol Tambah/Kontrol Kuantitas (di sisi kanan)
+                              SizedBox(
+                                width: 100, // Lebar fixed untuk kontrol ini
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end, // Rata kanan
+                                  children: [
+                                    Text(
+                                      "Rp $harga", // Harga di atas tombol
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF078603),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8), // Spasi antara harga dan tombol
+
+                                    quantity == 0
+                                        ? ElevatedButton(
+                                            onPressed: () => _increaseQuantity(item["nama_menu"], harga),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
+                                              backgroundColor: const Color(0xFF078603),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(8),
-                                                side: const BorderSide(color: Color(0xFF078603)),
                                               ),
+                                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12), // Padding Vertikal disamakan
+                                              elevation: 0,
                                             ),
                                             child: const Text(
                                               "Tambah",
-                                              style: TextStyle(color: Color(0xFF078603)),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              IconButton(
-                                                icon: const Icon(Icons.remove_circle_outline,
-                                                    color: Colors.red),
-                                                onPressed: () =>
-                                                    _decreaseQuantity(item["nama_menu"], harga),
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
                                               ),
-                                              Text('$quantity'),
-                                              IconButton(
-                                                icon: const Icon(Icons.add_circle_outline,
-                                                    color: Color(0xFF078603)),
-                                                onPressed: () =>
-                                                    _increaseQuantity(item["nama_menu"], harga),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () => _decreaseQuantity(item["nama_menu"], harga),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(8), // Padding ikon +/- disamakan
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                  child: const Icon(Icons.remove, color: Colors.red, size: 20),
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                child: Text(
+                                                  '$quantity',
+                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () => _increaseQuantity(item["nama_menu"], harga),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(8), // Padding ikon +/- disamakan
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF078603).withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                  child: const Icon(Icons.add, color: Color(0xFF078603), size: 20),
+                                                ),
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              item["nama_menu"],
-                                              style: const TextStyle(
-                                                  fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(item["deskripsi_menu"] ?? ''),
-                                            const SizedBox(height: 10),
-                                            // Hapus Row harga di sini
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              // Harga di pojok kanan bawah
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Text(
-                                  "Rp $harga",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -379,6 +351,40 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                 ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: _totalCartItems > 0
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CartPage(
+                      cartItems: cartQuantities,
+                      menu_makanan: {},
+                      menu_minuman: {},
+                      menu_snack: {
+                        for (var item in menuItems)
+                          item["nama_menu"]: item["harga_menu"]
+                      },
+                      menu_paket: {},
+                    ),
+                  ),
+                ).then((_) {
+                  _loadCartFromDatabase();
+                });
+              },
+              backgroundColor: const Color(0xFF078603),
+              icon: const Icon(Icons.shopping_cart, color: Colors.white),
+              label: Text(
+                "Lihat Keranjang (${_totalCartItems} item)",
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              extendedPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            )
+          : null,
     );
   }
 }

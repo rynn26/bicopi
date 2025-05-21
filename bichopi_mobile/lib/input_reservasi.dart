@@ -3,7 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-void main() {
+void main() async {
+  // Initialize Supabase
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'YOUR_SUPABASE_URL', // Ganti dengan URL Supabase Anda
+    anonKey: 'YOUR_SUPABASE_ANON_KEY', // Ganti dengan anon key Supabase Anda
+  );
   runApp(const MyApp());
 }
 
@@ -16,6 +22,50 @@ class MyApp extends StatelessWidget {
       title: 'Aplikasi Reservasi',
       theme: ThemeData(
         primarySwatch: Colors.green,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 1,
+          titleTextStyle: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+          iconTheme: IconThemeData(color: Colors.black87),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), // Slightly more rounded
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.green[700]!, width: 2), // Thicker on focus
+          ),
+          labelStyle: TextStyle(color: Colors.grey[600]),
+          hintStyle: TextStyle(color: Colors.grey[400]),
+          prefixIconColor: Colors.green[700], // Consistent icon color
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[700],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            elevation: 3, // Add a slight elevation
+          ),
+        ),
       ),
       home: const ReservationFormScreen(category: {'name': 'Nama Tempat'}),
     );
@@ -40,12 +90,31 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
 
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Supabase in main() instead of here for global access.
+    // Ensure you replace 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY'
+    // in main()
+  }
+
   Future<void> _selectDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.green[700],
+            colorScheme: ColorScheme.light(primary: Colors.green[700]!),
+            buttonTheme:
+                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
@@ -56,6 +125,17 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.green[700],
+            colorScheme: ColorScheme.light(primary: Colors.green[700]!),
+            buttonTheme:
+                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       final now = DateTime.now();
@@ -75,7 +155,9 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
 
     if (nama.isEmpty || tanggal.isEmpty || waktu.isEmpty || jumlah.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap isi semua field yang diperlukan.')),
+        const SnackBar(
+            content: Text('Harap isi semua field yang diperlukan.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -85,7 +167,9 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
 
     if (!dateRegex.hasMatch(tanggal) || !timeRegex.hasMatch(waktu)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Format tanggal atau waktu tidak valid.')),
+        const SnackBar(
+            content: Text('Format tanggal atau waktu tidak valid.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -93,8 +177,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response =
-          await Supabase.instance.client.from('reservasii').insert({
+      final response = await Supabase.instance.client.from('reservasii').insert({
         'nama_pengguna': nama,
         'tanggal': _formatDateForSupabase(tanggal),
         'waktu': waktu,
@@ -102,11 +185,13 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         'keterangan': keterangan,
         'nama_tempat': namaTempat,
         'created_at': DateTime.now().toIso8601String(),
-      }).select();
+      }).select(); // Use .select() to get the inserted data if needed, or remove if not.
 
       if (response == null || response.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menyimpan reservasi.')),
+          const SnackBar(
+              content: Text('Gagal menyimpan reservasi.'),
+              backgroundColor: Colors.red),
         );
       } else {
         Navigator.push(
@@ -123,6 +208,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
           ),
         );
 
+        // Clear controllers after successful submission and navigation
         namaController.clear();
         tanggalController.clear();
         waktuController.clear();
@@ -132,17 +218,19 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     } catch (error) {
       print('Error menyimpan reservasi: $error');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: $error')),
+        SnackBar(
+            content: Text('Terjadi kesalahan: $error'),
+            backgroundColor: Colors.red),
       );
+    } finally {
+      setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = false);
   }
 
   String _formatDateForSupabase(String dateString) {
     final parts = dateString.split('/');
     if (parts.length == 3) {
-      return '${parts[2]}-${parts[1]}-${parts[0]}';
+      return '${parts[2]}-${parts[1]}-${parts[0]}'; // YYYY-MM-DD
     }
     return dateString;
   }
@@ -150,20 +238,12 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[50], // Lighter background
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
         title: Text(
           'Reservasi ${widget.category['name']}',
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
         ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -171,14 +251,23 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Isi Detail Reservasi',
+              'Buat Reservasi Anda', // More engaging title
               style: TextStyle(
-                color: Colors.green[700],
-                fontSize: 22,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
+                color: Colors.green[800],
               ),
             ),
-            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+              child: Text(
+                'Lengkapi detail di bawah ini untuk memesan di ${widget.category['name']}.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -186,10 +275,10 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withOpacity(0.1), // Softer shadow
                     spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -226,7 +315,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                   ),
                   _buildRoundedTextField(
                     labelText: 'Keterangan (Opsional)',
-                    hintText: 'Catatan tambahan',
+                    hintText: 'Catatan tambahan seperti preferensi meja, dll.',
                     controller: keteranganController,
                     icon: Icons.note_outlined,
                     maxLines: 3,
@@ -235,22 +324,13 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(child: CircularProgressIndicator(color: Colors.green,))
                         : ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green[700],
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
                             onPressed: _submitReservation,
-                            icon: const Icon(Icons.check_circle_outline,
-                                color: Colors.white),
+                            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
                             label: const Text(
                               'Konfirmasi Reservasi',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 18),
+                              style: TextStyle(color: Colors.white, fontSize: 18),
                             ),
                           ),
                   ),
@@ -285,23 +365,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,
-          prefixIcon: Icon(icon, color: Colors.green[700]),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey[400]!),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.green[700]!),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          prefixIcon: Icon(icon), // Icon color handled by InputDecorationTheme
         ),
       ),
     );
@@ -329,64 +393,92 @@ class HasilReservasiScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50], // Consistent background
       appBar: AppBar(
         title: const Text('Bukti Reservasi'),
         backgroundColor: Colors.green[700],
+        foregroundColor: Colors.white, // White text for AppBar title
+        elevation: 0, // Flat app bar for a cleaner look
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center, // Center content
           children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 80),
+            const SizedBox(height: 10),
             Text(
-              'Terima kasih, $nama!',
-              style: const TextStyle(
-                fontSize: 24,
+              'Reservasi Berhasil!',
+              style: TextStyle(
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
-                color: Colors.green,
+                color: Colors.green[700],
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
             Text(
-              'Reservasi Anda untuk $namaTempat telah berhasil.',
-              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+              'Terima kasih, $nama! Reservasi Anda untuk $namaTempat telah dikonfirmasi.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30), // More space before card
             Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(15), // Consistent rounding
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0), // Increased padding
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDetailRow('Nama Pemesan:', nama),
-                    _buildDetailRow('Tanggal Reservasi:', tanggal),
-                    _buildDetailRow('Waktu Reservasi:', waktu),
-                    _buildDetailRow('Jumlah Orang:', jumlah),
+                    _buildDetailRow('Nama Pemesan:', nama, Icons.person_outline),
+                    _buildDetailRow('Tanggal Reservasi:', tanggal, Icons.calendar_today_outlined),
+                    _buildDetailRow('Waktu Reservasi:', waktu, Icons.access_time_outlined),
+                    _buildDetailRow('Jumlah Orang:', jumlah, Icons.people_outline),
                     if (keterangan.isNotEmpty)
-                      _buildDetailRow('Keterangan:', keterangan),
+                      _buildDetailRow('Keterangan:', keterangan, Icons.note_outlined),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _kirimKeWhatsApp(context),
-                icon: const Icon(Icons.abc, color: Colors.white),
+                icon: const Icon(Icons.abc, color: Colors.white), // WhatsApp icon
                 label: const Text('Lanjutkan ke WhatsApp'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
+                  backgroundColor: const Color(0xFF25D366), // WhatsApp Green
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  textStyle: const TextStyle(fontSize: 18),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  elevation: 3,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+             SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.popUntil(context, (route) => route.isFirst); // Go back to the first screen (e.g., home)
+                },
+                icon: const Icon(Icons.home_outlined, color: Colors.green),
+                label: const Text('Kembali ke Beranda'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green[700],
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: BorderSide(color: Colors.green[700]!, width: 2), // Green border
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -396,11 +488,14 @@ class HasilReservasiScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(icon, color: Colors.green[700], size: 22),
+          const SizedBox(width: 12),
           Text(
             label,
             style: const TextStyle(
@@ -417,6 +512,7 @@ class HasilReservasiScreen extends StatelessWidget {
                 color: Colors.grey[700],
                 fontSize: 16,
               ),
+              textAlign: TextAlign.right, // Align value to the right
             ),
           ),
         ],
@@ -435,25 +531,26 @@ Halo, saya ingin konfirmasi reservasi:
 📝 Keterangan: ${keterangan.isEmpty ? '-' : keterangan}
 ''';
 
-    const nomorTujuan = '6281230735844'; // Ganti dengan nomor tujuan
+    const nomorTujuan = '6281230735844'; // Ganti dengan nomor tujuan Anda
 
-    // Membuat URL WhatsApp
     final url = Uri.parse(
         'https://wa.me/$nomorTujuan?text=${Uri.encodeComponent(pesan)}');
 
     try {
-      // Menggunakan launchUrl pada versi terbaru url_launcher
-      if (await launchUrl(url)) {
+      if (await launchUrl(url, mode: LaunchMode.externalApplication)) {
         print("WhatsApp terbuka");
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka WhatsApp')),
+          const SnackBar(
+              content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi terinstall.'),
+              backgroundColor: Colors.red),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Terjadi kesalahan saat membuka WhatsApp')),
+            content: Text('Terjadi kesalahan saat membuka WhatsApp.'),
+            backgroundColor: Colors.red),
       );
       print("Error launching WhatsApp: $e");
     }

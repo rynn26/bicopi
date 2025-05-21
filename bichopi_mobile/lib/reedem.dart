@@ -1,9 +1,8 @@
 import 'dart:math';
-import 'package:coba3/reedem_up.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'popup_page.dart'; // Import PopupPage
+import 'package:coba3/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key});
@@ -13,68 +12,150 @@ class RewardPage extends StatefulWidget {
 }
 
 class _RewardPageState extends State<RewardPage> {
-  int currentPoints = 0; // Poin yang akan diambil dari Supabase
-  bool isLoading = true; // Menandakan data sedang diambil
-
-  final List<Map<String, dynamic>> rewards = [
-    {"title": "Kopi Premium", "points": 150, "description": "Nikmati citarasa kopi pilihan dengan kualitas terbaik."},
-    {"title": "Teh Herbal", "points": 200, "description": "Segarkan diri Anda dengan kehangatan teh herbal alami."},
-    {"title": "Diskon 50% Produk Pilihan", "points": 250, "description": "Raih kesempatan emas untuk mendapatkan diskon 50%."},
-    {"title": "Voucher Eksklusif Rp75.000", "points": 300, "description": "Voucher spesial senilai Rp75.000 untuk Anda."},
-  ];
+  int currentPoints = 0;
+  bool isLoading = true;
+  List<Map<String, dynamic>> rewards = [];
 
   @override
   void initState() {
     super.initState();
-    fetchCurrentPoints();
+    fetchAllData();
   }
 
-  // Fungsi untuk mengambil poin dari Supabase
- Future<void> fetchCurrentPoints() async {
-  try {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    if (user == null) {
-      throw Exception("User belum login.");
-    }
-
-    final response = await supabase
-        .from('member_points_log')
-        .select('points_earned')
-        .eq('member_id', user.id);
-
-    if (response == null || response.isEmpty) {
-      throw Exception("Tidak ada data poin.");
-    }
-
-    int total = 0;
-    for (final row in response) {
-      total += row['points_earned'] as int;
-    }
-
-    if (!mounted) return; // Tambahkan ini untuk mencegah error
-
+  Future<void> fetchAllData() async {
     setState(() {
-      currentPoints = total;
-      isLoading = false;
+      isLoading = true;
     });
-  } catch (e) {
-    print("Error mengambil poin: $e");
-    if (!mounted) return; // Tambahkan ini juga
+    await fetchCurrentPoints();
+    await fetchRewards();
     setState(() {
       isLoading = false;
     });
   }
-}
 
+  Future<void> fetchCurrentPoints() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+
+      if (user == null) {
+        print("Pengguna belum login.");
+        setState(() {
+          currentPoints = 0;
+        });
+        return;
+      }
+
+      final response = await supabase
+          .from('member_points_log')
+          .select('points_earned')
+          .eq('member_id', user.id);
+
+      int total = 0;
+      if (response != null && response.isNotEmpty) {
+        for (final row in response) {
+          total += row['points_earned'] as int;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        currentPoints = total;
+      });
+    } catch (e) {
+      print("Error mengambil poin: $e");
+      if (!mounted) return;
+      setState(() {
+        currentPoints = 0;
+      });
+    }
+  }
+
+  // Fungsi untuk mencatat penukaran
+  Future<void> redeemReward(String rewardId, String rewardTitle, int pointsToDeduct) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception("User belum login.");
+      }
+
+      // 1. Catat transaksi penukaran ke tabel 'penukaran_point'
+      // Perhatikan bahwa redeemed_at sekarang disertakan lagi
+      await supabase.from('penukaran_point').insert({
+        'member_id': user.id,
+        'penukaran_point': pointsToDeduct, // Ini akan mencatat poin reward
+      
+      });
+
+      // 2. BAGIAN INI DIHAPUS/DIKOMENTARI AGAR POIN TIDAK BERKURANG
+      /*
+      await supabase.from('member_points_log').insert({
+        'member_id': user.id,
+        'points_earned': -pointsToDeduct,
+        'description': 'Penukaran reward: "$rewardTitle"',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      */
+
+      // 3. Muat ulang poin saat ini (meskipun poin tidak berkurang, tetap panggil untuk konsistensi UI)
+      await fetchCurrentPoints();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Reward \"$rewardTitle\" berhasil diklaim!", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print("Error saat menukarkan reward: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal mengklaim reward. Coba lagi nanti: $e", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> fetchRewards() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('klaim_rewards')
+          .select('id, judul, deskripsi, points, status')
+          .eq('status', 'setuju');
+
+      if (response == null || response.isEmpty) {
+        setState(() {
+          rewards = [];
+        });
+      } else {
+        setState(() {
+          rewards = List<Map<String, dynamic>>.from(response.map((item) => {
+                "id": item["id"].toString(),
+                "title": item["judul"],
+                "description": item["deskripsi"],
+                "points": item["points"],
+              }));
+        });
+      }
+    } catch (e) {
+      print("Error mengambil rewards: $e");
+      setState(() {
+        rewards = [];
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60), // tinggi AppBar
+        preferredSize: const Size.fromHeight(60),
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -132,7 +213,7 @@ class _RewardPageState extends State<RewardPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 40,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF4CAF50),
+                            color: const Color(0xFF4CAF50),
                           ),
                         ),
                 ],
@@ -148,23 +229,44 @@ class _RewardPageState extends State<RewardPage> {
               ),
             ),
             const SizedBox(height: 10),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: rewards.length,
-              itemBuilder: (context, index) {
-                final reward = rewards[index];
-                return _buildRewardCard(
-                    context, reward["title"], reward["points"], reward["description"]);
-              },
-            ),
+            isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : rewards.isEmpty
+                    ? Center(
+                        child: Text(
+                          "Tidak ada reward tersedia.",
+                          style: GoogleFonts.poppins(),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: rewards.length,
+                        itemBuilder: (context, index) {
+                          final reward = rewards[index];
+                          return _buildRewardCard(
+                            context,
+                            reward["id"] ?? "",
+                            reward["title"] ?? "",
+                            reward["points"] ?? 0,
+                            reward["description"] ?? "",
+                          );
+                        },
+                      ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRewardCard(BuildContext context, String title, int points, String description) {
+  Widget _buildRewardCard(BuildContext context, String rewardId, String title, int points, String description) {
+    // Karena poin tidak berkurang, 'canRedeem' selalu true (jika ada reward)
+    // Atau Anda bisa tetap menggunakan logika 'currentPoints >= points' jika Anda ingin
+    // reward hanya bisa diklaim jika poin saat ini lebih besar dari poin reward,
+    // meskipun poinnya sendiri tidak berkurang.
+    // Saya akan biarkan logika lama agar reward masih butuh jumlah poin tertentu
+    final bool canRedeem = currentPoints >= points;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -214,14 +316,14 @@ class _RewardPageState extends State<RewardPage> {
                     "$points Poin",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF4CAF50),
+                      color: const Color(0xFF4CAF50),
                     ),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () => showRedeemDialog(context, title, points),
+                  onPressed: canRedeem ? () => showRedeemDialog(context, rewardId, title, points) : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: canRedeem ? const Color(0xFF4CAF50) : Colors.grey[400],
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 2,
@@ -242,16 +344,25 @@ class _RewardPageState extends State<RewardPage> {
     );
   }
 
-  // Fungsi untuk menampilkan dialog konfirmasi klaim reward
-  void showRedeemDialog(BuildContext context, String title, int points) {
+  void showRedeemDialog(BuildContext context, String rewardId, String title, int points) async {
+    // Logika ini masih akan mengecek apakah poin cukup untuk mengklaim.
+    // Jika Anda ingin poin tidak berkurang SAMA SEKALI dan reward bisa diklaim kapan saja,
+    // Anda bisa menghapus blok 'if (currentPoints < points)' ini.
     if (currentPoints < points) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Poin Anda tidak mencukupi untuk reward ini.",
-            style: GoogleFonts.poppins(),
-          ),
-        ),
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Poin Tidak Cukup"),
+            content: const Text("Maaf, poin Anda tidak cukup untuk menukar reward ini."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          );
+        },
       );
       return;
     }
@@ -263,11 +374,11 @@ class _RewardPageState extends State<RewardPage> {
       builder: (context) {
         return AlertDialog(
           title: Text(
-            "Konfirmasi Penukaran",
+            "Konfirmasi Klaim Reward",
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
           ),
           content: Text(
-            "Apakah Anda yakin ingin menukar $points poin untuk mendapatkan $title?",
+            "Apakah Anda yakin ingin mengklaim reward \"$title\"?", // Teks disesuaikan
             style: GoogleFonts.poppins(),
           ),
           actions: [
@@ -279,46 +390,48 @@ class _RewardPageState extends State<RewardPage> {
               ),
             ),
             TextButton(
-              onPressed: () {
-                setState(() {
-                  currentPoints -= points; // Kurangi poin di sini!
-                });
-
+              onPressed: () async {
                 Navigator.pop(context);
-                Navigator.of(context).push(
-                  PageRouteBuilder(
-                    opaque: false,
-                    barrierDismissible: true,
-                    transitionDuration: const Duration(milliseconds: 300),
-                    pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
-                      return PopupPage(
-                        title: title,
-                        points: points,
-                        transactionId: transactionId,
-                      );
-                    },
-                    transitionsBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: ScaleTransition(
-                          scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeInOutCubic,
+                await redeemReward(rewardId, title, points); // Memanggil fungsi redeemReward
+
+                if (mounted) {
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      opaque: false,
+                      barrierDismissible: true,
+                      transitionDuration: const Duration(milliseconds: 300),
+                      pageBuilder: (BuildContext context, Animation<double> animation,
+                          Animation<double> secondaryAnimation) {
+                        return PopupPage(
+                          title: title,
+                          points: points,
+                          transactionId: transactionId,
+                        );
+                      },
+                      transitionsBuilder: (BuildContext context, Animation<double> animation,
+                          Animation<double> secondaryAnimation, Widget child) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: ScaleTransition(
+                            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                              CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOutCubic,
+                              ),
                             ),
+                            child: child,
                           ),
-                          child: child,
-                        ),
-                      );
-                    },
-                  ),
-                );
+                        );
+                      },
+                    ),
+                  );
+                }
               },
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF4CAF50),
                 textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
-              child: const Text("Tukar"),
+              child: const Text("Klaim"),
             ),
           ],
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -327,10 +440,9 @@ class _RewardPageState extends State<RewardPage> {
     );
   }
 
-  /// Fungsi untuk membuat ID unik berdasarkan waktu + angka acak
   String generateUniqueId() {
     final int timestamp = DateTime.now().millisecondsSinceEpoch;
-    final int random = Random().nextInt(900) + 100; // Angka acak 3 digit
+    final int random = Random().nextInt(900) + 100;
     return "#$timestamp$random";
   }
 }

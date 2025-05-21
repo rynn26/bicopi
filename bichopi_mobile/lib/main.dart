@@ -1,6 +1,6 @@
 import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
-import 'package:coba3/profile.dart';
+import 'package:coba3/profile.dart'; // Pastikan import ProfileScreen
 import 'package:coba3/search_menu_page.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/foundation.dart';
@@ -18,6 +18,7 @@ import 'login.dart';
 import 'menu_list_from_db.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'payment_history_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,56 @@ class _HomePageState extends State<HomePage> {
   int? _focusedIndex; // Menyimpan indeks item yang sedang ditekan
   final Map<String, int> _cart =
       {}; // Menyimpan item dalam keranjang (nama: jumlah)
+  String? _memberId; // To store the member ID
+
+  @override
+  void initState() {
+    super.initState();
+    filteredMenus = allMenus;
+    _initializeMemberId(); // Call this to get the member ID on init
+  }
+
+  // New function to get the member ID
+  Future<void> _initializeMemberId() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        // First, check the 'members' table for the user's id_user
+        final response = await Supabase.instance.client
+            .from(
+                'members') // Assuming 'members' table holds the member's id_user
+            .select(
+                'id_user') // Select the 'id_user' column from the 'members' table
+            .eq('id',
+                user.id) // Assuming 'id' in 'members' table is linked to auth.users.id
+            .single();
+
+        if (response.isNotEmpty && response['id_user'] != null) {
+          setState(() {
+            _memberId = response['id_user'] as String;
+          });
+          print(
+              'Fetched member ID (id_user from members table): $_memberId'); // For debugging
+        } else {
+          print(
+              'Member profile (id_user in members table) not found for current user ID: ${user.id}');
+          setState(() {
+            _memberId = null; // Ensure it's null if not found
+          });
+        }
+      } catch (e) {
+        print('Error fetching member ID from members table: $e');
+        setState(() {
+          _memberId = null; // Handle error by setting _memberId to null
+        });
+      }
+    } else {
+      print('No user logged in. Member ID cannot be fetched.');
+      setState(() {
+        _memberId = null; // No user, so no member ID
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -62,11 +113,19 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // Update this list to EXCLUDE ProfileScreen
   final List<Widget> _pages = [
-    HomePage(),
+    HomeContent(addItemToCart: (itemName) {
+      // Implement your addItemToCart logic here or pass it from HomeContent
+      // For now, let's keep it simple as it's passed directly to HomeContent
+    }),
     ReservasiPage(selectedItem: {}),
     RewardPage(),
-    ProfileScreen(),
+    // PaymentHistoryPage needs memberId, so build it with a Builder
+    Builder(builder: (context) {
+      // Access _memberId from the state
+      return PaymentHistoryPage(memberId: (_HomePageState()._memberId ?? ''));
+    }),
   ];
 
   void _onBottomNavItemTapped(int index) {
@@ -117,12 +176,6 @@ class _HomePageState extends State<HomePage> {
     },
   ];
   List<Map<String, dynamic>> filteredMenus = [];
-
-  @override
-  void initState() {
-    super.initState();
-    filteredMenus = allMenus;
-  }
 
   void _filterMenu(String query) {
     setState(() {
@@ -198,11 +251,13 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: const Color(0xFFF5F5F5),
       body: PageView(
         controller: _pageController,
+        // The list of pages should reflect the order of your BottomNavigationBar items.
+        // ProfileScreen is now navigated to separately.
         children: [
-          HomeContent(addItemToCart: _addItemToCart), // Pass the callback
-          _pages[1],
-          _pages[2],
-          _pages[3],
+          HomeContent(addItemToCart: _addItemToCart), // Home (index 0)
+          ReservasiPage(selectedItem: {}), // Reservasi (index 1)
+          RewardPage(), // Redeem (index 2)
+          PaymentHistoryPage(memberId: _memberId ?? ''), // Riwayat (index 3, changed from index 4)
         ],
         onPageChanged: (index) {
           setState(() {
@@ -258,10 +313,12 @@ class _HomePageState extends State<HomePage> {
                   currentIndex: _currentIndex,
                   isFocused: _focusedIndex == 2,
                 ),
+                // "Profil" item is now removed from BottomNavigationBar
+                // Add the "Riwayat" (Payment History) item here
                 _buildNavItem(
-                  index: 3,
-                  icon: Icons.person_outline,
-                  label: 'Profil',
+                  index: 3, // New index for Riwayat (since Profile is removed)
+                  icon: Icons.history, // Choose an appropriate icon
+                  label: 'Riwayat',
                   onTap: _onBottomNavItemTapped,
                   currentIndex: _currentIndex,
                   isFocused: _focusedIndex == 3,
@@ -324,8 +381,7 @@ class HomeContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _buildTopBar(context),
-
+          _buildTopBar(context), // Perhatikan pemanggilan di sini
           _buildCategoryList(context),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -357,6 +413,138 @@ class HomeContent extends StatelessWidget {
       ),
     );
   }
+}
+
+// _buildTopBar harus dipindahkan ke sini atau dijadikan method static di HomeContent
+// agar bisa mengakses context dan navigasi
+Widget _buildTopBar(BuildContext context) {
+  return SafeArea(
+    child: Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(25),
+          bottomRight: Radius.circular(25),
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Background image
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(25),
+              bottomRight: Radius.circular(25),
+            ),
+            child: Image.asset(
+              'assets/backgroundb.png',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          // Green overlay
+          Container(
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 55, 221, 33).withOpacity(0.3),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
+              ),
+            ),
+          ),
+          // Profile icon di pojok kanan atas
+          Positioned(
+            top: 36,
+            right: 35,
+            child: GestureDetector(
+              onTap: () {
+                // Arahkan ke halaman profil
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(), // Navigasi ke ProfileScreen
+                  ),
+                );
+              },
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.green[800],
+                ),
+              ),
+            ),
+          ),
+          // Content: Greeting + Search Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Selamat Datang Di,",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  "BICOPI",
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF028A0F),
+                  ),
+                ),
+                const SizedBox(height: 35),
+                // Search Bar
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SearchMenuPage()),
+                    );
+                  },
+                  child: AbsorbPointer(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: "Cari menu...",
+                          hintStyle: TextStyle(color: Colors.grey[700]),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Color(0xFF078603),
+                            size: 28,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 Widget _buildCategoryList(BuildContext context) {
@@ -445,137 +633,6 @@ Widget _buildCategoryList(BuildContext context) {
   );
 }
 
-Widget _buildTopBar(BuildContext context) {
-  return SafeArea(
-    child: Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(25),
-          bottomRight: Radius.circular(25),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Background image
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(25),
-              bottomRight: Radius.circular(25),
-            ),
-            child: Image.asset(
-              'assets/backgroundb.png',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-            ),
-          ),
-          // Green overlay
-          Container(
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 55, 221, 33).withOpacity(0.3),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-          ),
-          // Profile icon di pojok kanan atas
-          Positioned(
-            top: 36,
-            right: 35,
-            child: GestureDetector(
-              onTap: () {
-                // Arahkan ke halaman profil
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                );
-              },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.green[800],
-                ),
-              ),
-            ),
-          ),
-          // Content: Greeting + Search Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Selamat Datang Di,",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  "BICOPI",
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF028A0F),
-                  ),
-                ),
-                const SizedBox(height: 35),
-                // Search Bar
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SearchMenuPage()),
-                    );
-                  },
-                  child: AbsorbPointer(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "Cari menu...",
-                          hintStyle: TextStyle(color: Colors.grey[700]),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Color(0xFF078603),
-                            size: 28,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
 Widget _buildCarousel() {
   final List<String> imageList = [
     "assets/paketramadhan.jpg",
@@ -598,6 +655,7 @@ Widget _buildCarousel() {
             image,
             fit: BoxFit.cover,
             width: double.infinity,
+            height: double.infinity,
           ),
         );
       }).toList(),
