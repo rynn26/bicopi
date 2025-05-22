@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF078603),
+                        color: Colors.green.shade700,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide:
-                              BorderSide(color:Color(0xFF078603), width: 2),
+                              BorderSide(color: Colors.green.shade600, width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 16),
@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide:
-                              BorderSide(color: Color(0xFF078603), width: 2),
+                              BorderSide(color: Colors.green.shade600, width: 2),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 16),
@@ -204,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ElevatedButton(
                       onPressed: _isLoggingIn ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:Color(0xFF078603),
+                        backgroundColor:  Color(0xFF078603),
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

@@ -2,7 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'package:coba3/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
+
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key});
@@ -19,6 +21,7 @@ class _RewardPageState extends State<RewardPage> {
   @override
   void initState() {
     super.initState();
+
     fetchAllData();
   }
 
@@ -32,6 +35,7 @@ class _RewardPageState extends State<RewardPage> {
       isLoading = false;
     });
   }
+
 
   Future<void> fetchCurrentPoints() async {
     try {
@@ -80,6 +84,7 @@ class _RewardPageState extends State<RewardPage> {
         throw Exception("User belum login.");
       }
 
+
       // 1. Catat transaksi penukaran ke tabel 'penukaran_point'
       // Perhatikan bahwa redeemed_at sekarang disertakan lagi
       await supabase.from('penukaran_point').insert({
@@ -118,6 +123,7 @@ class _RewardPageState extends State<RewardPage> {
         ),
       );
     }
+
   }
 
   Future<void> fetchRewards() async {
@@ -147,6 +153,99 @@ class _RewardPageState extends State<RewardPage> {
       setState(() {
         rewards = [];
       });
+    }
+  }
+
+  Future<void> deductPoints(int points, String rewardTitle, String rewardId) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception("User belum login.");
+      }
+
+      await supabase.from('member_points_log').insert({
+        'member_id': user.id,
+        'points_earned': -points,
+        'description': 'Poin ditukarkan untuk "$rewardTitle"',
+        'created_at': DateTime.now().toIso8601String(),
+        'reward_id': rewardId,
+        'redeemed_at': DateTime.now().toIso8601String(),
+      });
+
+      setState(() {
+        currentPoints -= points;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Poin berhasil ditukarkan untuk \"$rewardTitle\"!", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print("Error mengurangi poin: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal menukar poin. Coba lagi nanti.", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> fetchRewards() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('klaim_rewards')
+          .select('id, judul, deskripsi, points, status')
+          .eq('status', 'setuju');
+
+      if (response == null || response.isEmpty) {
+        setState(() {
+          rewards = [];
+        });
+      } else {
+        setState(() {
+          rewards = List<Map<String, dynamic>>.from(response.map((item) => {
+                "id": item["id"].toString(),
+                "title": item["judul"],
+                "description": item["deskripsi"],
+                "points": item["points"],
+              }));
+        });
+      }
+    } catch (e) {
+      print("Error mengambil rewards: $e");
+      setState(() {
+        rewards = [];
+      });
+    }
+  }
+
+  Future<bool> hasRedeemedRecently(String rewardId) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
+      final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
+
+      final response = await supabase
+          .from('member_points_log')
+          .select('id')
+          .eq('member_id', user.id)
+          .eq('reward_id', rewardId)
+          .gte('redeemed_at', oneWeekAgo)
+          .limit(1);
+
+      return response != null && response.isNotEmpty;
+    } catch (e) {
+      print("Error memeriksa klaim sebelumnya: $e");
+      return false;
     }
   }
 
@@ -260,12 +359,14 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   Widget _buildRewardCard(BuildContext context, String rewardId, String title, int points, String description) {
+
     // Karena poin tidak berkurang, 'canRedeem' selalu true (jika ada reward)
     // Atau Anda bisa tetap menggunakan logika 'currentPoints >= points' jika Anda ingin
     // reward hanya bisa diklaim jika poin saat ini lebih besar dari poin reward,
     // meskipun poinnya sendiri tidak berkurang.
     // Saya akan biarkan logika lama agar reward masih butuh jumlah poin tertentu
     final bool canRedeem = currentPoints >= points;
+
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -321,7 +422,9 @@ class _RewardPageState extends State<RewardPage> {
                   ),
                 ),
                 ElevatedButton(
+
                   onPressed: canRedeem ? () => showRedeemDialog(context, rewardId, title, points) : null,
+
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canRedeem ? const Color(0xFF4CAF50) : Colors.grey[400],
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -345,9 +448,11 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   void showRedeemDialog(BuildContext context, String rewardId, String title, int points) async {
+
     // Logika ini masih akan mengecek apakah poin cukup untuk mengklaim.
     // Jika Anda ingin poin tidak berkurang SAMA SEKALI dan reward bisa diklaim kapan saja,
     // Anda bisa menghapus blok 'if (currentPoints < points)' ini.
+
     if (currentPoints < points) {
       showDialog(
         context: context,
@@ -363,6 +468,19 @@ class _RewardPageState extends State<RewardPage> {
             ],
           );
         },
+      );
+      return;
+    }
+
+    final hasRedeemed = await hasRedeemedRecently(rewardId);
+    if (hasRedeemed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Anda telah mengklaim reward ini. Anda dapat mengklaimnya lagi setelah 7 hari.",
+            style: GoogleFonts.poppins(),
+          ),
+        ),
       );
       return;
     }
@@ -392,6 +510,7 @@ class _RewardPageState extends State<RewardPage> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
+
                 await redeemReward(rewardId, title, points); // Memanggil fungsi redeemReward
 
                 if (mounted) {

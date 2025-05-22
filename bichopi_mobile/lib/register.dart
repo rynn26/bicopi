@@ -52,6 +52,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           10; // Poin referral untuk pendaftar saat menggunakan kode
 
       if (referralCode.isNotEmpty) {
+
         final referralMatch = await Supabase.instance.client
             .from('affiliates')
             .select('id_user')
@@ -160,7 +161,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             'created_at': DateTime.now().toIso8601String(),
           });
           print('Berhasil menambahkan poin referral untuk pendaftar (log).');
-
+=======
+ 
           // Update total poin pendaftar
           final currentPointsPendaftar = await Supabase.instance.client
               .from('members')
