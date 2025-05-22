@@ -489,7 +489,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                                 item["nama_menu"] ?? "-",
                                 style: const TextStyle(fontWeight: FontWeight.w500),
                               ),
-                              subtitle: Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"),
+                              // subtitle: Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"), // REMOVED THIS LINE
                               trailing: Text(
                                 "Rp ${item["harga_menu"]}",
                                 style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),

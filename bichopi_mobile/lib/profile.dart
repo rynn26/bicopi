@@ -29,6 +29,14 @@ class _ProfilePage extends State<ProfileScreen> {
     _loadUserData();
   }
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadUserData() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
@@ -41,7 +49,7 @@ class _ProfilePage extends State<ProfileScreen> {
 
         setState(() {
           _nameController.text = response['nama'] ?? '';
-          _emailController.text = response['email'] ?? '';
+          _emailController.text = user.email ?? ''; // Use Supabase user email as primary
           _phoneController.text = response['phone']?.toString() ?? '';
           _imageUrl = response['image_url'];
           _isLoading = false;
@@ -51,11 +59,21 @@ class _ProfilePage extends State<ProfileScreen> {
         setState(() {
           _isLoading = false;
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to load user data: $e")),
+          );
+        }
       }
     } else {
       setState(() {
         _isLoading = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("User not logged in.")),
+        );
+      }
     }
   }
 
@@ -72,41 +90,54 @@ class _ProfilePage extends State<ProfileScreen> {
 
   Future<void> _uploadImageToSupabase(File file) async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-    final fileExt = p.extension(file.path);
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please log in to upload image.")),
+        );
+      }
+      return;
+    }
 
+    final fileExt = p.extension(file.path);
     final filePath = 'profile_pictures/${user.id}$fileExt';
 
     try {
-      final fileBytes = await file.readAsBytes(); // convert to Uint8List
+      final fileBytes = await file.readAsBytes();
 
       await Supabase.instance.client.storage
           .from('profileimages')
-          .uploadBinary(filePath, fileBytes,
-              fileOptions: const FileOptions(upsert: true));
+          .uploadBinary(
+            filePath,
+            fileBytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
 
       final imageUrl = Supabase.instance.client.storage
           .from('profileimages')
           .getPublicUrl(filePath);
 
-      // Simpan URL ke database
+      // Save URL to database
       await Supabase.instance.client
           .from('profil')
-          .update({'image_url': imageUrl})
-          .eq('id_user', user.id);
+          .update({'image_url': imageUrl}).eq('id_user', user.id);
 
       setState(() {
         _imageUrl = imageUrl;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Foto profil berhasil diperbarui")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile picture updated successfully!")),
+        );
+      }
     } catch (e) {
       print("Upload error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Gagal upload gambar: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to upload image: $e")),
+        );
+      }
     }
   }
 
@@ -114,19 +145,28 @@ class _ProfilePage extends State<ProfileScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
-        await Supabase.instance.client.from('profil').update({
-          'nama': _nameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-        }).eq('id_user', user.id);
+        await Supabase.instance.client.from('profil').upsert(
+          {
+            'id_user': user.id, // Ensure id_user is provided for upsert
+            'nama': _nameController.text,
+            'email': _emailController.text, // Update email in profile table too
+            'phone': _phoneController.text.isEmpty ? null : _phoneController.text, // Handle empty phone number
+          },
+          onConflict: 'id_user', // Specify conflict key for upsert
+        );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Data berhasil diperbarui")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Profile data updated successfully!")),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal update data: $e")),
-        );
+        print("Update data error: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to update profile data: $e")),
+          );
+        }
       }
     }
   }
@@ -142,34 +182,46 @@ class _ProfilePage extends State<ProfileScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 16, // Ukuran teks diperkecil
+        style: TextStyle(
+          fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF2E7D32),
+          color: Colors.grey[800], // Darker grey for section titles
         ),
       ),
     );
   }
 
   Widget _buildRoundedTextField(
-      String label, TextEditingController controller, IconData icon) {
+      String label, TextEditingController controller, IconData icon, {bool readOnly = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
         controller: controller,
-        style: const TextStyle(fontSize: 14), // Ukuran teks input diperkecil
+        readOnly: readOnly,
+        style: const TextStyle(fontSize: 16, color: Colors.black87), // Slightly larger input text
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF2E7D32), fontSize: 14), // Ukuran teks label diperkecil
-          prefixIcon: Icon(icon, color: Color(0xFF2E7D32), size: 20), // Ukuran ikon diperkecil
+          labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(15), // More rounded corners
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0), // Lighter border
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFF1E88E5), width: 2.0), // Primary green on focus
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0),
           ),
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Padding diperkecil
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 18), // Slightly larger padding
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
@@ -180,14 +232,17 @@ class _ProfilePage extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.all(18), // Slightly larger padding
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(15), // Consistent rounding
           boxShadow: [
-            const BoxShadow(
-              color: Colors.black12, blurRadius: 3, offset: Offset(1, 1)),
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1), // Softer shadow
+              blurRadius: 8,
+              offset: const Offset(0, 3), // Subtle elevation
+            ),
           ],
         ),
         child: Row(
@@ -195,101 +250,85 @@ class _ProfilePage extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF2E7D32), size: 20), // Ukuran ikon diperkecil
-                const SizedBox(width: 10),
-                Text(text, style: const TextStyle(fontSize: 14)), // Ukuran teks diperkecil
+                Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
+                const SizedBox(width: 15),
+                Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87)), // Larger text
               ],
             ),
             const Icon(Icons.arrow_forward_ios,
-                size: 14, color: Color(0xFF2E7D32)), // Ukuran ikon diperkecil
+                size: 16, color: Colors.grey), // Grey arrow for subtlety
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIconButtonWithText(IconData icon, VoidCallback onPressed, String text, {Color? backgroundColor, Color? iconColor, TextStyle? textStyle}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 40, // Ukuran tombol ikon diperkecil
-          height: 40, // Ukuran tombol ikon diperkecil
-          child: ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: backgroundColor ?? Colors.green,
-              foregroundColor: iconColor ?? Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
-              ),
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(40, 40),
+  Widget _buildActionButton(IconData icon, String text, VoidCallback onPressed, Color color) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color, // Use provided color
+            foregroundColor: Colors.white,
+            elevation: 4, // Slightly more elevation
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15), // Consistent rounding
             ),
-            child: Icon(icon, size: 20), // Ukuran ikon diperkecil
+            padding: const EdgeInsets.symmetric(vertical: 14), // Larger padding for better touch target
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500), // Larger and slightly bolder text
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 3), // Jarak diperkecil
-        Text(
-          text,
-          style: textStyle ?? const TextStyle(fontSize: 10, color: Colors.grey), // Ukuran teks diperkecil
-          textAlign: TextAlign.center,
-        ),
-      ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200], // Warna latar belakang AppBar sebelumnya
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF078603), // Warna AppBar sebelumnya
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
+      backgroundColor: const Color(0xFFF5F5F5), // Light background
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1E88E5), // Primary blue AppBar
+        elevation: 0, // No shadow under app bar
+        title: const Text(
+          "Profile",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
           ),
-          child: SafeArea(
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 25,
-                  top: 10,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const HomePage()),
-                      );
-                    },
-                  ),
-                ),
-                const Center(
-                  child: Text(
-                    "Profile",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          },
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(25), // Rounded bottom corners for AppBar
           ),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0), // Padding keseluruhan diperkecil
+              padding: const EdgeInsets.all(20.0), // Increased overall padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -297,90 +336,104 @@ class _ProfilePage extends State<ProfileScreen> {
                     child: Stack(
                       children: [
                         CircleAvatar(
-                          radius: 50, // Ukuran avatar diperkecil
+                          radius: 60, // Slightly larger avatar
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
                               : (_imageUrl != null
-                                  ? NetworkImage(_imageUrl!)
-                                  : const AssetImage(
+                                      ? NetworkImage(_imageUrl!)
+                                      : const AssetImage(
                                           "assets/foto_profile.png")
-                                      as ImageProvider),
-                          backgroundColor: Colors.grey[300],
+                                          as ImageProvider),
+                          backgroundColor: Colors.grey[200],
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: InkWell(
                             onTap: _pickImage,
-                            borderRadius: BorderRadius.circular(15), // Sudut lebih kecil
+                            borderRadius: BorderRadius.circular(20), // Larger for better touch
                             child: Container(
-                              padding: const EdgeInsets.all(6.0), // Padding diperkecil
+                              padding: const EdgeInsets.all(8.0), // Larger padding
                               decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(color: Colors.white, width: 1), // Border lebih tipis
+                                color: const Color(0xFF4CAF50), // Secondary green for camera button
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white, width: 2), // Thicker white border
                               ),
                               child: const Icon(Icons.camera_alt,
-                                  size: 16, color: Colors.white), // Ukuran ikon diperkecil
+                                  size: 20, color: Colors.white), // Larger icon
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 15), // Jarak diperkecil
+                  const SizedBox(height: 20),
                   Center(
                     child: Column(
                       children: [
                         Text(
-                          _nameController.text,
-                          style: const TextStyle(
-                            fontSize: 18, // Ukuran teks nama diperkecil
+                          _nameController.text.isNotEmpty ? _nameController.text : "Your Name",
+                          style: TextStyle(
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E7D32),
+                            color: Colors.grey[900], // Darker text for name
                           ),
                         ),
-                        const SizedBox(height: 3), // Jarak diperkecil
+                        const SizedBox(height: 5),
                         Text(
-                          _emailController.text,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey), // Ukuran teks email diperkecil
+                          _emailController.text.isNotEmpty ? _emailController.text : "youremail@example.com",
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]), // Subtler grey for email
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20), // Jarak diperkecil
+                  const SizedBox(height: 30),
                   Container(
-                    padding: const EdgeInsets.all(12.0), // Padding diperkecil
+                    padding: const EdgeInsets.all(16.0), // Larger padding for section
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
+                      borderRadius: BorderRadius.circular(15), // Consistent rounding
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle("Informasi Akun"),
+                        _buildSectionTitle("Account Information"),
                         _buildRoundedTextField(
-                            "Nama Lengkap", _nameController, Icons.person_outline),
+                            "Full Name", _nameController, Icons.person_outline),
                         _buildRoundedTextField(
-                            "Email", _emailController, Icons.email_outlined),
+                            "Email", _emailController, Icons.email_outlined, readOnly: true), // Email should generally be read-only
                         _buildRoundedTextField(
-                            "No. Telepon", _phoneController, Icons.phone_outlined),
+                            "Phone Number", _phoneController, Icons.phone_outlined),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 15), // Jarak diperkecil
+                  const SizedBox(height: 20),
                   Container(
-                    padding: const EdgeInsets.all(12.0), // Padding diperkecil
+                    padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12), // Sudut lebih kecil
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle("Pengaturan Keamanan"),
+                        _buildSectionTitle("Security Settings"),
                         _buildClickableRoundedBox(
-                            "Ubah Password", Icons.lock_outline, () {
+                            "Change Password", Icons.lock_outline, () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -390,24 +443,12 @@ class _ProfilePage extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20), // Jarak diperkecil
+                  const SizedBox(height: 30),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildIconButtonWithText(
-                        Icons.save_alt,
-                        _updateUserData,
-                        "Simpan",
-                        backgroundColor: Colors.green,
-                        textStyle: const TextStyle(fontSize: 10), // Ukuran teks tombol diperkecil
-                      ),
-                      _buildIconButtonWithText(
-                        Icons.logout,
-                        _logout,
-                        "Logout",
-                        backgroundColor: Colors.redAccent,
-                        textStyle: const TextStyle(fontSize: 10), // Ukuran teks tombol diperkecil
-                      ),
+                      _buildActionButton(Icons.save, "Save Changes", _updateUserData, const Color(0xFF1E88E5)), // Primary blue for save
+                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent), // Red for logout
                     ],
                   ),
                 ],
