@@ -92,8 +92,8 @@ class _CartPageState extends State<CartPage> {
         'item_name': itemName,
         'quantity': quantity,
         'price': price,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
+        'created_at': now,
+        'updated_at': now,
       }, onConflict: 'user_id,item_name');
     } else {
       await supabase
@@ -166,35 +166,37 @@ class _CartPageState extends State<CartPage> {
       print('Error saat menyimpan ke Supabase: $e');
     }
   }
-Future<String?> _fetchMemberIdFromProfiles() async {
-  final supabase = Supabase.instance.client;
-  final userId = supabase.auth.currentUser?.id;
-  print("Mencoba mendapatkan member ID untuk user: $userId"); // Tambahkan ini
-  if (userId == null) {
-    print("User ID null, mengembalikan null"); // Tambahkan ini
-    return null;
-  }
-  try {
-    final response = await supabase
-        .from('profil')
-        .select('id_user')
-        .eq('id_user', userId)
-        .single();
 
-    print("Respon dari Supabase: $response"); // Tambahkan ini
-    if (response == null) {
-      print("Respon null, mengembalikan null"); // Tambahkan ini
+  Future<String?> _fetchMemberIdFromProfiles() async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+    print("Mencoba mendapatkan member ID untuk user: $userId");
+    if (userId == null) {
+      print("User ID null, mengembalikan null");
       return null;
     }
-    final memberId = response['id_user'] as String?;
-    print("Member ID ditemukan: $memberId"); // Tambahkan ini
-    return memberId;
-  } catch (e) {
-    print('Error fetching member ID: $e'); // Pastikan ini ada
-    return null;
+    try {
+      final response = await supabase
+          .from('profil')
+          .select('id_user')
+          .eq('id_user', userId)
+          .single();
+
+      print("Respon dari Supabase: $response");
+      if (response == null) {
+        print("Respon null, mengembalikan null");
+        return null;
+      }
+      final memberId = response['id_user'] as String?;
+      print("Member ID ditemukan: $memberId");
+      return memberId;
+    } catch (e) {
+      print('Error fetching member ID: $e');
+      return null;
+    }
   }
-}
-void _checkout(BuildContext context) async {
+
+  void _checkout(BuildContext context) async {
     final shouldProceed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -216,18 +218,18 @@ void _checkout(BuildContext context) async {
 
     if (shouldProceed == true) {
       setState(() => isLoading = true);
-      print("Checkout dimulai"); // Tambahkan ini
+      print("Checkout dimulai");
       try {
-        print("Mencoba menyimpan keranjang"); // Tambahkan ini
+        print("Mencoba menyimpan keranjang");
         await _saveCartToSupabase();
-        print("Keranjang berhasil disimpan"); // Tambahkan ini
+        print("Keranjang berhasil disimpan");
         final totalPrice = _calculateTotalPrice();
-        print("Total harga: $totalPrice"); // Tambahkan ini
+        print("Total harga: $totalPrice");
         if (!mounted) {
-          print("Widget tidak lagi mounted, membatalkan navigasi"); // Tambahkan ini
+          print("Widget tidak lagi mounted, membatalkan navigasi");
           return;
         }
-        print("Navigasi ke PaymentPage"); // Tambahkan ini
+        print("Navigasi ke PaymentPage");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -237,7 +239,7 @@ void _checkout(BuildContext context) async {
             ),
           ),
         );
-        print("Navigasi selesai"); // Tambahkan ini
+        print("Navigasi selesai");
       } catch (e) {
         print("Error saat checkout: $e");
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,17 +247,17 @@ void _checkout(BuildContext context) async {
         );
       } finally {
         setState(() => isLoading = false);
-        print("Checkout selesai (loading diatur ke false)"); // Tambahkan ini
+        print("Checkout selesai (loading diatur ke false)");
       }
     } else {
-      print("Pengguna membatalkan checkout"); // Tambahkan ini
+      print("Pengguna membatalkan checkout");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF0F2F5), // Lighter background
       body: Column(
         children: [
           const CustomAppBar(),
@@ -264,8 +266,10 @@ void _checkout(BuildContext context) async {
                 ? const Center(
                     child: Text(
                       "Keranjang masih kosong",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 16, // Reduced from 18
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey),
                     ),
                   )
                 : Padding(
@@ -308,10 +312,6 @@ void _checkout(BuildContext context) async {
   }
 }
 
-extension on String {
-  toIso8601String() {}
-}
-
 // Komponen UI
 
 class CartItemCard extends StatelessWidget {
@@ -334,60 +334,81 @@ class CartItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalPrice = itemPrice * quantity;
 
-    return Container(
+    return Card(
+      // Use Card widget for a modern look
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F3FB), // Ungu muda
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(itemName,
+      elevation: 4, // Add elevation for a subtle shadow
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16)), // More rounded corners
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    itemName,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text("${formatter.format(itemPrice)} x $quantity",
-                    style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 4),
-                Text("Total: ${formatter.format(totalPrice)}",
-                    style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 15, // Reduced from 17
                         fontWeight: FontWeight.bold,
-                        color: Colors.green)),
-              ],
+                        color: Color(0xFF333333)), // Darker text for better contrast
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "${formatter.format(itemPrice)} x $quantity",
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.grey), // Reduced from 14
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Total: ${formatter.format(totalPrice)}",
+                    style: const TextStyle(
+                        fontSize: 13, // Reduced from 15
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF078603)), // Consistent green color
+                  ),
+                ],
+              ),
             ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                onPressed: onDecrease,
-                icon: const Icon(Icons.remove_circle_outline,
-                    color: Colors.red),
+            Container(
+              // Wrap quantity controls in a container for styling
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9), // Light green background
+                borderRadius: BorderRadius.circular(20),
               ),
-              Text(
-                "$quantity",
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: onDecrease,
+                    icon: const Icon(Icons.remove_circle_outline,
+                        color: Colors
+                            .redAccent), // Slightly brighter red
+                    tooltip: 'Kurangi jumlah', // Add tooltips
+                  ),
+                  Text(
+                    "$quantity",
+                    style: const TextStyle(
+                        fontSize: 14, // Reduced from 16
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333)),
+                  ),
+                  IconButton(
+                    onPressed: onIncrease,
+                    icon: const Icon(Icons.add_circle_outline,
+                        color: Color(0xFF078603)), // Consistent green color
+                    tooltip: 'Tambah jumlah',
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: onIncrease,
-                icon: const Icon(Icons.add_circle_outline,
-                    color: Colors.green),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
 
 class PaymentSummaryCard extends StatelessWidget {
   final int subtotal;
@@ -407,98 +428,90 @@ class PaymentSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Detail Pembayaran",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-
-          const SizedBox(height: 12),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Subtotal"),
-              Text(formatter.format(subtotal)),
-            ],
-          ),
-          const SizedBox(height: 4),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Biaya Layanan"),
-              Text(formatter.format(serviceFee)),
-            ],
-          ),
-
-          const Divider(height: 24, thickness: 1),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Total",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                formatter.format(total),
-                style: const TextStyle(
+    return Card(
+      // Use Card widget for a modern look
+      elevation: 6, // Increased elevation for more prominence
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.only(top: 16), // Adjust margin for better spacing
+      child: Padding(
+        padding: const EdgeInsets.all(20), // More padding
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Detail Pembayaran",
+              style: TextStyle(
+                  fontSize: 16, // Reduced from 18
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF078603),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isLoading ? null : onCheckout,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: const Color(0xFF078603),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      "Checkout",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  color: Color(0xFF333333)),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            _buildSummaryRow("Subtotal", subtotal, Colors.black87),
+            const SizedBox(height: 8),
+            _buildSummaryRow("Biaya Layanan", serviceFee, Colors.black87),
+            const Divider(height: 30, thickness: 1.5, color: Colors.grey), // Thicker divider
+            _buildSummaryRow("Total", total, const Color(0xFF078603),
+                isTotal: true),
+            const SizedBox(height: 24), // More vertical spacing
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : onCheckout,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14), // Taller button (Reduced from 16)
+                  backgroundColor: const Color(0xFF078603),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4, // Add elevation to the button
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 22, // Larger indicator (Reduced from 24)
+                        width: 22, // Reduced from 24
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5, // Thicker stroke
+                        ),
+                      )
+                    : const Text(
+                        "Checkout",
+                        style: TextStyle(
+                          fontSize: 16, // Reduced from 18
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSummaryRow(String title, int amount, Color color,
+      {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isTotal ? 15 : 13, // Reduced from 17 and 15
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: color,
+          ),
+        ),
+        Text(
+          formatter.format(amount),
+          style: TextStyle(
+            fontSize: isTotal ? 15 : 13, // Reduced from 17 and 15
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal ? const Color(0xFF078603) : color,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -509,31 +522,46 @@ class CustomAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
+      padding:
+          const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16), // Adjust top padding for status bar (Reduced from 50 and 20)
       decoration: const BoxDecoration(
         color: Color(0xFF078603),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
+          bottomLeft: Radius.circular(25), // More rounded corners
+          bottomRight: Radius.circular(25),
         ),
+        boxShadow: [
+          // Add shadow to app bar
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios,
+                color: Colors.white), // iOS style back arrow
             onPressed: () => Navigator.pop(context),
+            tooltip: 'Kembali',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10), // Increased spacing (Reduced from 12)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
-              Text("Keranjang",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              Text("Bichopi, Indonesia",
-                  style: TextStyle(color: Colors.white70, fontSize: 14)),
+              Text(
+                "Keranjang Anda", // More engaging title
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18, // Reduced from 20
+                    fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "Bichopi, Indonesia",
+                style: TextStyle(fontSize: 12, color: Colors.white70), // Reduced from 14
+              ),
             ],
           ),
         ],
