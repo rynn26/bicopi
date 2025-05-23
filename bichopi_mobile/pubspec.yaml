@@ -119,7 +119,7 @@ flutter:
     - assets/reservasi1.png
     - assets/reservasi2.png
     - assets/reservasi3.png
-    - assets/icon_wa.png
+    
     - assets/bicopi_logo.png
     - assets/kopiesti.png
     - assets/icon_cash.png
@@ -128,8 +128,7 @@ flutter:
     - assets/backgroundb.png
 
 
-
-
+    - assets/icon_wa.png
     - assets/icon_miee.png
     - assets/icon_minuman1.png
     - assets/icon_snack1.png
