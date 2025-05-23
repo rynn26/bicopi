@@ -19,13 +19,18 @@ class MyApp extends StatelessWidget {
         hintColor: Colors.grey[600],
         scaffoldBackgroundColor: Colors.grey[100],
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.green[700],
+          backgroundColor: Colors.green,
           titleTextStyle: const TextStyle(
             color: Colors.white,
             fontSize: 20.0,
             fontWeight: FontWeight.bold,
           ),
           iconTheme: const IconThemeData(color: Colors.white),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(15),
+            ),
+          ),
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(fontSize: 16.0, color: Colors.black87),
@@ -61,10 +66,17 @@ class MyApp extends StatelessWidget {
             side: BorderSide(color: Colors.grey[400]!),
           ),
           backgroundColor: Colors.grey[200],
-          selectedColor: Colors.green[200],
+          selectedColor: Colors.green,
           labelStyle: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
           secondaryLabelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
           brightness: Brightness.light,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: const BorderSide(color: Colors.green, width: 2.0),
+          ),
+          hintStyle: TextStyle(color: Colors.grey[600]),
         ),
       ),
       home: const SearchMenuPage(),
@@ -316,10 +328,17 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cari Menu"),
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        titleTextStyle: Theme.of(context).appBarTheme.titleTextStyle,
-        iconTheme: Theme.of(context).appBarTheme.iconTheme,
+        title: const Text(
+          "Cari Menu",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color(0xFF078603),
+        iconTheme: const IconThemeData(color: Colors.white),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(15),
+          ),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60.0),
           child: Padding(
@@ -345,8 +364,9 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.0),
-                        borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2.0),
+                        borderSide: const BorderSide(color: Color(0xFF078603), width: 2.0),
                       ),
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                     ),
                   ),
                 ),
@@ -356,7 +376,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                   height: 48.0,
                   child: FloatingActionButton(
                     heroTag: "cartButton",
-                    backgroundColor: Theme.of(context).primaryColor,
+                    backgroundColor: Colors.green,
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -406,7 +426,7 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                         ),
                       ),
                       selected: isSelected,
-                      selectedColor: Theme.of(context).primaryColor,
+                      selectedColor: Color(0xFF078603),
                       backgroundColor: Colors.grey[200],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),
@@ -489,10 +509,9 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                                 item["nama_menu"] ?? "-",
                                 style: const TextStyle(fontWeight: FontWeight.w500),
                               ),
-                              // subtitle: Text(item["deskripsi_menu"] ?? "Tidak ada deskripsi"), // REMOVED THIS LINE
                               trailing: Text(
                                 "Rp ${item["harga_menu"]}",
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
                               ),
                               onTap: () => addToCart(item),
                             ),
@@ -510,8 +529,8 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
               height: 60.0,
               child: FloatingActionButton(
                 heroTag: "chatbotButton",
-                backgroundColor: Colors.transparent,
-                elevation: 0,
+                backgroundColor: Color(0xFF078603), // Background tombol chatbot hijau
+                elevation: 3,
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -519,30 +538,10 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
                         builder: (context) => const ChatbotRekomendasi()),
                   );
                 },
-                child: Container(
-                  width: 60.0,
-                  height: 60.0,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16.0),
-                    gradient: LinearGradient(
-                      colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColorDark ?? Theme.of(context).primaryColor.withOpacity(0.8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 7,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_outline,
-                    color: Colors.white,
-                    size: 30.0,
-                  ),
+                child: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Colors.white,
+                  size: 30.0,
                 ),
               ),
             ),
