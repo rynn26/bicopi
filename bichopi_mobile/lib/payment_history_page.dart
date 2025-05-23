@@ -209,14 +209,19 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50], // Latar belakang off-white
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1.5, // Subtle shadow for depth
+        backgroundColor: Color(0xFF078603),   
+        elevation: 1.5,
+        shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(20), // Lengkungan bawah
+        ),
+      ), // Subtle shadow for depth
         title: Text(
           "Riwayat Pembayaran",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
             fontSize: 19, // Slightly adjusted font size
-            color: Colors.grey[850],
+            color: const Color.fromARGB(255, 255, 255, 255),
           ),
         ),
         centerTitle: true,

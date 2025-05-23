@@ -273,18 +273,18 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.categoryName,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                    children: const [
+                          Text(
+                            "Menu Makanan",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                       const SizedBox(height: 4),
                       const Text(
-                        "Bichopi, Indonesia",
+                        "Bicopi, Indonesia",
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 15,

@@ -188,7 +188,7 @@ class _ProfilePage extends State<ProfileScreen> {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.grey[800], // Darker grey for section titles
+          color: Colors.green[800], // Darker green for section titles
         ),
       ),
     );
@@ -201,25 +201,24 @@ class _ProfilePage extends State<ProfileScreen> {
       child: TextField(
         controller: controller,
         readOnly: readOnly,
-        style: const TextStyle(fontSize: 16, color: Colors.black87), // Slightly larger input text
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
+          labelStyle: TextStyle(color: Colors.green[600], fontSize: 14),
+          prefixIcon: Icon(icon, color: Colors.green[400], size: 24), // Green icons
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15), // More rounded corners
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0), // Lighter border
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.green[300]!, width: 1.0), // Lighter green border
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: Color(0xFF1E88E5), width: 2.0), // Primary green on focus
+            borderSide: const BorderSide(color: Colors.green, width: 2.0), // Solid green on focus
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0),
+            borderSide: BorderSide(color: Colors.green[300]!, width: 1.0),
           ),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 18), // Slightly larger padding
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
           filled: true,
           fillColor: Colors.white,
         ),
@@ -232,16 +231,16 @@ class _ProfilePage extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18), // Slightly larger padding
+        padding: const EdgeInsets.all(18),
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15), // Consistent rounding
+          borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1), // Softer shadow
+              color: Colors.grey.withOpacity(0.1),
               blurRadius: 8,
-              offset: const Offset(0, 3), // Subtle elevation
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -250,13 +249,12 @@ class _ProfilePage extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
+                Icon(icon, color: Colors.green[400], size: 24), // Green icons
                 const SizedBox(width: 15),
-                Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87)), // Larger text
+                Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87)),
               ],
             ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.grey), // Grey arrow for subtlety
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
       ),
@@ -272,11 +270,11 @@ class _ProfilePage extends State<ProfileScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: color, // Use provided color
             foregroundColor: Colors.white,
-            elevation: 4, // Slightly more elevation
+            elevation: 4,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15), // Consistent rounding
+              borderRadius: BorderRadius.circular(15),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 14), // Larger padding for better touch target
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -285,7 +283,7 @@ class _ProfilePage extends State<ProfileScreen> {
               const SizedBox(width: 8),
               Text(
                 text,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500), // Larger and slightly bolder text
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -297,10 +295,10 @@ class _ProfilePage extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light background
+      backgroundColor: Colors.green[50], // Light green background
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E88E5), // Primary blue AppBar
-        elevation: 0, // No shadow under app bar
+        backgroundColor: const Color(0xFF078603), // Solid green AppBar
+        elevation: 0,
         title: const Text(
           "Profile",
           style: TextStyle(
@@ -321,14 +319,14 @@ class _ProfilePage extends State<ProfileScreen> {
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(25), // Rounded bottom corners for AppBar
+            bottom: Radius.circular(25),
           ),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)))
+          ? const Center(child: CircularProgressIndicator(color: const Color(0xFF078603)))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0), // Increased overall padding
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -336,7 +334,7 @@ class _ProfilePage extends State<ProfileScreen> {
                     child: Stack(
                       children: [
                         CircleAvatar(
-                          radius: 60, // Slightly larger avatar
+                          radius: 60,
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
                               : (_imageUrl != null
@@ -351,16 +349,15 @@ class _ProfilePage extends State<ProfileScreen> {
                           right: 0,
                           child: InkWell(
                             onTap: _pickImage,
-                            borderRadius: BorderRadius.circular(20), // Larger for better touch
+                            borderRadius: BorderRadius.circular(20),
                             child: Container(
-                              padding: const EdgeInsets.all(8.0), // Larger padding
+                              padding: const EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4CAF50), // Secondary green for camera button
+                                color:const Color(0xFF078603), // Green camera button
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white, width: 2), // Thicker white border
+                                border: Border.all(color: Colors.white, width: 2),
                               ),
-                              child: const Icon(Icons.camera_alt,
-                                  size: 20, color: Colors.white), // Larger icon
+                              child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
                             ),
                           ),
                         ),
@@ -376,23 +373,23 @@ class _ProfilePage extends State<ProfileScreen> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[900], // Darker text for name
+                            color: const Color(0xFF078603), // Darker green for name
                           ),
                         ),
                         const SizedBox(height: 5),
                         Text(
                           _emailController.text.isNotEmpty ? _emailController.text : "youremail@example.com",
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]), // Subtler grey for email
+                          style: TextStyle(fontSize: 14, color: const Color(0xFF078603)), // Subtler green for email
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 30),
                   Container(
-                    padding: const EdgeInsets.all(16.0), // Larger padding for section
+                    padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(15), // Consistent rounding
+                      borderRadius: BorderRadius.circular(15),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.1),
@@ -408,7 +405,7 @@ class _ProfilePage extends State<ProfileScreen> {
                         _buildRoundedTextField(
                             "Full Name", _nameController, Icons.person_outline),
                         _buildRoundedTextField(
-                            "Email", _emailController, Icons.email_outlined, readOnly: true), // Email should generally be read-only
+                            "Email", _emailController, Icons.email_outlined, readOnly: true),
                         _buildRoundedTextField(
                             "Phone Number", _phoneController, Icons.phone_outlined),
                       ],
@@ -447,8 +444,8 @@ class _ProfilePage extends State<ProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildActionButton(Icons.save, "Save Changes", _updateUserData, const Color(0xFF1E88E5)), // Primary blue for save
-                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent), // Red for logout
+                      _buildActionButton(Icons.save,"Save Changes", _updateUserData, const Color(0xFF078603)!), // Darker green for save
+                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent),
                     ],
                   ),
                 ],

@@ -173,7 +173,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Menu ${widget.categoryName}", // Menggunakan widget.categoryName
+                            "Menu Paket", // Menggunakan widget.categoryName
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,

@@ -126,6 +126,7 @@ flutter:
     - assets/icon_qris.png
     - assets/foto_profile.png
     - assets/backgroundb.png
+    - assets/virtualacc.png
 
 
 
@@ -135,6 +136,8 @@ flutter:
     - assets/icon_snack1.png
     - assets/icon_paket1.png
     - assets/pakethebat.png
+    - assets/whatsapp.png
+
 
     - assets/indoor1.jpg
     - assets/indoor2.jpg
