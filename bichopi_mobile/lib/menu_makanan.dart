@@ -265,7 +265,7 @@ class _FoodMenuPageState extends State<FoodMenuPage> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 22),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
                   onPressed: () => Navigator.pop(context),
                   visualDensity: VisualDensity.compact,
                 ),
