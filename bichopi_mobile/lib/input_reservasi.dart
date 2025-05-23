@@ -324,6 +324,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
                     child: _isLoading
@@ -340,8 +341,12 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                               style:
                                   TextStyle(color: Colors.white, fontSize: 18),
                             ),
+
                           ),
-                  ),
+                          elevation: 2,
+                        ),
+                      ),
+              ),
                 ],
               ),
             ),

@@ -163,6 +163,46 @@ class _RewardPageState extends State<RewardPage> {
     }
   }
 
+
+  Future<void> deductPoints(int points, String rewardTitle, String rewardId) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        throw Exception("User belum login.");
+      }
+
+      await supabase.from('member_points_log').insert({
+        'member_id': user.id,
+        'points_earned': -points,
+        'description': 'Poin ditukarkan untuk "$rewardTitle"',
+        'created_at': DateTime.now().toIso8601String(),
+        'reward_id': rewardId,
+        'redeemed_at': DateTime.now().toIso8601String(),
+      });
+
+      setState(() {
+        currentPoints -= points;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Poin berhasil ditukarkan untuk \"$rewardTitle\"!", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print("Error mengurangi poin: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal menukar poin. Coba lagi nanti.", style: GoogleFonts.poppins()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+
   Future<void> fetchRewards() async {
     try {
       final supabase = Supabase.instance.client;
@@ -171,7 +211,10 @@ class _RewardPageState extends State<RewardPage> {
           .select('id, judul, deskripsi, points, status')
           .eq('status', 'setuju');
 
+
+
       if (response.isEmpty) {
+
         setState(() {
           rewards = [];
         });
@@ -193,6 +236,32 @@ class _RewardPageState extends State<RewardPage> {
     }
   }
 
+  Future<bool> hasRedeemedRecently(String rewardId) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
+      final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
+
+      final response = await supabase
+          .from('member_points_log')
+          .select('id')
+          .eq('member_id', user.id)
+          .eq('reward_id', rewardId)
+          .gte('redeemed_at', oneWeekAgo)
+          .limit(1);
+
+      return response != null && response.isNotEmpty;
+    } catch (e) {
+      print("Error memeriksa klaim sebelumnya: $e");
+      return false;
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,7 +273,7 @@ class _RewardPageState extends State<RewardPage> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+              colors: [Color(0xFF078603), Color(0xFF078603)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(20),

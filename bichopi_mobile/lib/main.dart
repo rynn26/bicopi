@@ -458,11 +458,10 @@ Widget _buildTopBar(BuildContext context) {
             right: 35,
             child: GestureDetector(
               onTap: () {
-                // Arahkan ke halaman profil
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(), // Navigasi ke ProfileScreen
+                    builder: (context) => const ProfileScreen(),
                   ),
                 );
               },
@@ -476,7 +475,7 @@ Widget _buildTopBar(BuildContext context) {
               ),
             ),
           ),
-          // Content: Greeting + Search Bar
+          // Content: Greeting + Logo + Title + Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Column(
@@ -489,13 +488,23 @@ Widget _buildTopBar(BuildContext context) {
                     color: Colors.black87,
                   ),
                 ),
-                Text(
-                  "BICOPI",
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF028A0F),
-                  ),
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/bicopi_logo.png', // Ganti dengan path logo kamu
+                      height: 50,
+                      width: 50,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "BICOPI",
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF028A0F),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 35),
                 // Search Bar
