@@ -176,7 +176,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            "Bichopi, Indonesia",
+                            "Bicopi, Indonesia",
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 16,

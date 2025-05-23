@@ -52,7 +52,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           0; // Poin referral untuk pendaftar saat menggunakan kode
 
       if (referralCode.isNotEmpty) {
-
         final referralMatch = await Supabase.instance.client
             .from('affiliates')
             .select('id')
@@ -120,16 +119,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
 
         await Supabase.instance.client.from('members').insert({
-        'id_user': user.id,
-        'joined_at': DateTime.now().toIso8601String(),
-        'nama_lengkap': nameController.text.trim(),
-        'nomor_telepon': parsedPhoneNumber,
-        'affiliate_id': affiliateId,
-        'total_points': 0,
-        'kelipatan': 10,
-        'presentase': 10,
-        'created_at': DateTime.now().toIso8601String(),
-      });
+          'id_user': user.id,
+          'joined_at': DateTime.now().toIso8601String(),
+          'nama_lengkap': nameController.text.trim(),
+          'nomor_telepon': parsedPhoneNumber,
+          'affiliate_id': affiliateId,
+          'total_points': 0,
+          'kelipatan': 10,
+          'presentase': 10,
+          'created_at': DateTime.now().toIso8601String(),
+        });
         print(
             'Berhasil memasukkan data ke tabel "members" dengan id: ${user.id} dan affiliate_id: $affiliateId');
         await Future.delayed(const Duration(seconds: 1)); // Tambahkan jeda
@@ -158,7 +157,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           });
           print('Berhasil menambahkan poin referral untuk pendaftar (log).');
 
- 
           // Update total poin pendaftar
           final currentPointsPendaftar = await Supabase.instance.client
               .from('members')
@@ -255,11 +253,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.'),
+              'Pendaftaran berhasil! Silakan login.'), // Pesan diubah
         ),
       );
 
-      await Future.delayed(const Duration(seconds: 2));
+      // Langsung navigasi ke halaman login setelah menampilkan pesan sukses
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
