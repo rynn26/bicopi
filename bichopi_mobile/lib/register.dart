@@ -49,20 +49,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String? affiliateId;
       final referralCode = referralCodeController.text.trim();
       int initialPoints =
-          10; // Poin referral untuk pendaftar saat menggunakan kode
+          0; // Poin referral untuk pendaftar saat menggunakan kode
 
       if (referralCode.isNotEmpty) {
 
         final referralMatch = await Supabase.instance.client
             .from('affiliates')
-            .select('id_user')
+            .select('id')
             .eq('referral_code', referralCode)
             .maybeSingle();
 
         if (referralMatch != null &&
-            referralMatch.containsKey('id_user') &&
-            referralMatch['id_user'] != null) {
-          affiliateId = referralMatch['id_user'];
+            referralMatch.containsKey('id') &&
+            referralMatch['id'] != null) {
+          affiliateId = referralMatch['id'];
           newUserLevel = 4; // Set user level menjadi 4 jika referral valid
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +74,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           return;
         }
       } else {
-        initialPoints = 100; // Poin awal jika tidak ada kode referral
+        initialPoints = 0; // Poin awal jika tidak ada kode referral
       }
 
       // 1. Insert data user ke tabel "users" *TERLEBIH DAHULU*
@@ -120,20 +120,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
 
         await Supabase.instance.client.from('members').insert({
-          'id': user
-              .id, // Menggunakan user.id sebagai primary key 'id' di tabel 'members'
-          'id_user': user
-              .id, // Tetap simpan id_user untuk referensi ke tabel users (jika diperlukan)
-          'joined_at': DateTime.now().toIso8601String(),
-          'nama_lengkap': nameController.text.trim(),
-          'nomor_telepon': parsedPhoneNumber,
-          'affiliate_id':
-              affiliateId, // Menggunakan affiliateId yang didapatkan
-          'total_points': 0, // Poin awal member (bisa disesuaikan)
-          'kelipatan': 0,
-          'presentase': 0,
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        'id_user': user.id,
+        'joined_at': DateTime.now().toIso8601String(),
+        'nama_lengkap': nameController.text.trim(),
+        'nomor_telepon': parsedPhoneNumber,
+        'affiliate_id': affiliateId,
+        'total_points': 0,
+        'kelipatan': 10,
+        'presentase': 10,
+        'created_at': DateTime.now().toIso8601String(),
+      });
         print(
             'Berhasil memasukkan data ke tabel "members" dengan id: ${user.id} dan affiliate_id: $affiliateId');
         await Future.delayed(const Duration(seconds: 1)); // Tambahkan jeda
@@ -161,7 +157,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             'created_at': DateTime.now().toIso8601String(),
           });
           print('Berhasil menambahkan poin referral untuk pendaftar (log).');
-=======
  
           // Update total poin pendaftar
           final currentPointsPendaftar = await Supabase.instance.client

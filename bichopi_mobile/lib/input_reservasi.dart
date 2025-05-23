@@ -321,19 +321,29 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator(color: Colors.green,))
-                        : ElevatedButton.icon(
-                            onPressed: _submitReservation,
-                            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                            label: const Text(
-                              'Konfirmasi Reservasi',
-                              style: TextStyle(color: Colors.white, fontSize: 18),
-                            ),
+              SizedBox(
+                width: double.infinity,
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.green),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _submitReservation,
+                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                        label: const Text(
+                          'Konfirmasi Reservasi',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF078603), // Warna latar hijau
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                  ),
+                          elevation: 2,
+                        ),
+                      ),
+              ),
                 ],
               ),
             ),

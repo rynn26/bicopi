@@ -187,14 +187,14 @@ class _PaymentPageState extends State<PaymentPage> {
         title: const Text(
           'Pembayaran',
           style: TextStyle(
-            color: Colors.black87,
+            color: Color.fromARGB(221, 255, 255, 255),
             fontWeight: FontWeight.w600, // Lebih tebal
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xFF078603),
         elevation: 1, // Sedikit shadow
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Color.fromARGB(221, 255, 255, 255)),
         shape: const RoundedRectangleBorder(
           // Sudut membulat
           borderRadius: BorderRadius.vertical(
@@ -236,8 +236,8 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                   const SizedBox(height: 15),
                   _buildPaymentOption('Tunai', 'assets/icon_cash.png', true),
-                  const SizedBox(height: 10),
-                  _buildPaymentOption('QRIS', 'assets/icon_qris.png', false),
+                  const SizedBox(height: 25),
+                  _buildPaymentOption('Virtual Account', 'assets/virtualacc.png', false),
                   // Removed Spacer here as SingleChildScrollView handles the overflow
                   // Add a SizedBox for consistent spacing before the total
                   const SizedBox(height: 30),
@@ -276,32 +276,28 @@ class _PaymentPageState extends State<PaymentPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading || _isMemberIdLoading
-                          ? null
-                          : createTransaction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 2, // Sedikit shadow
-                        textStyle: const TextStyle(
-                          // Style teks
-                          color: Colors.white,
-                          fontSize: 16, // Ukuran font agak kecil
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: Text(
-                        _isLoading || _isMemberIdLoading
-                            ? 'Memproses...'
-                            : 'Bayar Sekarang',
-                      ),
+                 SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading || _isMemberIdLoading ? null : createTransaction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF078603),
+                    foregroundColor: Colors.white, // <-- warna teks tombol
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  child: Text(
+                    _isLoading || _isMemberIdLoading ? 'Memproses...' : 'Bayar Sekarang',
+                  ),
+                ),
+              ),
                   const SizedBox(height: 20), // Added bottom space
                 ],
               ),
@@ -320,7 +316,6 @@ class _PaymentPageState extends State<PaymentPage> {
       ),
     );
   }
-
   Widget _buildTextField(
       TextEditingController controller, String labelText, IconData icon) {
     return Container(
@@ -581,17 +576,18 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       final memberData = await supabase
           .from('members')
           .select(
-              'total_points, affiliate_id') // affiliate_id here MUST store affiliates.id
+              'total_points, affiliate_id, id') // affiliate_id here MUST store affiliates.id
           .eq('id', widget.memberId)
           .single();
 
       // Pastikan 'users' adalah tabel yang benar untuk id_user_level
       final int currentUserLevel = await supabase
-          .from('users')
-          .select('id_user_level')
-          .eq('id_user', widget.memberId) // id_user harus match dengan memberId
-          .single()
-          .then((data) => data['id_user_level'] as int? ?? 1);
+    .from('users')
+    .select('id_user_level')
+    .eq('id_user', widget.memberId) // ← ganti ini
+    .single()
+    .then((data) => data['id_user_level'] as int? ?? 1);
+
 
       int currentMemberTotalPoints = memberData['total_points'] as int? ?? 0;
       // This affiliateIdOfCurrentMember is expected to be the 'id' from the affiliates table
@@ -599,7 +595,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           memberData['affiliate_id'] as String?;
 
       // Poin yang diterima oleh *member yang melakukan pembelian*
-      const int pointsForPurchasingMember = 10;
+      const int pointsForPurchasingMember = 0;
 
       // Update total_points untuk member yang melakukan pembelian
       await supabase.from('members').update({
@@ -623,7 +619,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       if (currentUserLevel == 4 && affiliateIdOfCurrentMember != null) {
         print(
             'PaymentSuccessPage: Member level 4, akan menambahkan poin ke afiliasi.');
-        const int affiliatePoints = 90;
+        const int affiliatePoints = 100;
 
         try {
           // Ketika mencari atau memperbarui, kita akan menggunakan 'id' sebagai primary key.

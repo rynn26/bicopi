@@ -126,36 +126,6 @@ class _RewardPageState extends State<RewardPage> {
 
   }
 
-  Future<void> fetchRewards() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('klaim_rewards')
-          .select('id, judul, deskripsi, points, status')
-          .eq('status', 'setuju');
-
-      if (response == null || response.isEmpty) {
-        setState(() {
-          rewards = [];
-        });
-      } else {
-        setState(() {
-          rewards = List<Map<String, dynamic>>.from(response.map((item) => {
-                "id": item["id"].toString(),
-                "title": item["judul"],
-                "description": item["deskripsi"],
-                "points": item["points"],
-              }));
-        });
-      }
-    } catch (e) {
-      print("Error mengambil rewards: $e");
-      setState(() {
-        rewards = [];
-      });
-    }
-  }
-
   Future<void> deductPoints(int points, String rewardTitle, String rewardId) async {
     try {
       final supabase = Supabase.instance.client;
@@ -260,7 +230,7 @@ class _RewardPageState extends State<RewardPage> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+              colors: [Color(0xFF078603), Color(0xFF078603)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(20),

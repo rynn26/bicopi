@@ -176,7 +176,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text( // Menggunakan widget.categoryName
-                            "Menu ${widget.categoryName}",
+                            "Menu Snack",
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -185,7 +185,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            "Bichopi, Indonesia",
+                            "Bicopi, Indonesia",
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 16,
