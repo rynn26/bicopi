@@ -157,6 +157,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             'created_at': DateTime.now().toIso8601String(),
           });
           print('Berhasil menambahkan poin referral untuk pendaftar (log).');
+
  
           // Update total poin pendaftar
           final currentPointsPendaftar = await Supabase.instance.client

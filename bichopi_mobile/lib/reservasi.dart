@@ -18,19 +18,24 @@ class ReservationScreen extends StatelessWidget {
 
   final List<Map<String, String>> categories = const [
     {
-      'name': 'Kursi Deretan Depan',
+      'name': 'Lantai 2 Indoor',
+      'capacity': 'Untuk Acara bersama keluarga',
+      'image': 'assets/indoor2.jpg',
+    },
+    {
+      'name': 'Lantai 2 Outdoor',
       'capacity': 'Kapasitas 20 Orang',
-      'image': 'assets/reservasi1.png',
+      'image': 'assets/outdoor22.jpg',
     },
     {
-      'name': 'VIP Plate',
+      'name': 'Lantai 1 Indoor',
       'capacity': 'Kapasitas 10 Orang',
-      'image': 'assets/reservasi2.png',
+      'image': 'assets/indoor1.jpg',
     },
     {
-      'name': 'Kursi Biasa',
+      'name': 'Lantai 1 Outdoor',
       'capacity': 'Kapasitas 50 Orang',
-      'image': 'assets/reservasi3.png',
+      'image': 'assets/outdoor1.jpg',
     },
   ];
 

@@ -1,10 +1,8 @@
-import 'dart:math';
+import 'dart:math'; // Untuk generateUniqueId sebagai fallback
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'package:coba3/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
-
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key});
@@ -21,7 +19,6 @@ class _RewardPageState extends State<RewardPage> {
   @override
   void initState() {
     super.initState();
-
     fetchAllData();
   }
 
@@ -35,7 +32,6 @@ class _RewardPageState extends State<RewardPage> {
       isLoading = false;
     });
   }
-
 
   Future<void> fetchCurrentPoints() async {
     try {
@@ -56,7 +52,7 @@ class _RewardPageState extends State<RewardPage> {
           .eq('member_id', user.id);
 
       int total = 0;
-      if (response != null && response.isNotEmpty) {
+      if (response.isNotEmpty) {
         for (final row in response) {
           total += row['points_earned'] as int;
         }
@@ -75,7 +71,7 @@ class _RewardPageState extends State<RewardPage> {
     }
   }
 
-  // Fungsi untuk mencatat penukaran
+  // Fungsi untuk mencatat penukaran dan menampilkan popup
   Future<void> redeemReward(String rewardId, String rewardTitle, int pointsToDeduct) async {
     try {
       final supabase = Supabase.instance.client;
@@ -84,16 +80,24 @@ class _RewardPageState extends State<RewardPage> {
         throw Exception("User belum login.");
       }
 
-
       // 1. Catat transaksi penukaran ke tabel 'penukaran_point'
-      // Perhatikan bahwa redeemed_at sekarang disertakan lagi
-      await supabase.from('penukaran_point').insert({
+      // Menangkap respons untuk mendapatkan ID yang dibuat oleh database
+      final List<Map<String, dynamic>> response = await supabase.from('penukaran_point').insert({
         'member_id': user.id,
-        'penukaran_point': pointsToDeduct, // Ini akan mencatat poin reward
-      
-      });
+        'penukaran_point': pointsToDeduct,
+        // Anda bisa menambahkan 'redeemed_at': DateTime.now().toIso8601String(), jika diperlukan
+      }).select('id'); // Memilih kolom 'id' dari hasil insert
 
-      // 2. BAGIAN INI DIHAPUS/DIKOMENTARI AGAR POIN TIDAK BERKURANG
+      String newTransactionId = '';
+      if (response.isNotEmpty) {
+        newTransactionId = response[0]['id'].toString(); // Ambil ID dari respons Supabase
+      } else {
+        // Fallback jika ID tidak bisa didapatkan (misal: Supabase tidak mengembalikan ID secara langsung)
+        newTransactionId = generateUniqueId();
+        print("Warning: Could not get ID from Supabase insert response. Using fallback ID.");
+      }
+
+      // 2. BAGIAN INI DIKOMENTARI AGAR POIN TIDAK BERKURANG
       /*
       await supabase.from('member_points_log').insert({
         'member_id': user.id,
@@ -113,6 +117,40 @@ class _RewardPageState extends State<RewardPage> {
           backgroundColor: Colors.green,
         ),
       );
+
+      // Setelah proses redeem, tampilkan popup dengan newTransactionId
+      if (mounted) {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            opaque: false,
+            barrierDismissible: true,
+            transitionDuration: const Duration(milliseconds: 300),
+            pageBuilder: (BuildContext context, Animation<double> animation,
+                Animation<double> secondaryAnimation) {
+              return PopupPage( // Menggunakan PopupPage
+                title: rewardTitle,
+                points: pointsToDeduct,
+                transactionId: newTransactionId, // Meneruskan ID dari Supabase
+              );
+            },
+            transitionsBuilder: (BuildContext context, Animation<double> animation,
+                Animation<double> secondaryAnimation, Widget child) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOutCubic,
+                    ),
+                  ),
+                  child: child,
+                ),
+              );
+            },
+          ),
+        );
+      }
     } catch (e) {
       print("Error saat menukarkan reward: $e");
       if (!mounted) return;
@@ -123,8 +161,8 @@ class _RewardPageState extends State<RewardPage> {
         ),
       );
     }
-
   }
+
 
   Future<void> deductPoints(int points, String rewardTitle, String rewardId) async {
     try {
@@ -164,6 +202,7 @@ class _RewardPageState extends State<RewardPage> {
     }
   }
 
+
   Future<void> fetchRewards() async {
     try {
       final supabase = Supabase.instance.client;
@@ -172,7 +211,10 @@ class _RewardPageState extends State<RewardPage> {
           .select('id, judul, deskripsi, points, status')
           .eq('status', 'setuju');
 
-      if (response == null || response.isEmpty) {
+
+
+      if (response.isEmpty) {
+
         setState(() {
           rewards = [];
         });
@@ -218,6 +260,7 @@ class _RewardPageState extends State<RewardPage> {
       return false;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -329,14 +372,9 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   Widget _buildRewardCard(BuildContext context, String rewardId, String title, int points, String description) {
-
-    // Karena poin tidak berkurang, 'canRedeem' selalu true (jika ada reward)
-    // Atau Anda bisa tetap menggunakan logika 'currentPoints >= points' jika Anda ingin
-    // reward hanya bisa diklaim jika poin saat ini lebih besar dari poin reward,
-    // meskipun poinnya sendiri tidak berkurang.
-    // Saya akan biarkan logika lama agar reward masih butuh jumlah poin tertentu
+    // Logika ini tetap memeriksa poin agar reward hanya bisa diklaim jika poin cukup,
+    // meskipun poinnya sendiri tidak berkurang setelah klaim.
     final bool canRedeem = currentPoints >= points;
-
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -392,9 +430,7 @@ class _RewardPageState extends State<RewardPage> {
                   ),
                 ),
                 ElevatedButton(
-
                   onPressed: canRedeem ? () => showRedeemDialog(context, rewardId, title, points) : null,
-
                   style: ElevatedButton.styleFrom(
                     backgroundColor: canRedeem ? const Color(0xFF4CAF50) : Colors.grey[400],
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -418,11 +454,7 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   void showRedeemDialog(BuildContext context, String rewardId, String title, int points) async {
-
     // Logika ini masih akan mengecek apakah poin cukup untuk mengklaim.
-    // Jika Anda ingin poin tidak berkurang SAMA SEKALI dan reward bisa diklaim kapan saja,
-    // Anda bisa menghapus blok 'if (currentPoints < points)' ini.
-
     if (currentPoints < points) {
       showDialog(
         context: context,
@@ -442,20 +474,8 @@ class _RewardPageState extends State<RewardPage> {
       return;
     }
 
-    final hasRedeemed = await hasRedeemedRecently(rewardId);
-    if (hasRedeemed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Anda telah mengklaim reward ini. Anda dapat mengklaimnya lagi setelah 7 hari.",
-            style: GoogleFonts.poppins(),
-          ),
-        ),
-      );
-      return;
-    }
-
-    String transactionId = generateUniqueId();
+    // Tidak perlu generateUniqueId di sini lagi karena akan diambil dari Supabase
+    // String transactionId = generateUniqueId(); // Dihapus atau dikomentari
 
     showDialog(
       context: context,
@@ -466,7 +486,7 @@ class _RewardPageState extends State<RewardPage> {
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
           ),
           content: Text(
-            "Apakah Anda yakin ingin mengklaim reward \"$title\"?", // Teks disesuaikan
+            "Apakah Anda yakin ingin mengklaim reward \"$title\"?",
             style: GoogleFonts.poppins(),
           ),
           actions: [
@@ -479,42 +499,9 @@ class _RewardPageState extends State<RewardPage> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context);
-
-                await redeemReward(rewardId, title, points); // Memanggil fungsi redeemReward
-
-                if (mounted) {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      opaque: false,
-                      barrierDismissible: true,
-                      transitionDuration: const Duration(milliseconds: 300),
-                      pageBuilder: (BuildContext context, Animation<double> animation,
-                          Animation<double> secondaryAnimation) {
-                        return PopupPage(
-                          title: title,
-                          points: points,
-                          transactionId: transactionId,
-                        );
-                      },
-                      transitionsBuilder: (BuildContext context, Animation<double> animation,
-                          Animation<double> secondaryAnimation, Widget child) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: ScaleTransition(
-                            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                              CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOutCubic,
-                              ),
-                            ),
-                            child: child,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                }
+                Navigator.pop(context); // Tutup dialog konfirmasi
+                // Panggil redeemReward yang sekarang akan menampilkan PopupPage dengan ID dari Supabase
+                await redeemReward(rewardId, title, points);
               },
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF4CAF50),
@@ -529,9 +516,10 @@ class _RewardPageState extends State<RewardPage> {
     );
   }
 
+  // Fungsi fallback untuk generate ID unik jika Supabase tidak mengembalikan ID langsung
   String generateUniqueId() {
     final int timestamp = DateTime.now().millisecondsSinceEpoch;
-    final int random = Random().nextInt(900) + 100;
+    final int random = Random().nextInt(900) + 100; // Angka acak 100-999
     return "#$timestamp$random";
   }
 }
