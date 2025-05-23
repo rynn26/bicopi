@@ -85,28 +85,32 @@ class HasilReservasiScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _kirimKeWhatsApp(context),
-                  icon: Image.asset(
-                    'assets/icons/whatsapp.png', // Pastikan path ini benar
-                    width: 24,
-                    height: 24,
-                    color: Colors.white, // Sesuaikan jika ikon Anda tidak berwarna putih
-                  ),
-                  label: const Text(
-                    'Lanjutkan ke WhatsApp',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+
+            const SizedBox(height: 10),
+            Text('Reservasi Anda untuk $namaTempat telah berhasil.'),
+            const SizedBox(height: 20),
+            const Text('Detail Reservasi:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text('Nama Pemesan: $nama'),
+            Text('Tanggal Reservasi: $tanggal'),
+            Text('Waktu Reservasi: $waktu'),
+            Text('Jumlah Orang: $jumlah'),
+            if (keterangan.isNotEmpty) Text('Keterangan: $keterangan'),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _kirimKeWhatsApp(context),
+                icon: const Icon(Icons.home),
+                label: const Text('Lanjutkan ke WhatsApp'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+
                   ),
                 ),
               ),
