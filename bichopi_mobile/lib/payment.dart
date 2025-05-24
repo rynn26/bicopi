@@ -86,7 +86,7 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         final response = await http.post(
           Uri.parse(
-              'http://:3000/create-transaction'), // Replace with your server URL
+              'http://192.168.1.18:3000/create-transaction'), // Replace with your server URL
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
