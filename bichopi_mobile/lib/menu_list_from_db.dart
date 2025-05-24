@@ -8,7 +8,8 @@ class MenuListFromDB extends StatefulWidget {
 
   const MenuListFromDB({
     Key? key,
-    required this.categoryId, required Function(String p1) addItemToCart,
+    required this.categoryId,
+    required Function(String p1) addItemToCart,
   }) : super(key: key);
 
   @override
@@ -236,7 +237,7 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: ListView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -248,66 +249,29 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
           final quantity = cartQuantities[itemName] ?? 0;
 
           return Card(
-            margin: const EdgeInsets.symmetric(vertical: 6),
+            margin: const EdgeInsets.symmetric(vertical: 8),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(16),
             ),
-            color: Colors.white,
+            color: const Color(0xFFF8F6FF), // ungu muda
+            elevation: 0.5,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          item['foto_menu'] ?? '',
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 80),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 80,
-                        child: OutlinedButton(
-                          onPressed: () => _showAddToCartDialog(context, item),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.green,
-                            side: const BorderSide(color: Colors.green),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                          ),
-                          child: const Text(
-                            "Tambah",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                            onPressed: () => _decreaseQuantity(itemName, harga),
-                          ),
-                          Text('$quantity'),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: Colors.green),
-                            onPressed: () => _increaseQuantity(itemName, harga),
-                          ),
-                        ],
-                      ),
-                    ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      item['foto_menu'] ?? '',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 80),
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,24 +281,78 @@ class _MenuListFromDBState extends State<MenuListFromDB> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
+                            color: Colors.black,
                           ),
                         ),
+                        const SizedBox(height: 4),
                         Text(
                           item['deskripsi_menu'] ?? '',
                           style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade800,
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    formatter.format(harga),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatter.format(harga),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF078603), // hijau
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      quantity == 0
+                          ? SizedBox(
+                              width: 80,
+                              height: 36,
+                              child: ElevatedButton(
+                                onPressed: () => _increaseQuantity(itemName, harga),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF078603),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  "Tambah",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove, color: Colors.red),
+                                  onPressed: () => _decreaseQuantity(itemName, harga),
+                                ),
+                                Text(
+                                  '$quantity',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add, color: Color(0xFF078603)),
+                                  onPressed: () => _increaseQuantity(itemName, harga),
+                                ),
+                              ],
+                            ),
+                    ],
                   ),
                 ],
               ),

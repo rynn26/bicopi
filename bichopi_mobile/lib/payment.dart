@@ -86,7 +86,7 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         final response = await http.post(
           Uri.parse(
-              'http://172.14.8.230:3000/create-transaction'), // Replace with your server URL
+              'http://:3000/create-transaction'), // Replace with your server URL
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
@@ -236,8 +236,8 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                   const SizedBox(height: 15),
                   _buildPaymentOption('Tunai', 'assets/icon_cash.png', true),
-                  const SizedBox(height: 10),
-                  _buildPaymentOption('QRIS', 'assets/icon_qris.png', false),
+                  const SizedBox(height: 25),
+                  _buildPaymentOption('Virtual Account', 'assets/virtualacc.png', false),
                   // Removed Spacer here as SingleChildScrollView handles the overflow
                   // Add a SizedBox for consistent spacing before the total
                   const SizedBox(height: 30),

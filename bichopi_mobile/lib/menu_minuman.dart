@@ -285,7 +285,7 @@ class _DrinkMenuPageState extends State<DrinkMenuPage> {
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               // Menyesuaikan padding agar sama dengan FoodMenuPage (misal: 12 vertikal)
-                                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                               elevation: 0,
                                             ),
                                             child: const Text(

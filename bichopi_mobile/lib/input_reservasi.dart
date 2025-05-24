@@ -406,7 +406,7 @@ class HasilReservasiScreen extends StatelessWidget {
       backgroundColor: Colors.grey[50], // Consistent background
       appBar: AppBar(
         title: const Text('Bukti Reservasi'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Color(0xFF078603),
         foregroundColor: Colors.white, // White text for AppBar title
         elevation: 0, // Flat app bar for a cleaner look
       ),
@@ -415,7 +415,7 @@ class HasilReservasiScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center, // Center content
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 80),
+            Icon(Icons.check_circle, color: Color(0xFF078603), size: 80),
             const SizedBox(height: 10),
             Text(
               'Reservasi Berhasil!',
@@ -428,7 +428,7 @@ class HasilReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Terima kasih, $nama! Reservasi Anda untuk $namaTempat telah dikonfirmasi.',
+              'Terima kasih, $nama! Reservasi Anda untuk $namaTempat akan dikonfirmasi lebih lanjut.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, color: Colors.grey[700]),
             ),
@@ -458,11 +458,13 @@ class HasilReservasiScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _kirimKeWhatsApp(context),
-                icon: Image.asset('assets/icons/whatsapp.png',width: 24, height: 24, color: Colors.white, // opsional: jika ikon PNG transparan dan kamu ingin warnanya putih
+
+              icon: Image.asset('assets/whatsapp.png',width: 24, height: 24, color: Colors.white, // opsional: jika ikon PNG transparan dan kamu ingin warnanya putih
+
 ),
                 label: const Text('Lanjutkan ke WhatsApp'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366), // WhatsApp Green
+                  backgroundColor: Color(0xFF078603), // WhatsApp Green
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
