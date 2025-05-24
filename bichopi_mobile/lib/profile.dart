@@ -441,16 +441,62 @@ class _ProfilePage extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(Icons.save,"Save Changes", _updateUserData, const Color(0xFF078603)!), // Darker green for save
-                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent),
-                    ],
+                   Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    Icons.save, 
+                    "Save Changes",
+                    _updateUserData,
+                    const Color(0xFF078603), // Hijau gelap
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildActionButton(
+                    Icons.logout,
+                    "Logout",
+                    _logout,
+                    Colors.redAccent,
+                  ),
+                ),
+              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleActionButton(
+    IconData icon,
+    String label,
+    VoidCallback onPressed,
+    Color backgroundColor,
+  ) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        elevation: 2,
+      ),
+      icon: Icon(
+        icon,
+        color: Colors.white, // Ikon putih
+      ),
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white, // Teks putih
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }
