@@ -670,7 +670,7 @@ class CustomAppBar extends StatelessWidget {
                     fontWeight: FontWeight.bold),
               ),
               Text(
-                "Bichopi, Indonesia",
+                "Bicopi, Indonesia",
                 style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
