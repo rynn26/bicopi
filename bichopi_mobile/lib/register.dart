@@ -254,13 +254,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Pendaftaran berhasil! Silakan verifikasi email Anda sebelum login.'),
+              'Pendaftaran berhasil! Silakan login.'), // Pesan diubah
         ),
       );
+
 
       // --- CHANGE STARTS HERE ---
       // Instead of going to LoginScreen, go to HomePage
       await Future.delayed(const Duration(seconds: 2));
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()), // Changed to HomePage
