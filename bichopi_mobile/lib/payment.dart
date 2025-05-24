@@ -276,33 +276,35 @@ class _PaymentPageState extends State<PaymentPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
                   SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading || _isMemberIdLoading
-                          ? null
-                          : createTransaction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        elevation: 2, // Sedikit shadow
-                        textStyle: const TextStyle(
-                          // Style teks
-                          color: Colors.white,
-                          fontSize: 16, // Ukuran font agak kecil
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      child: Text(
-                        _isLoading || _isMemberIdLoading
-                            ? 'Memproses...'
-                            : 'Bayar Sekarang',
-                      ),
-                    ),
-                  ),
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: _isLoading || _isMemberIdLoading
+        ? null
+        : createTransaction,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      padding: const EdgeInsets.symmetric(vertical: 15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 2,
+      textStyle: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    child: Text(
+      _isLoading || _isMemberIdLoading
+          ? 'Memproses...'
+          : 'Bayar Sekarang',
+      style: const TextStyle(
+        color: Colors.white,
+      ),
+    ),
+  ),
+),
+
                   const SizedBox(height: 20), // Added bottom space
                 ],
               ),
@@ -464,7 +466,6 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
       ..loadRequest(Uri.parse(
           'https://app.sandbox.midtrans.com/snap/v2/vtweb/${widget.snapToken}'));
   }
-
   @override
   Widget build(BuildContext context) {
     print("MidtransWebViewPage build() called");

@@ -458,7 +458,8 @@ class HasilReservasiScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _kirimKeWhatsApp(context),
-                icon: const Icon(Icons.abc, color: Colors.white), // WhatsApp icon
+                icon: Image.asset('assets/icons/whatsapp.png',width: 24, height: 24, color: Colors.white, // opsional: jika ikon PNG transparan dan kamu ingin warnanya putih
+),
                 label: const Text('Lanjutkan ke WhatsApp'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF25D366), // WhatsApp Green

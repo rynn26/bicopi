@@ -2,8 +2,6 @@ import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart'; // Pastikan import ProfileScreen
 import 'package:coba3/search_menu_page.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
@@ -17,8 +15,10 @@ import 'register.dart';
 import 'login.dart';
 import 'menu_list_from_db.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'payment_history_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'profile.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +57,7 @@ class _HomePageState extends State<HomePage> {
   final Map<String, int> _cart =
       {}; // Menyimpan item dalam keranjang (nama: jumlah)
   String? _memberId; // To store the member ID
+  bool _isMemberIdLoading = true; // New state to track loading
 
   @override
   void initState() {
@@ -67,6 +68,9 @@ class _HomePageState extends State<HomePage> {
 
   // New function to get the member ID
   Future<void> _initializeMemberId() async {
+    setState(() {
+      _isMemberIdLoading = true; // Start loading
+    });
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
@@ -78,11 +82,12 @@ class _HomePageState extends State<HomePage> {
                 'id_user') // Select the 'id_user' column from the 'members' table
             .eq('id',
                 user.id) // Assuming 'id' in 'members' table is linked to auth.users.id
-            .single();
+            .maybeSingle(); // Use maybeSingle() if it might not exist
 
-        if (response.isNotEmpty && response['id_user'] != null) {
+        if (response != null && response['id_user'] != null) {
           setState(() {
             _memberId = response['id_user'] as String;
+            _isMemberIdLoading = false; // Finished loading
           });
           print(
               'Fetched member ID (id_user from members table): $_memberId'); // For debugging
@@ -90,19 +95,25 @@ class _HomePageState extends State<HomePage> {
           print(
               'Member profile (id_user in members table) not found for current user ID: ${user.id}');
           setState(() {
-            _memberId = null; // Ensure it's null if not found
+            _memberId = user
+                .id; // Fallback to auth.users.id if members table doesn't have it
+            _isMemberIdLoading = false; // Finished loading
           });
+          print('Using auth.users.id as fallback: $_memberId');
         }
       } catch (e) {
         print('Error fetching member ID from members table: $e');
         setState(() {
-          _memberId = null; // Handle error by setting _memberId to null
+          _memberId = user.id; // Fallback to auth.users.id on error
+          _isMemberIdLoading = false; // Finished loading
         });
+        print('Using auth.users.id as fallback due to error: $_memberId');
       }
     } else {
       print('No user logged in. Member ID cannot be fetched.');
       setState(() {
         _memberId = null; // No user, so no member ID
+        _isMemberIdLoading = false; // Finished loading
       });
     }
   }
@@ -113,6 +124,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+
   // Update this list to EXCLUDE ProfileScreen
   final List<Widget> _pages = [
     HomeContent(addItemToCart: (itemName) {
@@ -120,10 +132,11 @@ class _HomePageState extends State<HomePage> {
       // For now, let's keep it simple as it's passed directly to HomeContent
     }),
     ReservasiPage(selectedItem: {}),
-    RewardPage(),
+    RewardPage(memberId: '',),
     // Show ProfileScreen instead of PaymentHistoryPage
     const ProfileScreen(),
   ];
+
 
   void _onBottomNavItemTapped(int index) {
     setState(() {
@@ -243,83 +256,101 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
- Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF5F5F5),
-    body: PageView(
-      controller: _pageController,
-      children: [
-        HomeContent(addItemToCart: _addItemToCart), // Home (index 0)
-        ReservasiPage(selectedItem: {}), // Reservasi (index 1)
-        RewardPage(), // Redeem (index 2)
-        ProfileScreen(), // Ganti Riwayat dengan ProfileScreen (index 3)
-      ],
-      onPageChanged: (index) {
-        setState(() {
-          _currentIndex = index;
-          _focusedIndex = null;
-        });
-      },
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: _onCartButtonTapped,
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      child: const Icon(Icons.shopping_cart,
-          color: Color.fromARGB(255, 131, 222, 127), size: 28),
-      elevation: 19,
-      shape: const CircleBorder(),
-    ),
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    bottomNavigationBar: Material(
-      elevation: 8.0,
-      shadowColor: Colors.black.withOpacity(0.2),
-      child: BottomAppBar(
-        color: Colors.white,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              _buildNavItem(
-                index: 0,
-                icon: Icons.home,
-                label: 'Home',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 0,
-              ),
-              _buildNavItem(
-                index: 1,
-                icon: Icons.chair_sharp,
-                label: 'Reservasi',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 1,
-              ),
-              const SizedBox(width: 48.0), // Spasi untuk FAB
-              _buildNavItem(
-                index: 2,
-                icon: Icons.redeem_rounded,
-                label: 'Redeem',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 2,
-              ),
-              _buildNavItem(
-                index: 3, // Profil sekarang ada di index 3
-                icon: Icons.person, // Ikon profil
-                label: 'Profil',
-                onTap: _onBottomNavItemTapped,
-                currentIndex: _currentIndex,
-                isFocused: _focusedIndex == 3,
-              ),
-            ],
+
+  Widget build(BuildContext context) {
+    // If memberId is still loading, show a loading indicator or handle it
+    if (_isMemberIdLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: PageView(
+        controller: _pageController,
+        // The list of pages should reflect the order of your BottomNavigationBar items.
+        // ProfileScreen is now navigated to separately.
+        children: [
+          HomeContent(addItemToCart: _addItemToCart), // Home (index 0)
+          ReservasiPage(selectedItem: {}), // Reservasi (index 1)
+          RewardPage(memberId: _memberId ?? ''), // Pass _memberId here
+          // PaymentHistoryPage needs memberId, so pass the actual _memberId
+          PaymentHistoryPage(memberId: _memberId ?? ''), // Pass _memberId here
+        ],
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+            _focusedIndex = null; // Reset fokus saat halaman berubah
+          });
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _onCartButtonTapped,
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        child: const Icon(Icons.shopping_cart,
+            color: Color.fromARGB(255, 131, 222, 127), size: 28),
+        elevation: 19,
+        shape: const CircleBorder(), // <-- pastikan ini membuatnya bulat
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: Material(
+        elevation: 8.0,
+        shadowColor: Colors.black.withOpacity(0.2),
+        child: BottomAppBar(
+          color: Colors.white,
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8.0,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16.0), // Kurangi padding vertikal
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: <Widget>[
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.home,
+                  label: 'Home',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 0,
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.chair_sharp,
+                  label: 'Reservasi',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 1,
+                ),
+                const SizedBox(width: 48.0), // Spasi untuk FAB
+                _buildNavItem(
+                  index: 2,
+                  icon: Icons.redeem_rounded,
+                  label: 'Redeem',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 2,
+                ),
+                // "Profil" item is now removed from BottomNavigationBar
+                // Add the "Riwayat" (Payment History) item here
+                _buildNavItem(
+                  index: 3, // New index for Riwayat (since Profile is removed)
+                  icon: Icons.history, // Choose an appropriate icon
+                  label: 'Riwayat',
+                  onTap: _onBottomNavItemTapped,
+                  currentIndex: _currentIndex,
+                  isFocused: _focusedIndex == 3,
+                ),
+              ],
+            ),
+
           ),
         ),
       ),
-    ),
+    
   );
 }
 
@@ -454,7 +485,10 @@ Widget _buildTopBar(BuildContext context) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
+
+                    builder: (context) =>
+                        const ProfileScreen(), // Navigasi ke ProfileScreen
+
                   ),
                 );
               },
@@ -474,13 +508,6 @@ Widget _buildTopBar(BuildContext context) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Selamat Datang Di,",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
                 Row(
                   children: [
                     Image.asset(

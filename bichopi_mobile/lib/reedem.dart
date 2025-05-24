@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:coba3/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
 
 class RewardPage extends StatefulWidget {
-  const RewardPage({super.key});
+  const RewardPage({super.key, required String memberId});
 
   @override
   _RewardPageState createState() => _RewardPageState();
@@ -264,7 +264,7 @@ class _RewardPageState extends State<RewardPage> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF4CAF50), Color(0xFF81C784)], // Gradient hijau
+              colors: [Color(0xFF078603), Color(0xFF078603)], // Gradient hijau
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(20),
@@ -444,7 +444,7 @@ class _RewardPageState extends State<RewardPage> {
                   // onPressed selalu aktif karena canRedeem selalu true
                   onPressed: () => showRedeemDialog(context, rewardId, title, points),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50), // Selalu hijau
+                    backgroundColor: Color(0xFF078603), // Selalu hijau
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(
