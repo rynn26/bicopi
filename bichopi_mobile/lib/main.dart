@@ -16,6 +16,9 @@ import 'login.dart';
 import 'menu_list_from_db.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'payment_history_page.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'profile.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -120,6 +123,20 @@ class _HomePageState extends State<HomePage> {
     _pageController.dispose();
     super.dispose();
   }
+
+
+  // Update this list to EXCLUDE ProfileScreen
+  final List<Widget> _pages = [
+    HomeContent(addItemToCart: (itemName) {
+      // Implement your addItemToCart logic here or pass it from HomeContent
+      // For now, let's keep it simple as it's passed directly to HomeContent
+    }),
+    ReservasiPage(selectedItem: {}),
+    RewardPage(),
+    // Show ProfileScreen instead of PaymentHistoryPage
+    const ProfileScreen(),
+  ];
+
 
   void _onBottomNavItemTapped(int index) {
     setState(() {
@@ -239,6 +256,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+
   Widget build(BuildContext context) {
     // If memberId is still loading, show a loading indicator or handle it
     if (_isMemberIdLoading) {
@@ -328,11 +346,14 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildNavItem({
     required int index,
@@ -461,12 +482,13 @@ Widget _buildTopBar(BuildContext context) {
             right: 35,
             child: GestureDetector(
               onTap: () {
-                // Arahkan ke halaman profil
                 Navigator.push(
                   context,
                   MaterialPageRoute(
+
                     builder: (context) =>
                         const ProfileScreen(), // Navigasi ke ProfileScreen
+
                   ),
                 );
               },
@@ -480,7 +502,7 @@ Widget _buildTopBar(BuildContext context) {
               ),
             ),
           ),
-          // Content: Greeting + Search Bar
+          // Content: Greeting + Logo + Title + Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Column(
@@ -493,13 +515,23 @@ Widget _buildTopBar(BuildContext context) {
                     color: Colors.black87,
                   ),
                 ),
-                Text(
-                  "BICOPI",
-                  style: GoogleFonts.playfairDisplay(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF028A0F),
-                  ),
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/bicopi_logo.png', // Ganti dengan path logo kamu
+                      height: 50,
+                      width: 50,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "BICOPI",
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF028A0F),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 35),
                 // Search Bar
@@ -639,9 +671,9 @@ Widget _buildCategoryList(BuildContext context) {
 
 Widget _buildCarousel() {
   final List<String> imageList = [
-    "assets/paketramadhan.jpg",
-    "assets/paketb.jpg",
-    "assets/bicopi.jpg",
+    "assets/paketramadhan.png",
+    "assets/pakethebat.png",
+    
   ];
 
   return Padding(

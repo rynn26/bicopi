@@ -193,10 +193,12 @@ class _ProfilePage extends State<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 8.0),
       child: Text(
         title,
+
         style: GoogleFonts.poppins( // Applied Poppins
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: _darkGreen,
+
         ),
       ),
     );
@@ -209,6 +211,7 @@ class _ProfilePage extends State<ProfileScreen> {
       child: TextField(
         controller: controller,
         readOnly: readOnly,
+
         keyboardType: keyboardType,
         style: GoogleFonts.poppins(fontSize: 14, color: _greyText), // Applied Poppins
         decoration: InputDecoration(
@@ -229,6 +232,7 @@ class _ProfilePage extends State<ProfileScreen> {
           ),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+
           filled: true,
           fillColor: Colors.white,
         ),
@@ -241,6 +245,7 @@ class _ProfilePage extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
         margin: const EdgeInsets.symmetric(vertical: 5.0),
         decoration: BoxDecoration(
@@ -251,6 +256,7 @@ class _ProfilePage extends State<ProfileScreen> {
               color: Colors.grey.withOpacity(0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
+
             ),
           ],
         ),
@@ -259,6 +265,7 @@ class _ProfilePage extends State<ProfileScreen> {
           children: [
             Row(
               children: [
+
                 Icon(icon, color: _darkGreen, size: 20),
                 const SizedBox(width: 10),
                 Text(
@@ -269,6 +276,7 @@ class _ProfilePage extends State<ProfileScreen> {
             ),
             Icon(Icons.arrow_forward_ios,
                 size: 12, color: _lightGrey),
+
           ],
         ),
       ),
@@ -278,6 +286,7 @@ class _ProfilePage extends State<ProfileScreen> {
   Widget _buildActionButton(IconData icon, String text, VoidCallback onPressed, Color color) {
     return Expanded(
       child: Padding(
+
         padding: const EdgeInsets.symmetric(horizontal: 5.0),
         child: Container(
           decoration: BoxDecoration(
@@ -287,6 +296,7 @@ class _ProfilePage extends State<ProfileScreen> {
                 color: color.withOpacity(0.2),
                 blurRadius: 6,
                 offset: const Offset(0, 3),
+
               ),
             ],
           ),
@@ -321,11 +331,13 @@ class _ProfilePage extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: _lightGreen,
       appBar: AppBar(
         backgroundColor: _primaryGreen,
         elevation: 0,
         title: Text( // Changed to Text() as GoogleFonts.poppins() is not const
+
           "Profile",
           style: GoogleFonts.poppins( // Applied Poppins to AppBar title
             color: Colors.white,
@@ -345,15 +357,19 @@ class _ProfilePage extends State<ProfileScreen> {
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
+
             bottom: Radius.circular(20),
+
           ),
         ),
         shadowColor: Colors.black.withOpacity(0.1),
       ),
       body: _isLoading
+
           ? const Center(child: CircularProgressIndicator(color: _primaryGreen, strokeWidth: 2.5))
           : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 15.0),
+
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -361,8 +377,10 @@ class _ProfilePage extends State<ProfileScreen> {
                     child: Stack(
                       children: [
                         CircleAvatar(
+
                           radius: 45,
                           backgroundColor: _accentGreen.withOpacity(0.3),
+
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
                               : (_imageUrl != null
@@ -375,6 +393,7 @@ class _ProfilePage extends State<ProfileScreen> {
                           right: 0,
                           child: InkWell(
                             onTap: _pickImage,
+
                             borderRadius: BorderRadius.circular(15),
                             child: Container(
                               padding: const EdgeInsets.all(6.0),
@@ -392,6 +411,7 @@ class _ProfilePage extends State<ProfileScreen> {
                               ),
                               child: const Icon(Icons.camera_alt,
                                   size: 16, color: Colors.white),
+
                             ),
                           ),
                         ),
@@ -407,23 +427,29 @@ class _ProfilePage extends State<ProfileScreen> {
                           style: GoogleFonts.poppins( // Applied Poppins
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: _darkGreen,
+
+                            color: const Color(0xFF078603), // Darker green for name
+
                           ),
                         ),
                         const SizedBox(height: 5),
                         Text(
                           _emailController.text.isNotEmpty ? _emailController.text : "youremail@example.com",
+
                           style: GoogleFonts.poppins(fontSize: 12, color: _greyText), // Applied Poppins
+
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 25),
                   Container(
+
                     padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(10),
+
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.05),
@@ -478,7 +504,9 @@ class _ProfilePage extends State<ProfileScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+
                       _buildActionButton(Icons.save, "Save Changes", _updateUserData, _primaryGreen),
+
                       _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent),
                     ],
                   ),

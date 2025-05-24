@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class PopupPage extends StatelessWidget {
+class PopupPage extends StatefulWidget { // Nama kelas tetap PopupPage seperti di import
   final String title;
   final int points;
-  final String transactionId;
+  final String transactionId; // Ini akan menerima ID dari Supabase
 
   const PopupPage({
     super.key,
@@ -14,27 +14,59 @@ class PopupPage extends StatelessWidget {
   });
 
   @override
+  State<PopupPage> createState() => _PopupPageState(); // Nama state disesuaikan
+}
+
+class _PopupPageState extends State<PopupPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+
+    // Mulai animasi saat widget diinisialisasi
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async =>
-          false, // Mencegah menutup dialog dengan tombol kembali fisik selama animasi
+          false, // Mencegah dialog tertutup dengan tombol kembali fisik selama animasi
       child: Center(
         child: Material(
-          color: Colors.transparent,
+          color: Colors.transparent, // Membuat latar belakang material transparan
           child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(
-                parent: ModalRoute.of(context)!.animation!,
-                curve: Curves.easeInOutCubic,
-              ),
-            ),
+            scale: _scaleAnimation, // Menggunakan animasi scale kustom
             child: FadeTransition(
-              opacity: Tween<double>(begin: 0.5, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: ModalRoute.of(context)!.animation!,
-                  curve: Curves.easeInOutCubic,
-                ),
-              ),
+              opacity: _fadeAnimation, // Menggunakan animasi fade kustom
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(24),
@@ -76,11 +108,12 @@ class PopupPage extends StatelessWidget {
                     Text(
                       "ID Penukaran",
                       style: GoogleFonts.nunitoSans(
-                          fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      transactionId,
+                      widget.transactionId, // Mengambil ID transaksi dari properti widget
                       style: GoogleFonts.nunitoSans(
                           color: Colors.black87, fontSize: 16),
                     ),
@@ -88,14 +121,15 @@ class PopupPage extends StatelessWidget {
                     Text(
                       "Penukaran Point",
                       style: GoogleFonts.nunitoSans(
-                          fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(Icons.sync, size: 20, color: Colors.green[400]),
                         const SizedBox(width: 8),
-                        Text("$points POIN",
+                        Text("${widget.points} POIN", // Mengambil poin dari properti widget
                             style: GoogleFonts.poppins(
                                 fontSize: 18, fontWeight: FontWeight.w500)),
                       ],
@@ -104,7 +138,12 @@ class PopupPage extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          // Membalik animasi sebelum menutup dialog
+                          _controller.reverse().then((_) {
+                            Navigator.pop(context);
+                          });
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[400],
                           padding: const EdgeInsets.symmetric(vertical: 14),
