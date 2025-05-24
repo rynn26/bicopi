@@ -86,7 +86,7 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         final response = await http.post(
           Uri.parse(
-              'http://192.168.1.18:3000/create-transaction'), // Replace with your server URL
+              'http://10.0.2.2:3000/create-transaction'), // Replace with your server URL
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
@@ -461,8 +461,8 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(
-          'https://app.sandbox.midtrans.com/snap/v2/vtweb/${widget.snapToken}'));
+..loadRequest(Uri.parse(
+    'https://app.sandbox.midtrans.com/snap/v4/redirection/${widget.snapToken}'));
   }
 
   @override
