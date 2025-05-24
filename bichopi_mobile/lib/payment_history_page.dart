@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Untuk format tanggal dan mata uang
+import 'package:intl/intl.dart';
 
 class PaymentHistoryPage extends StatefulWidget {
-  final String memberId;
-
-  const PaymentHistoryPage({Key? key, required this.memberId})
+  const PaymentHistoryPage({Key? key, required String memberId})
       : super(key: key);
 
   @override
@@ -17,6 +15,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   List<Map<String, dynamic>> _paymentHistory = [];
   bool _isLoading = true;
   String _errorMessage = '';
+
+  // Removed: final GlobalKey<AnimatedSwitcherState> _listKey = GlobalKey<AnimatedSwitcherState>();
 
   final NumberFormat currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
@@ -36,21 +36,73 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       _errorMessage = '';
     });
 
-    if (widget.memberId.isEmpty) {
+    final String? currentAuthUserId =
+        Supabase.instance.client.auth.currentUser?.id;
+
+    if (currentAuthUserId == null || currentAuthUserId.isEmpty) {
       setState(() {
         _errorMessage =
-            'ID member tidak valid. Tidak dapat memuat riwayat pembayaran.';
+            'Tidak ada pengguna yang masuk atau ID autentikasi tidak valid. Tidak dapat memuat riwayat pembayaran.';
         _isLoading = false;
       });
-      print('DEBUG: Member ID is empty. Cannot fetch payment history.');
+      print(
+          'DEBUG: No Supabase user authenticated or Auth ID is empty. Cannot fetch payment history.');
       return;
     }
+
+    // --- STEP 1: Get the 'id' (PK) from the 'members' table using auth.users.id ---
+    String? actualMemberIdForQuery;
+    try {
+      print(
+          'DEBUG: Looking up member ID in "members" table for auth user ID: $currentAuthUserId');
+      final memberRecord = await Supabase.instance.client
+          .from('members')
+          .select('id') // Select the primary key 'id' from the members table
+          .eq('id_user', currentAuthUserId) // Match using the auth.users.id
+          .maybeSingle();
+
+      if (memberRecord != null && memberRecord['id'] != null) {
+        actualMemberIdForQuery = memberRecord['id'] as String;
+        print(
+            'DEBUG: Found actual member ID from "members" table: $actualMemberIdForQuery');
+      } else {
+        setState(() {
+          _errorMessage =
+              'Tidak ada catatan member ditemukan di tabel "members" untuk user yang masuk. Pastikan user terdaftar sebagai member.';
+          _isLoading = false;
+        });
+        print(
+            'DEBUG: No corresponding member record found in "members" table for auth user ID: $currentAuthUserId');
+        return; // Stop if no member record is found
+      }
+    } on PostgrestException catch (e) {
+      print(
+          'DEBUG: Supabase PostgrestException when fetching member ID: ${e.message}');
+      setState(() {
+        _errorMessage = 'Gagal memuat ID member dari database: ${e.message}.';
+        _isLoading = false;
+      });
+      return;
+    } catch (e) {
+      print('DEBUG: Unexpected error fetching member ID: $e');
+      setState(() {
+        _errorMessage =
+            'Terjadi kesalahan saat memuat ID member: ${e.toString()}.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // --- STEP 2: Use the 'actualMemberIdForQuery' (PK from 'members' table) to query orderkasir_history ---
+    print(
+        'DEBUG: Attempting to fetch payment history for memberId (from "members" table): $actualMemberIdForQuery');
 
     try {
       final List<dynamic> response = await Supabase.instance.client
           .from('orderkasir_history')
           .select('*')
-          .eq('member_id', widget.memberId)
+          .eq('member_id',
+              actualMemberIdForQuery) // Use the actual member ID (PK from 'members' table)
           .order('created_at', ascending: false);
 
       setState(() {
@@ -96,13 +148,12 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             'Hapus Semua Riwayat?',
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
-              color: Colors.grey[900], // Darker title
+              color: Colors.grey[900],
             ),
           ),
           content: Text(
             'Apakah Anda yakin ingin menghapus semua riwayat pembayaran Anda? Tindakan ini tidak dapat dibatalkan.',
-            style: GoogleFonts.poppins(
-                fontSize: 14, color: Colors.grey[700]), // Clearer content
+            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]), // Reduced font size
           ),
           actions: <Widget>[
             TextButton(
@@ -116,19 +167,19 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[400], // Red accent for delete
+                backgroundColor: Colors.red[400],
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                elevation: 3, // Slight elevation for the button
+                elevation: 3,
               ),
               child: Text(
                 'Hapus',
                 style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold, fontSize: 15),
+                    fontWeight: FontWeight.bold, fontSize: 14), // Reduced font size
               ),
             ),
           ],
@@ -142,23 +193,51 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         _errorMessage = '';
       });
       try {
+        final String? currentAuthUserId =
+            Supabase.instance.client.auth.currentUser?.id;
+        if (currentAuthUserId == null || currentAuthUserId.isEmpty) {
+          throw Exception(
+              'Tidak ada pengguna yang masuk atau ID autentikasi tidak valid.');
+        }
+
+        String? actualMemberIdForDeletion;
+        try {
+          final memberRecord = await Supabase.instance.client
+              .from('members')
+              .select('id')
+              .eq('id_user', currentAuthUserId)
+              .maybeSingle();
+
+          if (memberRecord != null && memberRecord['id'] != null) {
+            actualMemberIdForDeletion = memberRecord['id'] as String;
+          } else {
+            throw Exception(
+                'Tidak ada catatan member ditemukan untuk user yang masuk.');
+          }
+        } catch (e) {
+          throw Exception(
+              'Gagal mendapatkan ID member untuk penghapusan: ${e.toString()}');
+        }
+
         await Supabase.instance.client
             .from('orderkasir_history')
             .delete()
-            .eq('member_id', widget.memberId);
+            .eq('member_id', actualMemberIdForDeletion);
 
+        // Update the state
         setState(() {
-          _paymentHistory = []; // Clear local list
+          _paymentHistory = []; // Clear the list
           _isLoading = false;
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'Riwayat pembayaran berhasil dihapus!',
-              style: GoogleFonts.poppins(),
+              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
             ),
             backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating, // Modern snackbar look
+            behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.all(10),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -173,7 +252,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           SnackBar(
             content: Text(
               'Gagal menghapus riwayat: ${e.message}',
-              style: GoogleFonts.poppins(),
+              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -191,7 +270,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           SnackBar(
             content: Text(
               'Terjadi kesalahan: ${e.toString()}',
-              style: GoogleFonts.poppins(),
+              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
@@ -207,25 +286,23 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Latar belakang off-white
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 1.5, // Subtle shadow for depth
+        elevation: 1.5,
         title: Text(
           "Riwayat Pembayaran",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
-            fontSize: 19, // Slightly adjusted font size
+            fontSize: 18, // Reduced font size
             color: Colors.grey[850],
           ),
         ),
         centerTitle: true,
-        iconTheme:
-            IconThemeData(color: Colors.grey[700]), // Consistent icon color
+        iconTheme: IconThemeData(color: Colors.grey[700]),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete_forever,
-                color: Colors.red[400], size: 26), // Larger and red icon
+            icon: Icon(Icons.delete_forever, color: Colors.red[400], size: 24), // Reduced icon size
             onPressed: _paymentHistory.isEmpty ? null : _clearPaymentHistory,
             tooltip: 'Hapus Semua Riwayat',
           ),
@@ -234,71 +311,74 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.green[700]!))) // Darker green for loader
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.green[700]!)))
           : _errorMessage.isNotEmpty
               ? _buildErrorState()
               : _paymentHistory.isEmpty
                   ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16.0), // Generous padding
+                  : ListView.separated(
+                      // No explicit key needed here for AnimatedSwitcher if it's removed
+                      padding: const EdgeInsets.all(16.0),
                       itemCount: _paymentHistory.length,
                       itemBuilder: (context, index) {
                         final history = _paymentHistory[index];
                         return _buildPaymentCard(history);
                       },
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
                     ),
     );
   }
 
   Widget _buildErrorState() {
     return Center(
+      // No explicit key needed here for AnimatedSwitcher if it's removed
       child: Padding(
-        padding: const EdgeInsets.all(20.0), // Consistent padding
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.sentiment_dissatisfied_outlined,
               color: Colors.red[400],
-              size: 70, // Slightly larger icon
+              size: 65, // Reduced icon size
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 15), // Reduced spacing
             Text(
               "Terjadi Kesalahan",
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 18, // Reduced font size
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[800],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6), // Reduced spacing
             Text(
               _errorMessage,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13, // Reduced font size
                 color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25), // Reduced spacing
             ElevatedButton.icon(
               onPressed: _fetchPaymentHistory,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[700], // Consistent primary green
+                backgroundColor: Colors.green[700],
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(10.0), // Reduced border radius
                 ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Reduced padding
                 elevation: 3,
               ),
-              icon: const Icon(Icons.refresh, size: 18),
+              icon: const Icon(Icons.refresh, size: 16), // Reduced icon size
               label: Text(
                 'Coba Lagi',
                 style: GoogleFonts.poppins(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+                    fontSize: 14, fontWeight: FontWeight.w600), // Reduced font size
               ),
             ),
           ],
@@ -309,36 +389,37 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   Widget _buildEmptyState() {
     return Center(
+      // No explicit key needed here for AnimatedSwitcher if it's removed
       child: Padding(
-        padding: const EdgeInsets.all(20.0), // Consistent padding
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.receipt_long,
               color: Colors.grey[300],
-              size: 90, // Slightly larger icon
+              size: 80, // Reduced icon size
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 15), // Reduced spacing
             Text(
               "Tidak Ada Riwayat Pembayaran",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: 18, // Reduced font size
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6), // Reduced spacing
             Text(
               "Transaksi Anda akan muncul di sini. Mulai berbelanja!",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13, // Reduced font size
                 color: Colors.grey[500],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25), // Reduced spacing
           ],
         ),
       ),
@@ -347,14 +428,14 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   Widget _buildPaymentCard(Map<String, dynamic> history) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 15.0), // More space between cards
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20), // More rounded corners
+        borderRadius: BorderRadius.circular(15), // Slightly reduced border radius
       ),
-      elevation: 6, // More pronounced shadow
-      shadowColor: Colors.black.withOpacity(0.08), // Softer, more spread shadow
+      elevation: 4, // Slightly reduced elevation
+      shadowColor: Colors.black.withOpacity(0.06), // Lighter shadow
       child: Padding(
-        padding: const EdgeInsets.all(20.0), // Generous internal padding
+        padding: const EdgeInsets.all(18.0), // Slightly reduced padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -366,34 +447,31 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
                     'Order No: ${history['order_no'] ?? 'N/A'}',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w700,
-                      fontSize: 17, // Clearer order number
-                      color: Colors.grey[900], // Darker for emphasis
+                      fontSize: 16, // Reduced font size
+                      color: Colors.grey[900],
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3), // Reduced padding
                   decoration: BoxDecoration(
-                    color: Colors.green[100], // Light green tag
-                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(5), // Reduced border radius
                   ),
                   child: Text(
                     'Selesai',
                     style: GoogleFonts.poppins(
-                      color: Colors.green[700], // Darker green text
+                      color: Colors.green[700],
                       fontWeight: FontWeight.w600,
-                      fontSize: 11,
+                      fontSize: 10, // Reduced font size
                     ),
                   ),
                 ),
               ],
             ),
-            Divider(
-                height: 20, // More space around divider
-                thickness: 0.6,
-                color: Colors.grey[200]),
+            Divider(height: 18, thickness: 0.5, color: Colors.grey[200]), // Adjusted divider
             _buildInfoRow(
               icon: Icons.table_bar_outlined,
               label: 'Meja',
@@ -404,11 +482,11 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               label: 'Pelanggan',
               value: history['nama_pelanggan'] ?? 'N/A',
             ),
-            const SizedBox(height: 15), // More space before total
+            const SizedBox(height: 12), // Reduced spacing
             Text(
               'Total Pembayaran',
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13, // Reduced font size
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
@@ -417,51 +495,56 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               currencyFormatter.format(history['total_harga'] ?? 0),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w800,
-                fontSize: 22, // Larger total price
-                color: Colors.green[700], // Prominent green
+                fontSize: 20, // Reduced font size
+                color: Colors.green[700],
                 letterSpacing: 0.2,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6), // Reduced spacing
             Align(
               alignment: Alignment.bottomRight,
               child: Text(
-                'Transaksi pada: ${history['created_at'] != null ? DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(history['created_at']).toLocal()) : 'N/A'}',
+                'Transaksi pada: ${history['created_at'] != null ? DateFormat('dd MMM, HH:mm').format(DateTime.parse(history['created_at']).toLocal()) : 'N/A'}',
                 style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: 10, // Reduced font size
                     color: Colors.grey[500],
                     fontStyle: FontStyle.italic),
               ),
             ),
-            // Item details section
             if (history['items'] != null &&
                 history['items'] is List &&
                 (history['items'] as List).isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 15),
+                  Divider(height: 20, thickness: 0.5, color: Colors.grey[200]), // Adjusted divider
                   Text(
                     'Detail Pesanan:',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 14, // Reduced font size
                       color: Colors.grey[700],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  ...(history['items'] as List).map((item) {
-                    return _buildItemRow(item);
-                  }).toList(),
+                  const SizedBox(height: 6), // Reduced spacing
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: (history['items'] as List).length,
+                    itemBuilder: (context, itemIndex) {
+                      final item = (history['items'] as List)[itemIndex];
+                      return _buildItemRow(item);
+                    },
+                  ),
                 ],
               )
             else
               Padding(
-                padding: const EdgeInsets.only(top: 15.0),
+                padding: const EdgeInsets.only(top: 12.0), // Reduced padding
                 child: Text(
                   'Detail Pesanan: Tidak ada item yang tercatat.',
                   style: GoogleFonts.poppins(
-                      fontSize: 13, color: Colors.grey[500]),
+                      fontSize: 12, color: Colors.grey[500]), // Reduced font size
                 ),
               ),
           ],
@@ -470,34 +553,31 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     );
   }
 
-  // Helper widget untuk baris informasi umum
   Widget _buildInfoRow(
       {required IconData icon, required String label, required String value}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 4.0), // Consistent vertical padding
+      padding: const EdgeInsets.symmetric(vertical: 3.0), // Reduced vertical padding
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon,
-              size: 18, color: Colors.green[400]), // Accent green for icons
-          const SizedBox(width: 10),
+          Icon(icon, size: 16, color: Colors.green[400]), // Reduced icon size
+          const SizedBox(width: 8), // Reduced spacing
           Text(
             '$label:',
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 13, // Reduced font size
               fontWeight: FontWeight.w500,
               color: Colors.grey[700],
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5), // Reduced spacing
           Expanded(
             child: Text(
               value,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13, // Reduced font size
                 color: Colors.grey[800],
-                fontWeight: FontWeight.w600, // Slightly bolder value
+                fontWeight: FontWeight.w600,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -507,15 +587,13 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     );
   }
 
-  // Helper widget untuk baris detail item
   Widget _buildItemRow(Map<String, dynamic> item) {
     final itemName = item['item_name'] ?? 'N/A';
     final itemQuantity = item['quantity'] ?? 'N/A';
     final itemPrice = item['price'] ?? 0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 4.0, horizontal: 8.0), // Slightly more horizontal padding
+      padding: const EdgeInsets.symmetric(vertical: 3.0, horizontal: 6.0), // Reduced padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,7 +603,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             child: Text(
               '$itemQuantity x $itemName',
               style: GoogleFonts.poppins(
-                fontSize: 13, // Slightly larger font
+                fontSize: 12, // Reduced font size
                 color: Colors.grey[800],
               ),
               overflow: TextOverflow.ellipsis,
@@ -537,7 +615,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               currencyFormatter.format(itemPrice),
               textAlign: TextAlign.right,
               style: GoogleFonts.poppins(
-                fontSize: 13, // Slightly larger font
+                fontSize: 12, // Reduced font size
                 color: Colors.grey[800],
                 fontWeight: FontWeight.w600,
               ),

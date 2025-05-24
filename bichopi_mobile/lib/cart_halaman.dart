@@ -196,6 +196,117 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
+  Future<void> _clearAllCartItems() async {
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0), // Rounded corners
+        ),
+        elevation: 10,
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.delete_forever,
+                color: Colors.redAccent,
+                size: 60,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Hapus Semua Item?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Apakah Anda yakin ingin menghapus semua item dari keranjang Anda? Tindakan ini tidak dapat dibatalkan.",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[300],
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        "Batal",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        "Hapus",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (shouldProceed == true) {
+      setState(() => isLoading = true);
+      final supabase = Supabase.instance.client;
+      if (userId == null) return;
+
+      try {
+        await supabase.from('keranjang').delete().eq('user_id', userId);
+
+        setState(() {
+          cartItems.clear();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Semua item di keranjang telah dihapus.")),
+        );
+      } catch (e) {
+        print('Error clearing cart: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gagal menghapus keranjang.")),
+        );
+      } finally {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
   void _checkout(BuildContext context) async {
     final shouldProceed = await showDialog<bool>(
       context: context,
@@ -260,7 +371,9 @@ class _CartPageState extends State<CartPage> {
       backgroundColor: const Color(0xFFF0F2F5), // Lighter background
       body: Column(
         children: [
-          const CustomAppBar(),
+          CustomAppBar(
+            onClearCart: _clearAllCartItems, // Pass the new method here
+          ),
           Expanded(
             child: cartItems.isEmpty
                 ? const Center(
@@ -335,13 +448,13 @@ class CartItemCard extends StatelessWidget {
     final totalPrice = itemPrice * quantity;
 
     return Card(
-      // Use Card widget for a modern look
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 4, // Add elevation for a subtle shadow
+      margin: const EdgeInsets.only(bottom: 8), // Reduced margin
+      elevation: 2, // Reduced elevation
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16)), // More rounded corners
+          borderRadius: BorderRadius.circular(12)), // Slightly less rounded
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(
+            vertical: 10, horizontal: 12), // Reduced padding
         child: Row(
           children: [
             Expanded(
@@ -351,53 +464,53 @@ class CartItemCard extends StatelessWidget {
                   Text(
                     itemName,
                     style: const TextStyle(
-                        fontSize: 15, // Reduced from 17
+                        fontSize: 13, // Reduced from 15
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333)), // Darker text for better contrast
+                        color: Color(0xFF333333)),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4), // Reduced spacing
                   Text(
                     "${formatter.format(itemPrice)} x $quantity",
-                    style:
-                        const TextStyle(fontSize: 12, color: Colors.grey), // Reduced from 14
+                    style: const TextStyle(
+                        fontSize: 10, color: Colors.grey), // Reduced from 12
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6), // Reduced spacing
                   Text(
                     "Total: ${formatter.format(totalPrice)}",
                     style: const TextStyle(
-                        fontSize: 13, // Reduced from 15
+                        fontSize: 11, // Reduced from 13
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF078603)), // Consistent green color
+                        color: Color(0xFF078603)),
                   ),
                 ],
               ),
             ),
             Container(
-              // Wrap quantity controls in a container for styling
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9), // Light green background
-                borderRadius: BorderRadius.circular(20),
+                color: const Color(0xFFE8F5E9),
+                borderRadius:
+                    BorderRadius.circular(16), // Smaller border radius
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: onDecrease,
                     icon: const Icon(Icons.remove_circle_outline,
-                        color: Colors
-                            .redAccent), // Slightly brighter red
-                    tooltip: 'Kurangi jumlah', // Add tooltips
+                        color: Colors.redAccent, size: 20), // Smaller icon size
+                    tooltip: 'Kurangi jumlah',
                   ),
                   Text(
                     "$quantity",
                     style: const TextStyle(
-                        fontSize: 14, // Reduced from 16
+                        fontSize: 12, // Reduced from 14
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF333333)),
                   ),
                   IconButton(
                     onPressed: onIncrease,
                     icon: const Icon(Icons.add_circle_outline,
-                        color: Color(0xFF078603)), // Consistent green color
+                        color: Color(0xFF078603),
+                        size: 20), // Smaller icon size
                     tooltip: 'Tambah jumlah',
                   ),
                 ],
@@ -429,19 +542,18 @@ class PaymentSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      // Use Card widget for a modern look
-      elevation: 6, // Increased elevation for more prominence
+      elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(top: 16), // Adjust margin for better spacing
+      margin: const EdgeInsets.only(top: 16),
       child: Padding(
-        padding: const EdgeInsets.all(20), // More padding
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               "Detail Pembayaran",
               style: TextStyle(
-                  fontSize: 16, // Reduced from 18
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF333333)),
             ),
@@ -449,36 +561,36 @@ class PaymentSummaryCard extends StatelessWidget {
             _buildSummaryRow("Subtotal", subtotal, Colors.black87),
             const SizedBox(height: 8),
             _buildSummaryRow("Biaya Layanan", serviceFee, Colors.black87),
-            const Divider(height: 30, thickness: 1.5, color: Colors.grey), // Thicker divider
+            const Divider(height: 30, thickness: 1.5, color: Colors.grey),
             _buildSummaryRow("Total", total, const Color(0xFF078603),
                 isTotal: true),
-            const SizedBox(height: 24), // More vertical spacing
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: isLoading ? null : onCheckout,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14), // Taller button (Reduced from 16)
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: const Color(0xFF078603),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 4, // Add elevation to the button
+                  elevation: 4,
                 ),
                 child: isLoading
                     ? const SizedBox(
-                        height: 22, // Larger indicator (Reduced from 24)
-                        width: 22, // Reduced from 24
+                        height: 22,
+                        width: 22,
                         child: CircularProgressIndicator(
                           color: Colors.white,
-                          strokeWidth: 2.5, // Thicker stroke
+                          strokeWidth: 2.5,
                         ),
                       )
                     : const Text(
                         "Checkout",
                         style: TextStyle(
-                          fontSize: 16, // Reduced from 18
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -498,7 +610,7 @@ class PaymentSummaryCard extends StatelessWidget {
         Text(
           title,
           style: TextStyle(
-            fontSize: isTotal ? 15 : 13, // Reduced from 17 and 15
+            fontSize: isTotal ? 15 : 13,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
             color: color,
           ),
@@ -506,7 +618,7 @@ class PaymentSummaryCard extends StatelessWidget {
         Text(
           formatter.format(amount),
           style: TextStyle(
-            fontSize: isTotal ? 15 : 13, // Reduced from 17 and 15
+            fontSize: isTotal ? 15 : 13,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
             color: isTotal ? const Color(0xFF078603) : color,
           ),
@@ -517,21 +629,21 @@ class PaymentSummaryCard extends StatelessWidget {
 }
 
 class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({super.key});
+  final VoidCallback? onClearCart; // New callback for clearing cart
+
+  const CustomAppBar({super.key, this.onClearCart});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16), // Adjust top padding for status bar (Reduced from 50 and 20)
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 40, bottom: 16),
       decoration: const BoxDecoration(
         color: Color(0xFF078603),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(25), // More rounded corners
+          bottomLeft: Radius.circular(25),
           bottomRight: Radius.circular(25),
         ),
         boxShadow: [
-          // Add shadow to app bar
           BoxShadow(
             color: Colors.black26,
             blurRadius: 8,
@@ -542,28 +654,35 @@ class CustomAppBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios,
-                color: Colors.white), // iOS style back arrow
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
             onPressed: () => Navigator.pop(context),
             tooltip: 'Kembali',
           ),
-          const SizedBox(width: 10), // Increased spacing (Reduced from 12)
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
               Text(
-                "Keranjang Anda", // More engaging title
+                "Keranjang Anda",
                 style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18, // Reduced from 20
+                    fontSize: 18,
                     fontWeight: FontWeight.bold),
               ),
               Text(
                 "Bichopi, Indonesia",
-                style: TextStyle(fontSize: 12, color: Colors.white70), // Reduced from 14
+                style: TextStyle(fontSize: 12, color: Colors.white70),
               ),
             ],
           ),
+          const Spacer(), // Add a spacer to push the clear button to the right
+          if (onClearCart !=
+              null) // Only show the button if the callback is provided
+            IconButton(
+              icon: const Icon(Icons.delete_sweep, color: Colors.white),
+              onPressed: onClearCart,
+              tooltip: 'Hapus Semua Keranjang',
+            ),
         ],
       ),
     );

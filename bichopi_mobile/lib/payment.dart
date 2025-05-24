@@ -86,7 +86,7 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         final response = await http.post(
           Uri.parse(
-              'http://172.14.8.230:3000/create-transaction'), // Replace with your server URL
+              'http://:3000/create-transaction'), // Replace with your server URL
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'order_id':
@@ -264,7 +264,8 @@ class _PaymentPageState extends State<PaymentPage> {
                         Expanded(
                           child: Text(
                             formatter.format(widget.totalPrice),
-                            textAlign: TextAlign.right, // Align text to the right
+                            textAlign:
+                                TextAlign.right, // Align text to the right
                             style: const TextStyle(
                               fontSize: 14, // Ukuran font agak kecil
                               fontWeight: FontWeight.bold,
@@ -341,11 +342,14 @@ class _PaymentPageState extends State<PaymentPage> {
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
-          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14), // Ukuran font agak kecil
-          prefixIcon: Icon(icon, color: Colors.green.shade700, size: 20), // Ukuran icon agak kecil
+          labelStyle: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14), // Ukuran font agak kecil
+          prefixIcon: Icon(icon,
+              color: Colors.green.shade700, size: 20), // Ukuran icon agak kecil
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 15), // Padding agak kecil
+          contentPadding: const EdgeInsets.symmetric(
+              vertical: 12, horizontal: 15), // Padding agak kecil
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -390,7 +394,8 @@ class _PaymentPageState extends State<PaymentPage> {
         ),
         child: Row(
           children: [
-            Image.asset(iconPath, width: 25, height: 25), // Ukuran icon agak kecil
+            Image.asset(iconPath,
+                width: 25, height: 25), // Ukuran icon agak kecil
             const SizedBox(width: 15),
             Text(
               title,
@@ -483,8 +488,10 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
 }
 
 // --- PaymentSuccessPage Class ---
+// --- PaymentSuccessPage Class ---
+
 class PaymentSuccessPage extends StatefulWidget {
-  final String memberId; // Pastikan ini tidak nullable
+  final String memberId; // Ini adalah ID dari auth.users.id
   final int totalPrice;
   final String namaPelanggan;
   final String nomorMeja;
@@ -505,6 +512,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   bool _isProcessingOrder = false;
+  // Variabel untuk menyimpan ID Primary Key (PK) dari tabel 'members'
+  // Ini akan digunakan untuk foreign key di tabel lain.
+  String? _actualMemberIdInMembersTable;
 
   @override
   void initState() {
@@ -515,11 +525,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
     _controller.addStatusListener((status) async {
       if (status == AnimationStatus.completed) {
+        // Panggil proses utama setelah animasi selesai
         await _processOrderAndPoints();
       }
     });
   }
 
+  // --- Fungsi untuk mengambil item keranjang ---
   Future<List<Map<String, dynamic>>?> _fetchCartItems() async {
     try {
       final supabase = Supabase.instance.client;
@@ -530,14 +542,27 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           .select()
           .eq('user_id', widget.memberId);
       print('PaymentSuccessPage: Fetch cart items response: $response');
-      if (response is List) {
+      // Supabase's .select() returns a List<Map<String, dynamic>> if successful,
+      // or throws an error. So we can check if it's empty.
+      if (response != null && response is List) {
         print('PaymentSuccessPage: Found ${response.length} items in cart.');
         return response.cast<Map<String, dynamic>>();
       } else {
         print(
-            'PaymentSuccessPage: No cart items found or response is not a List.');
+            'PaymentSuccessPage: No cart items found or response is not a List or is null.');
         return null;
       }
+    } on PostgrestException catch (e) {
+      print(
+          'PaymentSuccessPage: PostgrestException fetching cart items: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Gagal mengambil item keranjang dari database: ${e.message}')),
+        );
+      }
+      return null;
     } catch (error) {
       print('PaymentSuccessPage: Error fetching cart items: $error');
       if (mounted) {
@@ -549,102 +574,236 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     }
   }
 
+  // --- Fungsi utama untuk memproses pesanan dan poin ---
   Future<void> _processOrderAndPoints() async {
-    if (_isProcessingOrder) return;
+    if (_isProcessingOrder) return; // Mencegah proses berulang
     setState(() {
       _isProcessingOrder = true;
     });
     print("PaymentSuccessPage: Starting _processOrderAndPoints()");
 
     try {
-      // Fetch cart items
+      // 1. Ambil item keranjang terlebih dahulu
       final cartItems = await _fetchCartItems();
-      if (cartItems != null && cartItems.isNotEmpty) {
-        await _saveOrderHistory(cartItems);
-        await _clearShoppingCart();
-      } else {
-        print('PaymentSuccessPage: No items to process in cart.');
+      if (cartItems == null || cartItems.isEmpty) {
+        print(
+            'PaymentSuccessPage: Tidak ada item untuk diproses di keranjang.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Tidak ada item di keranjang.')),
           );
         }
+        return; // Keluar jika tidak ada item keranjang
       }
 
-      // --- LOGIC TO ADD POINTS BASED ON USER LEVEL ---
       final supabase = Supabase.instance.client;
-      final String orderId = const Uuid().v4();
+      final String orderId = const Uuid().v4(); // Generate UUID untuk order ID
 
-      // 1. Get user level and affiliate_id from members
-      // Perhatikan: Anda mengambil id_user_level dari tabel 'users',
-      // tapi points dari 'members'
-      final memberData = await supabase
-          .from('members')
-          .select(
-              'total_points, affiliate_id') // affiliate_id here MUST store affiliates.id
-          .eq('id', widget.memberId)
-          .single();
+      // 2. Pastikan member ada di tabel 'members'
+      // Ini sangat penting untuk memenuhi foreign key constraint
+      Map<String, dynamic>? memberRecord; // Change to Map<String, dynamic>?
+      try {
+        memberRecord = await supabase
+            .from('members')
+            .select(
+                'id, total_points, affiliate_id') // Pilih 'id' (PK tabel members)
+            .eq('id_user',
+                widget.memberId) // Menggunakan id_user dari auth.users.id
+            .maybeSingle(); // maybeSingle returns null if no record, or a map if one record
+      } on PostgrestException catch (e) {
+        print(
+            'PaymentSuccessPage: PostgrestException saat mencari member: ${e.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('Error database saat mencari member: ${e.message}')),
+          );
+        }
+        return;
+      } catch (e) {
+        print('PaymentSuccessPage: Error umum saat mencari member: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Terjadi kesalahan saat mencari member: $e')),
+          );
+        }
+        return;
+      }
 
-      // Pastikan 'users' adalah tabel yang benar untuk id_user_level
-      final int currentUserLevel = await supabase
-          .from('users')
-          .select('id_user_level')
-          .eq('id_user', widget.memberId) // id_user harus match dengan memberId
-          .single()
-          .then((data) => data['id_user_level'] as int? ?? 1);
+      // Set _actualMemberIdInMembersTable berdasarkan hasil pencarian/pembuatan member
+      if (memberRecord == null) {
+        // Jika tidak ada catatan member, buat satu
+        print(
+            'PaymentSuccessPage: Tidak ada catatan member ditemukan untuk ID pengguna: ${widget.memberId}. Membuat yang baru.');
+        try {
+          final List<Map<String, dynamic>> newMemberResponse = await supabase
+              .from('members')
+              .insert({
+            'id_user': widget.memberId, // Tautkan ke auth.users.id
+            'total_points': 0,
+          }).select(
+                  'id'); // Ambil 'id' (PK) dari member yang baru dibuat. select() returns a list.
 
-      int currentMemberTotalPoints = memberData['total_points'] as int? ?? 0;
-      // This affiliateIdOfCurrentMember is expected to be the 'id' from the affiliates table
+          if (newMemberResponse.isNotEmpty) {
+            _actualMemberIdInMembersTable =
+                newMemberResponse.first['id'] as String; // Update state
+            print(
+                'PaymentSuccessPage: Member baru dibuat dengan ID: $_actualMemberIdInMembersTable');
+          } else {
+            print(
+                'PaymentSuccessPage: Gagal membuat member baru, respons kosong.');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Gagal membuat catatan member baru.')),
+              );
+            }
+            return;
+          }
+        } on PostgrestException catch (e) {
+          print(
+              'PaymentSuccessPage: PostgrestException saat membuat member baru: ${e.message}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content:
+                      Text('Error database saat membuat member: ${e.message}')),
+            );
+          }
+          return;
+        } catch (e) {
+          print('PaymentSuccessPage: Error umum saat membuat member baru: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Terjadi kesalahan saat membuat member: $e')),
+            );
+          }
+          return;
+        }
+      } else {
+        _actualMemberIdInMembersTable =
+            memberRecord['id'] as String; // Update state dengan PK yang ada
+        print(
+            'PaymentSuccessPage: Member ditemukan dengan ID: $_actualMemberIdInMembersTable');
+      }
+
+      // Panggil _saveOrderHistory SETELAH _actualMemberIdInMembersTable terisi
+      await _saveOrderHistory(
+          cartItems, orderId); // Pass orderId to _saveOrderHistory
+      await _clearShoppingCart();
+
+      // 3. Lanjutkan dengan logika poin menggunakan _actualMemberIdInMembersTable
+      int currentMemberTotalPoints = memberRecord?['total_points'] as int? ?? 0;
       final String? affiliateIdOfCurrentMember =
-          memberData['affiliate_id'] as String?;
+          memberRecord?['affiliate_id'] as String?;
 
-      // Poin yang diterima oleh *member yang melakukan pembelian*
-      const int pointsForPurchasingMember = 10;
+      // Dapatkan level pengguna dari tabel 'users' (asumsi tabel kustom Anda)
+      int currentUserLevel = 1; // Default
+      try {
+        final userLevelData = await supabase
+            .from('users') // Nama tabel yang menyimpan level pengguna
+            .select('id_user_level')
+            .eq(
+                'id_user',
+                widget
+                    .memberId) // Menggunakan 'id_user' sebagai kolom untuk mencocokkan widget.memberId
+            .maybeSingle();
+
+        if (userLevelData != null) {
+          currentUserLevel = userLevelData['id_user_level'] as int? ?? 1;
+          print('PaymentSuccessPage: User level: $currentUserLevel');
+        } else {
+          print(
+              'PaymentSuccessPage: User level data not found for ${widget.memberId}. Using default level 1.');
+        }
+      } on PostgrestException catch (e) {
+        print(
+            'PaymentSuccessPage: PostgrestException saat mengambil level pengguna: ${e.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Error database saat mengambil level pengguna: ${e.message}')),
+          );
+        }
+        // Jangan return, biarkan proses berlanjut dengan level default
+      } catch (e) {
+        print(
+            'PaymentSuccessPage: Error umum saat mengambil level pengguna: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'Terjadi kesalahan saat mengambil level pengguna: $e')),
+          );
+        }
+        // Jangan return, biarkan proses berlanjut dengan level default
+      }
+
+      // --- LOGIKA POIN ---
+      int pointsForPurchasingMember;
+      if (affiliateIdOfCurrentMember == null ||
+          affiliateIdOfCurrentMember.isEmpty) {
+        pointsForPurchasingMember = 100;
+        print(
+            'PaymentSuccessPage: Member tidak memiliki afiliasi. Member mendapatkan $pointsForPurchasingMember poin.');
+      } else {
+        pointsForPurchasingMember =
+            0; // Member with affiliate gets 0 points from their own purchase directly
+        print(
+            'PaymentSuccessPage: Member memiliki afiliasi. Member mendapatkan $pointsForPurchasingMember poin langsung.');
+      }
 
       // Update total_points untuk member yang melakukan pembelian
-      await supabase.from('members').update({
-        'total_points': currentMemberTotalPoints + pointsForPurchasingMember
-      }).eq('id', widget.memberId);
-      print(
-          'PaymentSuccessPage: Berhasil memperbarui total poin member yang membeli.');
-
-      // Log poin untuk member yang melakukan pembelian
-      await supabase.from('member_points_log').insert({
-        'member_id': widget.memberId,
-        'points_earned': pointsForPurchasingMember,
-        'description': 'Poin dari pembelian (ID Order: $orderId)',
-        'created_at': DateTime.now().toIso8601String(),
-        'order_id': orderId,
-      });
-      print(
-          'PaymentSuccessPage: Berhasil menambahkan log poin untuk member yang membeli.');
-
-      // Logic untuk menambahkan poin ke AFILIASI (jika ada dan user level 4)
-      if (currentUserLevel == 4 && affiliateIdOfCurrentMember != null) {
+      if (_actualMemberIdInMembersTable != null) {
+        await supabase.from('members').update({
+          'total_points': currentMemberTotalPoints + pointsForPurchasingMember
+        }).eq('id',
+            _actualMemberIdInMembersTable!); // Menggunakan PK yang sebenarnya dari 'members'
         print(
-            'PaymentSuccessPage: Member level 4, akan menambahkan poin ke afiliasi.');
-        const int affiliatePoints = 90;
+            'PaymentSuccessPage: Berhasil memperbarui total poin member yang membeli.');
+
+        // Log poin untuk member yang melakukan pembelian
+        await supabase.from('member_points_log').insert({
+          'member_id':
+              _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
+          'points_earned': pointsForPurchasingMember,
+          'description': 'Poin dari pembelian (ID Pesanan: $orderId)',
+          'created_at': DateTime.now().toIso8601String(),
+          'order_id': orderId,
+        });
+        print(
+            'PaymentSuccessPage: Berhasil menambahkan log poin untuk member yang membeli.');
+      } else {
+        print(
+            'PaymentSuccessPage: _actualMemberIdInMembersTable is null, cannot update member points or log points.');
+      }
+
+      // Logika untuk menambahkan poin ke AFILIASI (jika ada dan level pengguna BUKAN 1)
+      if (currentUserLevel != 1 &&
+          affiliateIdOfCurrentMember != null &&
+          affiliateIdOfCurrentMember.isNotEmpty) {
+        print(
+            'PaymentSuccessPage: Member level BUKAN 1 dan memiliki afiliasi, akan menambahkan poin ke afiliasi.');
+        const int affiliatePoints = 100;
 
         try {
-          // Ketika mencari atau memperbarui, kita akan menggunakan 'id' sebagai primary key.
-          // Ini berarti affiliateIdOfCurrentMember sekarang adalah ID dari tabel affiliates.
           final affiliateData = await supabase
               .from('affiliates')
-              .select('id, total_points') // Select 'id' as well
-              .eq('id', affiliateIdOfCurrentMember) // Match against 'id' column
+              .select('id, total_points')
+              .eq('id', affiliateIdOfCurrentMember)
               .maybeSingle();
 
           int existingAffiliatePoints = 0;
 
           if (affiliateData == null) {
-            // Ini adalah skenario di mana `members.affiliate_id` tidak valid
-            // (tidak ada di `affiliates.id`).
-            // Karena Anda ingin mempertahankan foreign key dan tidak membuat entri baru di sini,
-            // kita akan me-log peringatan dan tidak melanjutkan penambahan poin afiliasi.
             print(
-                'PaymentSuccessPage: ERROR: Affiliate with ID $affiliateIdOfCurrentMember from members.affiliate_id NOT FOUND in affiliates.id.');
+                'PaymentSuccessPage: ERROR: Afiliasi dengan ID $affiliateIdOfCurrentMember dari members.affiliate_id TIDAK DITEMUKAN di affiliates.id.');
             print(
-                'PaymentSuccessPage: Please verify data consistency in members.affiliate_id and affiliates.id.');
+                'PaymentSuccessPage: Harap verifikasi konsistensi data di members.affiliate_id dan affiliates.id.');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -652,41 +811,34 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                         'Peringatan: Data afiliasi tidak konsisten. Poin afiliasi tidak ditambahkan.')),
               );
             }
-            setState(() {
-              _isProcessingOrder = false;
-            }); // Stop loading
-            return; // Hentikan proses poin afiliasi jika ID tidak ditemukan
           } else {
-            // Afiliasi sudah ada, perbarui poinnya menggunakan 'id'
             existingAffiliatePoints =
                 affiliateData['total_points'] as int? ?? 0;
             await supabase.from('affiliates').update({
               'total_points': existingAffiliatePoints + affiliatePoints
-            }).eq(
-                'id', affiliateIdOfCurrentMember); // Match against 'id' column
+            }).eq('id', affiliateIdOfCurrentMember);
             print(
-                'PaymentSuccessPage: Successfully updated total points for existing affiliate.');
+                'PaymentSuccessPage: Berhasil memperbarui total poin untuk afiliasi yang ada.');
+
+            await Future.delayed(
+                const Duration(milliseconds: 500)); // Penundaan untuk latensi
+
+            await supabase.from('affiliate_points_log').insert({
+              'affiliate_id': affiliateIdOfCurrentMember,
+              'member_id':
+                  _actualMemberIdInMembersTable, // Menggunakan PK yang sebenarnya dari 'members'
+              'order_id': orderId,
+              'points_earned': affiliatePoints,
+              'description':
+                  'Poin rujukan dari pembelian member ${widget.namaPelanggan} (ID Pesanan: $orderId)',
+              'created_at': DateTime.now().toIso8601String(),
+            });
+            print(
+                'PaymentSuccessPage: Berhasil menambahkan log poin untuk afiliasi ($affiliateIdOfCurrentMember).');
           }
-
-          // Tambahkan penundaan singkat (optional, tapi bisa membantu dengan latensi)
-          await Future.delayed(const Duration(milliseconds: 500));
-
-          // Setelah memastikan afiliasi ada dan poinnya diperbarui, baru tambahkan log.
-          await supabase.from('affiliate_points_log').insert({
-            'affiliate_id':
-                affiliateIdOfCurrentMember, // Gunakan ID yang diambil dari members, yang diasumsikan valid
-            'member_id': widget.memberId,
-            'order_id': orderId,
-            'points_earned': affiliatePoints,
-            'description':
-                'Poin referral dari pembelian member ${widget.namaPelanggan} (ID Order: $orderId)',
-            'created_at': DateTime.now().toIso8601String(),
-          });
-          print(
-              'PaymentSuccessPage: Berhasil menambahkan log poin untuk afiliasi ($affiliateIdOfCurrentMember).');
         } on PostgrestException catch (e) {
           print(
-              'PaymentSuccessPage: PostgrestException during affiliate points processing: ${e.message}');
+              'PaymentSuccessPage: PostgrestException selama pemrosesan poin afiliasi: ${e.message}');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Error database afiliasi: ${e.message}')),
@@ -694,22 +846,22 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           }
         } catch (e) {
           print(
-              'PaymentSuccessPage: General error during affiliate points processing: $e');
+              'PaymentSuccessPage: Error umum selama pemrosesan poin afiliasi: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text(
-                      'Terjadi kesalahan tidak terduga pada afiliasi: $e')),
+                  content:
+                      Text('Terjadi kesalahan tak terduga pada afiliasi: $e')),
             );
           }
         }
       } else {
         print(
-            'PaymentSuccessPage: User level bukan 4 atau tidak memiliki afiliasi, tidak ada poin afiliasi yang ditambahkan.');
+            'PaymentSuccessPage: Level pengguna adalah 1 atau tidak memiliki afiliasi yang valid, tidak ada poin afiliasi yang ditambahkan.');
       }
     } catch (error) {
       print(
-          'PaymentSuccessPage: Error during _processOrderAndPoints (outer catch): $error');
+          'PaymentSuccessPage: Error selama _processOrderAndPoints (outer catch): $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -721,40 +873,59 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       setState(() {
         _isProcessingOrder = false;
       });
-      print("PaymentSuccessPage: _processOrderAndPoints() finished");
+      print("PaymentSuccessPage: _processOrderAndPoints() selesai");
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
+          // Navigasi kembali ke halaman utama (root) dari aplikasi
           Navigator.of(context).popUntil((route) => route.isFirst);
           print(
-              "PaymentSuccessPage: Returning to home after process completes");
+              "PaymentSuccessPage: Kembali ke beranda setelah proses selesai");
         }
       });
     }
   }
 
-  Future<void> _saveOrderHistory(List<Map<String, dynamic>> cartItems) async {
+  // --- Fungsi untuk menyimpan riwayat pesanan ---
+  // Added orderId parameter
+  Future<void> _saveOrderHistory(
+      List<Map<String, dynamic>> cartItems, String orderId) async {
     try {
       final supabase = Supabase.instance.client;
-      final String orderNo =
-          'ORDER-' + DateTime.now().millisecondsSinceEpoch.toString();
+      // Using the provided orderId for consistency across logs and history
+      final String orderNo = orderId; // Or 'ORDER-' + orderId if you prefer
 
-      // === PERBAIKAN DI SINI: Tambahkan 'member_id' ===
+      // PENTING: Pastikan _actualMemberIdInMembersTable sudah diisi sebelum memanggil fungsi ini.
+      // Ini dijamin karena _saveOrderHistory dipanggil setelah logika member di _processOrderAndPoints.
+      if (_actualMemberIdInMembersTable == null) {
+        print(
+            'PaymentSuccessPage: Error: _actualMemberIdInMembersTable is NULL when saving order history. Order will not be saved.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'ID Anggota untuk riwayat pesanan tidak ditemukan. Pesanan tidak disimpan.')),
+          );
+        }
+        return; // Hentikan proses jika ID null
+      }
+
       final response = await supabase.from('orderkasir_history').insert({
-        'order_no': orderNo,
+        'order_no': orderNo, // Use the generated orderId
         'nomor_meja': widget.nomorMeja,
         'nama_pelanggan': widget.namaPelanggan,
-        'catatan': '',
-        'items': cartItems,
+        'catatan': '', // Assuming 'catatan' is an empty string for now
+        'items': cartItems, // This expects a JSONB column in Supabase
         'total_item': cartItems.length,
         'total_harga': widget.totalPrice,
         'created_at': DateTime.now().toIso8601String(),
-        'member_id': widget.memberId, // <<< PASTIKAN INI ADA DAN MEMBER_ID TIDAK NULL
-      }).select();
+        'member_id':
+            _actualMemberIdInMembersTable, // Foreign key to 'members' table
+      }).select(); // Use .select() to get the inserted data back
 
       print('PaymentSuccessPage: Save order history response: $response');
       if (response != null && response.isNotEmpty) {
         print(
-            'PaymentSuccessPage: Successfully saved order to orderkasir_history: $response');
+            'PaymentSuccessPage: Successfully saved order to orderkasir_history: ${response.first}'); // Log the first inserted record
       } else {
         print(
             'PaymentSuccessPage: Failed to save order to orderkasir_history (empty response or null).');
@@ -765,12 +936,12 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
         }
       }
     } on PostgrestException catch (e) {
-      // Tambahkan PostgrestException catch
       print(
           'PaymentSuccessPage: PostgrestException saving order history: ${e.message}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error database riwayat pesanan: ${e.message}')),
+          SnackBar(
+              content: Text('Error database riwayat pesanan: ${e.message}')),
         );
       }
     } catch (error) {
@@ -785,31 +956,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     }
   }
 
+  // --- Fungsi untuk mengosongkan keranjang belanja ---
   Future<void> _clearShoppingCart() async {
     try {
       final supabase = Supabase.instance.client;
       print(
           'PaymentSuccessPage: Attempting to clear cart for user ID: ${widget.memberId}');
-      final response = await supabase
-          .from('keranjang')
-          .delete()
-          .eq('user_id', widget.memberId);
-      print('PaymentSuccessPage: Delete cart response: $response');
-      if (response == null) {
-        // Supabase delete returns null on success if no rows were returned
-        print('PaymentSuccessPage: Successfully cleared items from cart');
-      } else {
-        // If response is not null, it might indicate an error object or unexpected data
-        print(
-            'PaymentSuccessPage: Failed to clear cart: ${response.toString()}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal menghapus keranjang.')),
-          );
-        }
-      }
+      // Supabase's delete() returns null on success, or throws PostgrestException on error.
+      await supabase.from('keranjang').delete().eq('user_id', widget.memberId);
+
+      print('PaymentSuccessPage: Successfully cleared items from cart');
     } on PostgrestException catch (e) {
-      // Tambahkan PostgrestException catch
       print(
           'PaymentSuccessPage: PostgrestException clearing cart items: ${e.message}');
       if (mounted) {
@@ -840,81 +997,110 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     print("PaymentSuccessPage build() called");
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset(
-              'assets/animasi.json',
-              controller: _controller,
-              onLoaded: (composition) {
-                _controller
-                  ..duration = composition.duration
-                  ..forward();
-              },
-              width: 200, // Ukuran animasi agak kecil
-              height: 200, // Ukuran animasi agak kecil
-              repeat: false,
-            ),
-            const SizedBox(height: 20), // Spasi agak kecil
-            const Text(
-              'Pembayaran Berhasil!',
-              style: TextStyle(
-                fontSize: 22, // Ukuran font agak kecil
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(height: 8), // Spasi agak kecil
-            Text(
-              'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
-              style: TextStyle(
-                fontSize: 16, // Ukuran font agak kecil
-                color: Colors.grey.shade700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20), // Spasi agak kecil
-            _isProcessingOrder
-                ? const Column(
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/animasi.json', // Pastikan path ini benar
+                  controller: _controller,
+                  onLoaded: (composition) {
+                    _controller
+                      ..duration = composition.duration
+                      ..forward();
+                  },
+                ),
+                const Text(
+                  'Pembayaran Berhasil!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Column(
                     children: [
-                      CircularProgressIndicator(
+                      _buildInfoRow('Total Pembayaran',
+                          formatter.format(widget.totalPrice)),
+                      _buildInfoRow('Nama Pelanggan', widget.namaPelanggan),
+                      _buildInfoRow('Nomor Meja', widget.nomorMeja),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+                if (_isProcessingOrder)
+                  Column(
+                    children: [
+                      const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                       ),
-                      SizedBox(height: 8), // Spasi agak kecil
+                      const SizedBox(height: 10),
                       Text(
                         'Memproses pesanan dan poin...',
-                        style: TextStyle(
-                          fontSize: 14, // Ukuran font agak kecil
-                          color: Colors.black54,
-                        ),
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                     ],
-                )
-                : ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                      print("PaymentSuccessPage: Back to Home button pressed");
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 3,
-                    ),
-                    child: const Text(
-                      'Kembali ke Beranda',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-          ],
-        ),
+                  ),
+              ],
+            ),
+          ),
+          if (_isProcessingOrder)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }

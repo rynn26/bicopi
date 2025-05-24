@@ -294,7 +294,7 @@ class _SnackMenuPageState extends State<SnackMenuPage> {
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12), // Padding Vertikal disamakan
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Padding Vertikal disamakan
                                               elevation: 0,
                                             ),
                                             child: const Text(

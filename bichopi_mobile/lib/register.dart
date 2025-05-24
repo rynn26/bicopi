@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login.dart' as login_page;
+import 'package:coba3/login.dart' as login_page; // Keep this import if you still use login_page elsewhere
+import 'package:coba3/main.dart'; // Import your HomePage from main.dart
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -49,19 +50,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String? affiliateId;
       final referralCode = referralCodeController.text.trim();
       int initialPoints =
-          10; // Poin referral untuk pendaftar saat menggunakan kode
+          0; // Poin referral untuk pendaftar saat menggunakan kode
 
       if (referralCode.isNotEmpty) {
         final referralMatch = await Supabase.instance.client
             .from('affiliates')
-            .select('id_user')
+            .select('id')
             .eq('referral_code', referralCode)
             .maybeSingle();
 
         if (referralMatch != null &&
-            referralMatch.containsKey('id_user') &&
-            referralMatch['id_user'] != null) {
-          affiliateId = referralMatch['id_user'];
+            referralMatch.containsKey('id') &&
+            referralMatch['id'] != null) {
+          affiliateId = referralMatch['id'];
           newUserLevel = 4; // Set user level menjadi 4 jika referral valid
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -73,10 +74,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           return;
         }
       } else {
-        initialPoints = 100; // Poin awal jika tidak ada kode referral
+        initialPoints = 0; // Poin awal jika tidak ada kode referral
       }
 
-      // 1. Insert data user ke tabel "users" *TERLEBIH DAHULU*
+      // 1. Insert data user ke tabel "users" TERLEBIH DAHULU
       try {
         await Supabase.instance.client.from('users').insert({
           'id_user': user.id,
@@ -119,18 +120,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
 
         await Supabase.instance.client.from('members').insert({
-          'id': user
-              .id, // Menggunakan user.id sebagai primary key 'id' di tabel 'members'
-          'id_user': user
-              .id, // Tetap simpan id_user untuk referensi ke tabel users (jika diperlukan)
+          'id_user': user.id,
           'joined_at': DateTime.now().toIso8601String(),
           'nama_lengkap': nameController.text.trim(),
           'nomor_telepon': parsedPhoneNumber,
-          'affiliate_id':
-              affiliateId, // Menggunakan affiliateId yang didapatkan
-          'total_points': 0, // Poin awal member (bisa disesuaikan)
-          'kelipatan': 0,
-          'presentase': 0,
+          'affiliate_id': affiliateId,
+          'total_points': 0,
+          'kelipatan': 10,
+          'presentase': 10,
           'created_at': DateTime.now().toIso8601String(),
         });
         print(
@@ -148,7 +145,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return;
       }
 
-      // 3. Tambahkan poin referral untuk *pendaftar* jika ada referral
+      // 3. Tambahkan poin referral untuk pendaftar jika ada referral
       if (referralCodeController.text.trim().isNotEmpty &&
           affiliateId != null) {
         try {
@@ -177,7 +174,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               'Error saat menambahkan poin referral untuk pendaftar: $pointsError');
         }
 
-        // 4. Tambahkan poin untuk user yang *memberikan* referral ke tabel 'affiliates'
+        // 4. Tambahkan poin untuk user yang memberikan referral ke tabel 'affiliates'
         try {
           print(
               'Mencari affiliate pemberi referral dengan id_user: $affiliateId');
@@ -261,11 +258,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       );
 
+      // --- CHANGE STARTS HERE ---
+      // Instead of going to LoginScreen, go to HomePage
       await Future.delayed(const Duration(seconds: 2));
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()), // Changed to HomePage
       );
+      // --- CHANGE ENDS HERE ---
+
     } on AuthException catch (error) {
       if (error.message.contains('users_email_key')) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -289,6 +290,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  // ... rest of your SignUpScreen class ...
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -3,9 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
 import 'login.dart';
 import 'ubah_password.dart';
-import 'main.dart'; // HomePage
+import 'main.dart'; // Assuming HomePage is in main.dart
+
+// Define a refined green color palette as top-level constants
+const Color _primaryGreen = Color(0xFF4CAF50); // A balanced, medium green
+const Color _darkGreen = Color(0xFF2E7D32); // Deeper green for accents
+const Color _lightGreen = Color(0xFFE8F5E9); // Very light green for backgrounds
+const Color _accentGreen = Color(0xFF81C784); // Slightly brighter accent for highlights
+const Color _greyText = Color(0xFF616161); // Darker grey for main text
+const Color _lightGrey = Color(0xFFBDBDBD); // Lighter grey for hints/dividers
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -49,7 +58,7 @@ class _ProfilePage extends State<ProfileScreen> {
 
         setState(() {
           _nameController.text = response['nama'] ?? '';
-          _emailController.text = user.email ?? ''; // Use Supabase user email as primary
+          _emailController.text = user.email ?? '';
           _phoneController.text = response['phone']?.toString() ?? '';
           _imageUrl = response['image_url'];
           _isLoading = false;
@@ -117,7 +126,6 @@ class _ProfilePage extends State<ProfileScreen> {
           .from('profileimages')
           .getPublicUrl(filePath);
 
-      // Save URL to database
       await Supabase.instance.client
           .from('profil')
           .update({'image_url': imageUrl}).eq('id_user', user.id);
@@ -147,12 +155,12 @@ class _ProfilePage extends State<ProfileScreen> {
       try {
         await Supabase.instance.client.from('profil').upsert(
           {
-            'id_user': user.id, // Ensure id_user is provided for upsert
+            'id_user': user.id,
             'nama': _nameController.text,
-            'email': _emailController.text, // Update email in profile table too
-            'phone': _phoneController.text.isEmpty ? null : _phoneController.text, // Handle empty phone number
+            'email': _emailController.text,
+            'phone': _phoneController.text.isEmpty ? null : _phoneController.text,
           },
-          onConflict: 'id_user', // Specify conflict key for upsert
+          onConflict: 'id_user',
         );
 
         if (mounted) {
@@ -182,44 +190,45 @@ class _ProfilePage extends State<ProfileScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: const EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 8.0),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[800], // Darker grey for section titles
+        style: GoogleFonts.poppins( // Applied Poppins
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: _darkGreen,
         ),
       ),
     );
   }
 
   Widget _buildRoundedTextField(
-      String label, TextEditingController controller, IconData icon, {bool readOnly = false}) {
+      String label, TextEditingController controller, IconData icon, {bool readOnly = false, TextInputType? keyboardType}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: TextField(
         controller: controller,
         readOnly: readOnly,
-        style: const TextStyle(fontSize: 16, color: Colors.black87), // Slightly larger input text
+        keyboardType: keyboardType,
+        style: GoogleFonts.poppins(fontSize: 14, color: _greyText), // Applied Poppins
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
+          labelStyle: GoogleFonts.poppins(color: _lightGrey, fontSize: 12), // Applied Poppins
+          prefixIcon: Icon(icon, color: _primaryGreen, size: 20),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15), // More rounded corners
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0), // Lighter border
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: Color(0xFF1E88E5), width: 2.0), // Primary green on focus
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _primaryGreen, width: 1.5),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide(color: Colors.grey[300]!, width: 1.0),
           ),
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 18), // Slightly larger padding
+              const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           filled: true,
           fillColor: Colors.white,
         ),
@@ -232,16 +241,16 @@ class _ProfilePage extends State<ProfileScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(18), // Slightly larger padding
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+        margin: const EdgeInsets.symmetric(vertical: 5.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15), // Consistent rounding
+          borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1), // Softer shadow
-              blurRadius: 8,
-              offset: const Offset(0, 3), // Subtle elevation
+              color: Colors.grey.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -250,13 +259,16 @@ class _ProfilePage extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: const Color(0xFF1E88E5), size: 24), // Primary green for icons
-                const SizedBox(width: 15),
-                Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87)), // Larger text
+                Icon(icon, color: _darkGreen, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  text,
+                  style: GoogleFonts.poppins(fontSize: 14, color: _greyText, fontWeight: FontWeight.w500), // Applied Poppins
+                ),
               ],
             ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.grey), // Grey arrow for subtlety
+            Icon(Icons.arrow_forward_ios,
+                size: 12, color: _lightGrey),
           ],
         ),
       ),
@@ -266,28 +278,40 @@ class _ProfilePage extends State<ProfileScreen> {
   Widget _buildActionButton(IconData icon, String text, VoidCallback onPressed, Color color) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color, // Use provided color
-            foregroundColor: Colors.white,
-            elevation: 4, // Slightly more elevation
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15), // Consistent rounding
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14), // Larger padding for better touch target
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                text,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500), // Larger and slightly bolder text
+        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
             ],
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  text,
+                  style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600), // Applied Poppins
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -297,21 +321,21 @@ class _ProfilePage extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light background
+      backgroundColor: _lightGreen,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E88E5), // Primary blue AppBar
-        elevation: 0, // No shadow under app bar
-        title: const Text(
+        backgroundColor: _primaryGreen,
+        elevation: 0,
+        title: Text( // Changed to Text() as GoogleFonts.poppins() is not const
           "Profile",
-          style: TextStyle(
+          style: GoogleFonts.poppins( // Applied Poppins to AppBar title
             color: Colors.white,
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -321,14 +345,15 @@ class _ProfilePage extends State<ProfileScreen> {
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(25), // Rounded bottom corners for AppBar
+            bottom: Radius.circular(20),
           ),
         ),
+        shadowColor: Colors.black.withOpacity(0.1),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)))
+          ? const Center(child: CircularProgressIndicator(color: _primaryGreen, strokeWidth: 2.5))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0), // Increased overall padding
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 15.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -336,68 +361,74 @@ class _ProfilePage extends State<ProfileScreen> {
                     child: Stack(
                       children: [
                         CircleAvatar(
-                          radius: 60, // Slightly larger avatar
+                          radius: 45,
+                          backgroundColor: _accentGreen.withOpacity(0.3),
                           backgroundImage: _imageFile != null
                               ? FileImage(_imageFile!)
                               : (_imageUrl != null
                                       ? NetworkImage(_imageUrl!)
                                       : const AssetImage(
-                                          "assets/foto_profile.png")
-                                          as ImageProvider),
-                          backgroundColor: Colors.grey[200],
+                                          "assets/foto_profile.png") as ImageProvider),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: InkWell(
                             onTap: _pickImage,
-                            borderRadius: BorderRadius.circular(20), // Larger for better touch
+                            borderRadius: BorderRadius.circular(15),
                             child: Container(
-                              padding: const EdgeInsets.all(8.0), // Larger padding
+                              padding: const EdgeInsets.all(6.0),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4CAF50), // Secondary green for camera button
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white, width: 2), // Thicker white border
+                                color: _accentGreen,
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: Colors.white, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _accentGreen.withOpacity(0.25),
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: const Icon(Icons.camera_alt,
-                                  size: 20, color: Colors.white), // Larger icon
+                                  size: 16, color: Colors.white),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
                   Center(
                     child: Column(
                       children: [
                         Text(
                           _nameController.text.isNotEmpty ? _nameController.text : "Your Name",
-                          style: TextStyle(
-                            fontSize: 22,
+                          style: GoogleFonts.poppins( // Applied Poppins
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[900], // Darker text for name
+                            color: _darkGreen,
                           ),
                         ),
                         const SizedBox(height: 5),
                         Text(
                           _emailController.text.isNotEmpty ? _emailController.text : "youremail@example.com",
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]), // Subtler grey for email
+                          style: GoogleFonts.poppins(fontSize: 12, color: _greyText), // Applied Poppins
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 25),
                   Container(
-                    padding: const EdgeInsets.all(16.0), // Larger padding for section
+                    padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(15), // Consistent rounding
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                          color: Colors.grey.withOpacity(0.05),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -408,23 +439,23 @@ class _ProfilePage extends State<ProfileScreen> {
                         _buildRoundedTextField(
                             "Full Name", _nameController, Icons.person_outline),
                         _buildRoundedTextField(
-                            "Email", _emailController, Icons.email_outlined, readOnly: true), // Email should generally be read-only
+                            "Email", _emailController, Icons.email_outlined, readOnly: true),
                         _buildRoundedTextField(
-                            "Phone Number", _phoneController, Icons.phone_outlined),
+                            "Phone Number", _phoneController, Icons.phone_outlined, keyboardType: TextInputType.phone),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
                   Container(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                          color: Colors.grey.withOpacity(0.05),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -443,12 +474,12 @@ class _ProfilePage extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 25),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildActionButton(Icons.save, "Save Changes", _updateUserData, const Color(0xFF1E88E5)), // Primary blue for save
-                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent), // Red for logout
+                      _buildActionButton(Icons.save, "Save Changes", _updateUserData, _primaryGreen),
+                      _buildActionButton(Icons.logout, "Logout", _logout, Colors.redAccent),
                     ],
                   ),
                 ],

@@ -293,7 +293,7 @@ class _PaketMenuPageState extends State<PaketMenuPage> {
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                               elevation: 0, // Hapus elevasi pada tombol
                                             ),
                                             child: const Text(

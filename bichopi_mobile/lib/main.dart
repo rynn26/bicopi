@@ -2,8 +2,6 @@ import 'package:coba3/menu_paket.dart';
 import 'package:coba3/reservasi.dart';
 import 'package:coba3/profile.dart'; // Pastikan import ProfileScreen
 import 'package:coba3/search_menu_page.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'menu_makanan.dart' as makanan;
@@ -17,7 +15,6 @@ import 'register.dart';
 import 'login.dart';
 import 'menu_list_from_db.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'payment_history_page.dart';
 
 Future<void> main() async {
@@ -57,6 +54,7 @@ class _HomePageState extends State<HomePage> {
   final Map<String, int> _cart =
       {}; // Menyimpan item dalam keranjang (nama: jumlah)
   String? _memberId; // To store the member ID
+  bool _isMemberIdLoading = true; // New state to track loading
 
   @override
   void initState() {
@@ -67,6 +65,9 @@ class _HomePageState extends State<HomePage> {
 
   // New function to get the member ID
   Future<void> _initializeMemberId() async {
+    setState(() {
+      _isMemberIdLoading = true; // Start loading
+    });
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
@@ -78,11 +79,12 @@ class _HomePageState extends State<HomePage> {
                 'id_user') // Select the 'id_user' column from the 'members' table
             .eq('id',
                 user.id) // Assuming 'id' in 'members' table is linked to auth.users.id
-            .single();
+            .maybeSingle(); // Use maybeSingle() if it might not exist
 
-        if (response.isNotEmpty && response['id_user'] != null) {
+        if (response != null && response['id_user'] != null) {
           setState(() {
             _memberId = response['id_user'] as String;
+            _isMemberIdLoading = false; // Finished loading
           });
           print(
               'Fetched member ID (id_user from members table): $_memberId'); // For debugging
@@ -90,19 +92,25 @@ class _HomePageState extends State<HomePage> {
           print(
               'Member profile (id_user in members table) not found for current user ID: ${user.id}');
           setState(() {
-            _memberId = null; // Ensure it's null if not found
+            _memberId = user
+                .id; // Fallback to auth.users.id if members table doesn't have it
+            _isMemberIdLoading = false; // Finished loading
           });
+          print('Using auth.users.id as fallback: $_memberId');
         }
       } catch (e) {
         print('Error fetching member ID from members table: $e');
         setState(() {
-          _memberId = null; // Handle error by setting _memberId to null
+          _memberId = user.id; // Fallback to auth.users.id on error
+          _isMemberIdLoading = false; // Finished loading
         });
+        print('Using auth.users.id as fallback due to error: $_memberId');
       }
     } else {
       print('No user logged in. Member ID cannot be fetched.');
       setState(() {
         _memberId = null; // No user, so no member ID
+        _isMemberIdLoading = false; // Finished loading
       });
     }
   }
@@ -112,21 +120,6 @@ class _HomePageState extends State<HomePage> {
     _pageController.dispose();
     super.dispose();
   }
-
-  // Update this list to EXCLUDE ProfileScreen
-  final List<Widget> _pages = [
-    HomeContent(addItemToCart: (itemName) {
-      // Implement your addItemToCart logic here or pass it from HomeContent
-      // For now, let's keep it simple as it's passed directly to HomeContent
-    }),
-    ReservasiPage(selectedItem: {}),
-    RewardPage(),
-    // PaymentHistoryPage needs memberId, so build it with a Builder
-    Builder(builder: (context) {
-      // Access _memberId from the state
-      return PaymentHistoryPage(memberId: (_HomePageState()._memberId ?? ''));
-    }),
-  ];
 
   void _onBottomNavItemTapped(int index) {
     setState(() {
@@ -247,6 +240,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // If memberId is still loading, show a loading indicator or handle it
+    if (_isMemberIdLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: PageView(
@@ -256,8 +258,9 @@ class _HomePageState extends State<HomePage> {
         children: [
           HomeContent(addItemToCart: _addItemToCart), // Home (index 0)
           ReservasiPage(selectedItem: {}), // Reservasi (index 1)
-          RewardPage(), // Redeem (index 2)
-          PaymentHistoryPage(memberId: _memberId ?? ''), // Riwayat (index 3, changed from index 4)
+          RewardPage(memberId: _memberId ?? ''), // Pass _memberId here
+          // PaymentHistoryPage needs memberId, so pass the actual _memberId
+          PaymentHistoryPage(memberId: _memberId ?? ''), // Pass _memberId here
         ],
         onPageChanged: (index) {
           setState(() {
@@ -462,7 +465,8 @@ Widget _buildTopBar(BuildContext context) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(), // Navigasi ke ProfileScreen
+                    builder: (context) =>
+                        const ProfileScreen(), // Navigasi ke ProfileScreen
                   ),
                 );
               },
