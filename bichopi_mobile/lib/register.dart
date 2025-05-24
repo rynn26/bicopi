@@ -259,15 +259,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
 
-      // --- CHANGE STARTS HERE ---
-      // Instead of going to LoginScreen, go to HomePage
-      await Future.delayed(const Duration(seconds: 2));
+     await Supabase.instance.client.auth.signOut();
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()), // Changed to HomePage
-      );
-      // --- CHANGE ENDS HERE ---
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
+);
+
 
     } on AuthException catch (error) {
       if (error.message.contains('users_email_key')) {
@@ -345,7 +343,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Daftar',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                             color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 15),
               TextButton(
@@ -356,7 +354,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         builder: (context) => const login_page.LoginScreen()),
                   );
                 },
-                child: const Text('Sudah punya akun? Login'),
+               child: const Text(
+                'Sudah punya akun? Login',
+                style: TextStyle(
+                  color: Color(0xFF078603), // Warna teks hijau
+                ),
+              ),
               ),
               const SizedBox(height: 20),
               TextButton(
@@ -367,7 +370,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         builder: (context) => const MemberPointsLogScreen()),
                   );
                 },
-                child: const Text('Lihat Log Poin Member'),
+                child: const Text(
+                  'Lihat Log Poin Member',
+                  style: TextStyle(
+                    color: Color(0xFF078603),
+                  ),
+                ),
               ),
             ],
           ),

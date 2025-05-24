@@ -508,13 +508,6 @@ Widget _buildTopBar(BuildContext context) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Selamat Datang Di,",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
                 Row(
                   children: [
                     Image.asset(
