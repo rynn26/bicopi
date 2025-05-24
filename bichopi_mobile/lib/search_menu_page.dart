@@ -205,128 +205,31 @@ class _SearchMenuPageState extends State<SearchMenuPage> {
     setState(() => filteredMenuItems = items);
   }
 
-  void addToCart(Map<String, dynamic> item) {
-    final String itemName = item["nama_menu"];
-    final int price = item["harga_menu"];
+// ...existing code...
+void addToCart(Map<String, dynamic> item) {
+  final String itemName = item["nama_menu"];
+  final int price = item["harga_menu"];
 
-    setState(() {
-      cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
-    });
+  setState(() {
+    cartQuantities[itemName] = (cartQuantities[itemName] ?? 0) + 1;
+  });
 
-    _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
-    _showAddToCartDialog(context, item);
-  }
+  _updateCartInDatabase(itemName, cartQuantities[itemName]!, price);
 
-  void _showAddToCartDialog(BuildContext context, Map<String, dynamic> item) {
-    int quantity = cartQuantities[item["nama_menu"]] ?? 1;
-    int price = item["harga_menu"];
+  // Tampilkan notifikasi snackbar sebagai feedback
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('$itemName ditambahkan ke keranjang'),
+      duration: const Duration(seconds: 1),
+      backgroundColor: Color(0xFF078603),
+    ),
+  );
+}
+// ...existing code...
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CartPage(
-                  cartItems: cartQuantities,
-                  menu_makanan: {},
-                  menu_minuman: {
-                    for (var item in filteredMenuItems)
-                      item["nama_menu"]: item["harga_menu"]
-                  },
-                  menu_snack: {},
-                  menu_paket: {},
-                ),
-              ),
-            );
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.shopping_cart, color: Colors.white),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Jumlah: $quantity",
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
-                            ),
-                            Text(
-                              item["nama_menu"],
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "Rp ${price * quantity}",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CartPage(
-                          cartItems: cartQuantities,
-                          menu_makanan: {},
-                          menu_minuman: {
-                            for (var item in filteredMenuItems)
-                              item["nama_menu"]: item["harga_menu"]
-                          },
-                          menu_snack: {},
-                          menu_paket: {},
-                        ),
-                      ),
-                    );
-                  },
-                  child: const Text("Lihat Keranjang"),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Cari Menu",

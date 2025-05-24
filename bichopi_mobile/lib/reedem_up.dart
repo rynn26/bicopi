@@ -145,7 +145,7 @@ class _PopupPageState extends State<PopupPage>
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[400],
+                          backgroundColor: Color(0xFF078603),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),

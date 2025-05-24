@@ -48,8 +48,7 @@ class MyApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(
-                color: Colors.green[700]!, width: 2), // Thicker on focus
+            borderSide: BorderSide(color: Colors.green[700]!, width: 2), // Thicker on focus
           ),
           labelStyle: TextStyle(color: Colors.grey[600]),
           hintStyle: TextStyle(color: Colors.grey[400]),
@@ -63,8 +62,7 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            textStyle:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             elevation: 3, // Add a slight elevation
           ),
         ),
@@ -179,8 +177,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response =
-          await Supabase.instance.client.from('reservasii').insert({
+      final response = await Supabase.instance.client.from('reservasii').insert({
         'nama_pengguna': nama,
         'tanggal': _formatDateForSupabase(tanggal),
         'waktu': waktu,
@@ -324,24 +321,24 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: _isLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                            color: Colors.green,
-                          ))
-                        : ElevatedButton.icon(
-                            onPressed: _submitReservation,
-                            icon: const Icon(Icons.check_circle_outline,
-                                color: Colors.white),
-                            label: const Text(
-                              'Konfirmasi Reservasi',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 18),
-                            ),
-
+              SizedBox(
+                width: double.infinity,
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.green),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _submitReservation,
+                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                        label: const Text(
+                          'Konfirmasi Reservasi',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF078603), // Warna latar hijau
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 2,
                         ),
@@ -409,7 +406,7 @@ class HasilReservasiScreen extends StatelessWidget {
       backgroundColor: Colors.grey[50], // Consistent background
       appBar: AppBar(
         title: const Text('Bukti Reservasi'),
-        backgroundColor: Colors.green[700],
+        backgroundColor: Color(0xFF078603),
         foregroundColor: Colors.white, // White text for AppBar title
         elevation: 0, // Flat app bar for a cleaner look
       ),
@@ -418,7 +415,7 @@ class HasilReservasiScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center, // Center content
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 80),
+            Icon(Icons.check_circle, color: Color(0xFF078603), size: 80),
             const SizedBox(height: 10),
             Text(
               'Reservasi Berhasil!',
@@ -431,7 +428,7 @@ class HasilReservasiScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Terima kasih, $nama! Reservasi Anda untuk $namaTempat telah dikonfirmasi.',
+              'Terima kasih, $nama! Reservasi Anda untuk $namaTempat akan dikonfirmasi lebih lanjut.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, color: Colors.grey[700]),
             ),
@@ -446,17 +443,12 @@ class HasilReservasiScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDetailRow(
-                        'Nama Pemesan:', nama, Icons.person_outline),
-                    _buildDetailRow('Tanggal Reservasi:', tanggal,
-                        Icons.calendar_today_outlined),
-                    _buildDetailRow(
-                        'Waktu Reservasi:', waktu, Icons.access_time_outlined),
-                    _buildDetailRow(
-                        'Jumlah Orang:', jumlah, Icons.people_outline),
+                    _buildDetailRow('Nama Pemesan:', nama, Icons.person_outline),
+                    _buildDetailRow('Tanggal Reservasi:', tanggal, Icons.calendar_today_outlined),
+                    _buildDetailRow('Waktu Reservasi:', waktu, Icons.access_time_outlined),
+                    _buildDetailRow('Jumlah Orang:', jumlah, Icons.people_outline),
                     if (keterangan.isNotEmpty)
-                      _buildDetailRow(
-                          'Keterangan:', keterangan, Icons.note_outlined),
+                      _buildDetailRow('Keterangan:', keterangan, Icons.note_outlined),
                   ],
                 ),
               ),
@@ -466,38 +458,27 @@ class HasilReservasiScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _kirimKeWhatsApp(context),
-                icon: Image.asset(
-                  'assets/icon_wa.png',
-                  width: 28,
-                  height: 28,
-                ), // Icon WhatsApp diambil dari assets
-                label: const Text(
-                  'Lanjutkan ke WhatsApp',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
+              icon: Image.asset('assets/whatsapp.png',width: 24, height: 24, color: Colors.white, // opsional: jika ikon PNG transparan dan kamu ingin warnanya putih
+),
+                label: const Text('Lanjutkan ke WhatsApp'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366), // hijau WhatsApp
+                  backgroundColor: Color(0xFF078603), // WhatsApp Green
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  elevation: 2,
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  elevation: 3,
                 ),
               ),
             ),
             const SizedBox(height: 10),
-            SizedBox(
+             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.popUntil(
-                      context,
-                      (route) => route
-                          .isFirst); // Go back to the first screen (e.g., home)
+                  Navigator.popUntil(context, (route) => route.isFirst); // Go back to the first screen (e.g., home)
                 },
                 icon: const Icon(Icons.home_outlined, color: Colors.green),
                 label: const Text('Kembali ke Beranda'),
@@ -507,10 +488,8 @@ class HasilReservasiScreen extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  side: BorderSide(
-                      color: Colors.green[700]!, width: 2), // Green border
-                  textStyle: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600),
+                  side: BorderSide(color: Colors.green[700]!, width: 2), // Green border
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -574,8 +553,7 @@ Halo, saya ingin konfirmasi reservasi:
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text(
-                  'Tidak dapat membuka WhatsApp. Pastikan aplikasi terinstall.'),
+              content: Text('Tidak dapat membuka WhatsApp. Pastikan aplikasi terinstall.'),
               backgroundColor: Colors.red),
         );
       }

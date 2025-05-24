@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
       // For now, let's keep it simple as it's passed directly to HomeContent
     }),
     ReservasiPage(selectedItem: {}),
-    RewardPage(),
+    RewardPage(memberId: '',),
     // Show ProfileScreen instead of PaymentHistoryPage
     const ProfileScreen(),
   ];
@@ -350,7 +350,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-    ),
+    
   );
 }
 
