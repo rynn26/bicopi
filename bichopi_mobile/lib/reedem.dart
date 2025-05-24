@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:coba3/reedem_up.dart'; // Pastikan path ini benar untuk PopupPage Anda
 
 class RewardPage extends StatefulWidget {
-  const RewardPage({super.key});
+  const RewardPage({super.key, required String memberId});
 
   @override
   _RewardPageState createState() => _RewardPageState();

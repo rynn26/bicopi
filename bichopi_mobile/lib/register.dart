@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login.dart' as login_page;
+import 'package:coba3/login.dart' as login_page; // Keep this import if you still use login_page elsewhere
+import 'package:coba3/main.dart'; // Import your HomePage from main.dart
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -76,7 +77,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         initialPoints = 0; // Poin awal jika tidak ada kode referral
       }
 
-      // 1. Insert data user ke tabel "users" *TERLEBIH DAHULU*
+      // 1. Insert data user ke tabel "users" TERLEBIH DAHULU
       try {
         await Supabase.instance.client.from('users').insert({
           'id_user': user.id,
@@ -144,7 +145,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         return;
       }
 
-      // 3. Tambahkan poin referral untuk *pendaftar* jika ada referral
+      // 3. Tambahkan poin referral untuk pendaftar jika ada referral
       if (referralCodeController.text.trim().isNotEmpty &&
           affiliateId != null) {
         try {
@@ -173,7 +174,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               'Error saat menambahkan poin referral untuk pendaftar: $pointsError');
         }
 
-        // 4. Tambahkan poin untuk user yang *memberikan* referral ke tabel 'affiliates'
+        // 4. Tambahkan poin untuk user yang memberikan referral ke tabel 'affiliates'
         try {
           print(
               'Mencari affiliate pemberi referral dengan id_user: $affiliateId');
@@ -257,11 +258,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       );
 
-      // Langsung navigasi ke halaman login setelah menampilkan pesan sukses
+
+      // --- CHANGE STARTS HERE ---
+      // Instead of going to LoginScreen, go to HomePage
+      await Future.delayed(const Duration(seconds: 2));
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const login_page.LoginScreen()),
+        MaterialPageRoute(builder: (context) => const HomePage()), // Changed to HomePage
       );
+      // --- CHANGE ENDS HERE ---
+
     } on AuthException catch (error) {
       if (error.message.contains('users_email_key')) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -285,6 +292,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  // ... rest of your SignUpScreen class ...
   @override
   Widget build(BuildContext context) {
     return Scaffold(
