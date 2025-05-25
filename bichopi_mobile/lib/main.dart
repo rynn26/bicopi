@@ -19,7 +19,6 @@ import 'payment_history_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'profile.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -124,7 +123,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-
   // Update this list to EXCLUDE ProfileScreen
   final List<Widget> _pages = [
     HomeContent(addItemToCart: (itemName) {
@@ -132,11 +130,10 @@ class _HomePageState extends State<HomePage> {
       // For now, let's keep it simple as it's passed directly to HomeContent
     }),
     ReservasiPage(selectedItem: {}),
-    RewardPage(memberId: '',),
+    RewardPage(memberId: ''),
     // Show ProfileScreen instead of PaymentHistoryPage
     const ProfileScreen(),
   ];
-
 
   void _onBottomNavItemTapped(int index) {
     setState(() {
@@ -256,7 +253,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-
   Widget build(BuildContext context) {
     // If memberId is still loading, show a loading indicator or handle it
     if (_isMemberIdLoading) {
@@ -273,6 +269,7 @@ class _HomePageState extends State<HomePage> {
         controller: _pageController,
         // The list of pages should reflect the order of your BottomNavigationBar items.
         // ProfileScreen is now navigated to separately.
+        physics: const NeverScrollableScrollPhysics(), // <--- ADD THIS LINE
         children: [
           HomeContent(addItemToCart: _addItemToCart), // Home (index 0)
           ReservasiPage(selectedItem: {}), // Reservasi (index 1)
@@ -346,14 +343,11 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-
           ),
         ),
       ),
-    
-  );
-}
-
+    );
+  }
 
   Widget _buildNavItem({
     required int index,
@@ -485,10 +479,8 @@ Widget _buildTopBar(BuildContext context) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-
                     builder: (context) =>
                         const ProfileScreen(), // Navigasi ke ProfileScreen
-
                   ),
                 );
               },
@@ -666,7 +658,6 @@ Widget _buildCarousel() {
   final List<String> imageList = [
     "assets/paketramadhan.png",
     "assets/pakethebat.png",
-    
   ];
 
   return Padding(

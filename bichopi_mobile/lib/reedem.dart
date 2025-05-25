@@ -24,8 +24,6 @@ class _RewardPageState extends State<RewardPage> {
 
   @override
   void dispose() {
-    // Pastikan untuk membersihkan sumber daya jika ada, meskipun untuk Supabase
-    // tidak selalu diperlukan dispose client secara eksplisit di widget.
     super.dispose();
   }
 
@@ -52,7 +50,6 @@ class _RewardPageState extends State<RewardPage> {
             currentPoints = 0;
           });
         }
-        // Tampilkan pesan jika pengguna belum login
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -63,12 +60,10 @@ class _RewardPageState extends State<RewardPage> {
         return;
       }
 
-      // Fetch total_points directly from the 'members' table using 'id_user'
       final response = await supabase
           .from('members')
           .select('total_points')
-          .eq('id_user',
-              user.id) // <--- PERBAIKAN DI SINI: user_id menjadi id_user
+          .eq('id_user', user.id)
           .single();
 
       if (!mounted) return;
@@ -81,7 +76,6 @@ class _RewardPageState extends State<RewardPage> {
       setState(() {
         currentPoints = 0;
       });
-      // Tampilkan SnackBar untuk error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -92,10 +86,9 @@ class _RewardPageState extends State<RewardPage> {
     }
   }
 
-  // Fungsi untuk mencatat penukaran
   Future<void> redeemReward(
       String rewardId, String rewardTitle, int pointsToDeduct) async {
-    String? transactionId; // Deklarasikan di sini agar bisa diakses di luar try-catch
+    String? transactionId;
     try {
       final supabase = Supabase.instance.client;
       final user = supabase.auth.currentUser;
@@ -103,24 +96,20 @@ class _RewardPageState extends State<RewardPage> {
         throw Exception("User belum login.");
       }
 
-      // Pengecekan poin tidak lagi relevan jika poin tidak berkurang.
-      // Namun, jika Anda ingin tetap menampilkan notifikasi "poin tidak cukup"
-      // meskipun poin tidak dikurangi, Anda bisa biarkan bagian ini.
-      // Jika tidak, Anda bisa menghapusnya.
-      // if (currentPoints < pointsToDeduct) {
-      //   if (mounted) {
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       SnackBar(
-      //         content: Text("Poin Anda tidak cukup untuk menukar reward ini.",
-      //             style: GoogleFonts.poppins()),
-      //         backgroundColor: Colors.orange,
-      //       ),
-      //     );
-      //   }
-      //   return;
-      // }
+      // *Keep the point check here to prevent redemption if insufficient*
+      if (currentPoints < pointsToDeduct) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Poin Anda tidak cukup untuk menukar reward ini.",
+                  style: GoogleFonts.poppins()),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return; // Stop the process if points are insufficient
+      }
 
-      // Dapatkan member_id yang benar dari tabel 'members'
       final memberResponse = await supabase
           .from('members')
           .select('id')
@@ -133,27 +122,26 @@ class _RewardPageState extends State<RewardPage> {
 
       final actualMemberId = memberResponse['id'] as String;
 
-      // 1. Catat transaksi penukaran ke tabel 'penukaran_point'
-      // Dan langsung ambil ID transaksi yang dihasilkan oleh database
+      // 1. Record the transaction to 'penukaran_point'
       final List<Map<String, dynamic>> insertResponse =
           await supabase.from('penukaran_point').insert({
         'member_id': actualMemberId,
-        'penukaran_point': pointsToDeduct, // Poin dicatat, tapi tidak dikurangi dari total
-        // 'redeemed_at': DateTime.now().toIso8601String(), // Jika ada
-      }).select('id'); // <-- Hanya pilih kolom 'id' yang baru disisipkan
+        'penukaran_point': pointsToDeduct, // Record points, but don't deduct from total
+      }).select('id');
 
       if (insertResponse.isEmpty || insertResponse.first['id'] == null) {
         throw Exception("Gagal mendapatkan ID transaksi yang baru disisipkan.");
       }
 
-      transactionId = insertResponse.first['id'] as String; // Ambil ID transaksi dari database
+      transactionId = insertResponse.first['id'] as String;
 
-      // 2. HAPUS BARIS INI JIKA POIN TIDAK INGIN BERKURANG
+      // *Crucially, DO NOT DEDUCT points here:*
+      // The following lines are intentionally removed/commented out
+      // to ensure points are not decreased after a claim.
       // final newPoints = currentPoints - pointsToDeduct;
       // await supabase.from('members').update({'total_points': newPoints}).eq('id_user', user.id);
 
-      // 3. Muat ulang poin saat ini dari database untuk update UI
-      // Ini tetap diperlukan jika Anda ingin menampilkan poin terkini (meskipun tidak berubah karena penukaran)
+      // 2. Refresh current points (they won't change due to a claim now)
       await fetchCurrentPoints();
 
       if (!mounted) return;
@@ -165,7 +153,6 @@ class _RewardPageState extends State<RewardPage> {
         ),
       );
 
-      // Tampilkan PopupPage hanya jika transactionId berhasil didapatkan
       if (transactionId != null && mounted) {
         Navigator.of(context).push(
           PageRouteBuilder(
@@ -178,7 +165,7 @@ class _RewardPageState extends State<RewardPage> {
               return PopupPage(
                 title: rewardTitle,
                 points: pointsToDeduct,
-                transactionId: transactionId!, // Gunakan ID transaksi dari DB
+                transactionId: transactionId!,
               );
             },
             transitionsBuilder: (BuildContext context,
@@ -220,7 +207,7 @@ class _RewardPageState extends State<RewardPage> {
       final response = await supabase
           .from('klaim_rewards')
           .select('id, judul, deskripsi, points, status')
-          .eq('status', 'setuju'); // Hanya ambil reward yang statusnya 'setuju'
+          .eq('status', 'setuju');
 
       if (!mounted) return;
       if (response == null || response.isEmpty) {
@@ -264,7 +251,7 @@ class _RewardPageState extends State<RewardPage> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF078603), Color(0xFF078603)], // Gradient hijau
+              colors: [Color(0xFF078603), Color(0xFF078603)],
             ),
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(20),
@@ -301,7 +288,7 @@ class _RewardPageState extends State<RewardPage> {
                     color: Colors.grey.withOpacity(0.15),
                     spreadRadius: 2,
                     blurRadius: 8,
-                    offset: const Offset(0, 4), // Bayangan lembut
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -326,8 +313,7 @@ class _RewardPageState extends State<RewardPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 40,
                             fontWeight: FontWeight.w700,
-                            color: const Color(
-                                0xFF4CAF50), // Warna hijau untuk poin
+                            color: const Color(0xFF4CAF50),
                           ),
                         ),
                 ],
@@ -382,9 +368,9 @@ class _RewardPageState extends State<RewardPage> {
 
   Widget _buildRewardCard(BuildContext context, String rewardId, String title,
       int points, String description) {
-    // canRedeem sekarang bisa selalu true jika poin tidak berkurang,
-    // atau Anda bisa menghapusnya jika validasi poin tidak diperlukan sama sekali.
-    final bool canRedeem = true; // Set to true if points never deduct
+    // Determine if the user has enough points to redeem this reward
+    // This will still grey out the button if points are insufficient.
+    final bool canRedeem = currentPoints >= points;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -441,10 +427,14 @@ class _RewardPageState extends State<RewardPage> {
                   ),
                 ),
                 ElevatedButton(
-                  // onPressed selalu aktif karena canRedeem selalu true
-                  onPressed: () => showRedeemDialog(context, rewardId, title, points),
+                  // Enable/disable the button based on canRedeem
+                  onPressed: canRedeem
+                      ? () => showRedeemDialog(context, rewardId, title, points)
+                      : null, // Set to null to disable the button
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF078603), // Selalu hijau
+                    backgroundColor: canRedeem
+                        ? Color(0xFF078603)
+                        : Colors.grey, // Green if enabled, grey if disabled
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(
@@ -469,8 +459,19 @@ class _RewardPageState extends State<RewardPage> {
 
   void showRedeemDialog(
       BuildContext context, String rewardId, String title, int points) async {
-    // Karena poin tidak berkurang, tidak perlu ada pengecekan "Poin Tidak Cukup" di sini.
-    // Anda bisa langsung menampilkan dialog konfirmasi.
+    // This check is still important to prevent dialog from showing if button was somehow enabled when it shouldn't be.
+    if (currentPoints < points) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Poin Anda tidak cukup untuk menukar reward ini.",
+                style: GoogleFonts.poppins()),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
 
     showDialog(
       context: context,
@@ -480,8 +481,9 @@ class _RewardPageState extends State<RewardPage> {
             "Konfirmasi Klaim Reward",
             style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
           ),
+          // Modify content to reflect that points are not deducted, but used as a threshold.
           content: Text(
-            "Apakah Anda yakin ingin mengklaim reward \"$title\"?", // Hilangkan info poin jika tidak relevan
+            "Apakah Anda yakin ingin mengklaim reward \"$title\" (membutuhkan $points poin)? Poin Anda tidak akan berkurang.",
             style: GoogleFonts.poppins(),
           ),
           actions: [
@@ -494,12 +496,11 @@ class _RewardPageState extends State<RewardPage> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.pop(context); // Tutup dialog konfirmasi
+                Navigator.pop(context);
                 await redeemReward(rewardId, title, points);
               },
               style: TextButton.styleFrom(
-                foregroundColor:
-                    const Color(0xFF4CAF50), // Warna hijau untuk tombol Klaim
+                foregroundColor: const Color(0xFF4CAF50),
                 textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
               child: const Text("Klaim"),
@@ -512,12 +513,9 @@ class _RewardPageState extends State<RewardPage> {
     );
   }
 
-  // Fungsi generateUniqueId tidak lagi digunakan untuk transactionId yang ditampilkan di PopupPage
-  // karena ID akan diambil dari database. Namun, fungsi ini bisa tetap ada jika Anda menggunakannya
-  // untuk keperluan lain di aplikasi Anda (misalnya, sebagai ID sementara sebelum disimpan ke DB).
   String generateUniqueId() {
     final int timestamp = DateTime.now().millisecondsSinceEpoch;
-    final int random = Random().nextInt(900) + 100; // Angka acak 3 digit
+    final int random = Random().nextInt(900) + 100;
     return "#$timestamp$random";
   }
 }

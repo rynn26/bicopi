@@ -1,7 +1,9 @@
+import 'package:coba3/reservation_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+ // Make sure this import path is correct
 
 class PaymentHistoryPage extends StatefulWidget {
   const PaymentHistoryPage({Key? key, required String memberId})
@@ -15,8 +17,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   List<Map<String, dynamic>> _paymentHistory = [];
   bool _isLoading = true;
   String _errorMessage = '';
-
-  // Removed: final GlobalKey<AnimatedSwitcherState> _listKey = GlobalKey<AnimatedSwitcherState>();
 
   final NumberFormat currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
@@ -153,7 +153,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           ),
           content: Text(
             'Apakah Anda yakin ingin menghapus semua riwayat pembayaran Anda? Tindakan ini tidak dapat dibatalkan.',
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]), // Reduced font size
+            style: GoogleFonts.poppins(
+                fontSize: 13, color: Colors.grey[700]), // Reduced font size
           ),
           actions: <Widget>[
             TextButton(
@@ -179,7 +180,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               child: Text(
                 'Hapus',
                 style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold, fontSize: 14), // Reduced font size
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14), // Reduced font size
               ),
             ),
           ],
@@ -288,30 +290,38 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-
-
-        backgroundColor: Color(0xFF078603),   
+        backgroundColor: const Color(0xFF078603),
         elevation: 1.5,
         shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(20), // Lengkungan bawah
-        ),
-      ), // Subtle shadow for depth
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20), // Lengkungan bawah
+          ),
+        ), // Subtle shadow for depth
 
         title: Text(
           "Riwayat Pembayaran",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w700,
-
-
             fontSize: 19, // Slightly adjusted font size
             color: const Color.fromARGB(255, 255, 255, 255),
-
           ),
         ),
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.grey[700]),
         actions: [
+          // New button for Reservation History
+          IconButton(
+            icon: Icon(Icons.bookmark_added_outlined, color: Colors.white, size: 24),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReservationHistoryScreen(),
+                ),
+              );
+            },
+            tooltip: 'Riwayat Reservasi',
+          ),
           IconButton(
             icon: Icon(Icons.delete_forever, color: Colors.red[400], size: 24), // Reduced icon size
             onPressed: _paymentHistory.isEmpty ? null : _clearPaymentHistory,
@@ -329,7 +339,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               : _paymentHistory.isEmpty
                   ? _buildEmptyState()
                   : ListView.separated(
-                      // No explicit key needed here for AnimatedSwitcher if it's removed
                       padding: const EdgeInsets.all(16.0),
                       itemCount: _paymentHistory.length,
                       itemBuilder: (context, index) {
@@ -343,7 +352,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   Widget _buildErrorState() {
     return Center(
-      // No explicit key needed here for AnimatedSwitcher if it's removed
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -400,7 +408,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 
   Widget _buildEmptyState() {
     return Center(
-      // No explicit key needed here for AnimatedSwitcher if it's removed
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
