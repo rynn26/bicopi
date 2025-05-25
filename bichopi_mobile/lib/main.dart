@@ -288,7 +288,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: _onCartButtonTapped,
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         child: const Icon(Icons.shopping_cart,
-            color: Color.fromARGB(255, 131, 222, 127), size: 28),
+            color: Color(0xFF078603), size: 28),
         elevation: 19,
         shape: const CircleBorder(), // <-- pastikan ini membuatnya bulat
       ),
