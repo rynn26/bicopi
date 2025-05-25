@@ -2,75 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:async'; // Diperlukan untuk StreamSubscription
 
-void main() async {
-  // Initialize Supabase
-  WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'YOUR_SUPABASE_URL', // Ganti dengan URL Supabase Anda
-    anonKey: 'YOUR_SUPABASE_ANON_KEY', // Ganti dengan anon key Supabase Anda
-  );
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Aplikasi Reservasi',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 1,
-          titleTextStyle: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-          iconTheme: IconThemeData(color: Colors.black87),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), // Slightly more rounded
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.green[700]!, width: 2), // Thicker on focus
-          ),
-          labelStyle: TextStyle(color: Colors.grey[600]),
-          hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIconColor: Colors.green[700], // Consistent icon color
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green[700],
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            elevation: 3, // Add a slight elevation
-          ),
-        ),
-      ),
-      home: const ReservationFormScreen(category: {'name': 'Nama Tempat'}),
-    );
-  }
-}
+// Ini adalah contoh widget untuk menampilkan hasil reservasi.
+// Pastikan ini ada di file yang sama atau diimpor dengan benar.
+// Contoh: import 'package:your_app_name/screens/hasil_reservasi_screen.dart';
+// Saya akan menyertakannya di bawah untuk kelengkapan.
+// import 'package:your_app_name/screens/hasil_reservasi_screen.dart';
 
 class ReservationFormScreen extends StatefulWidget {
   final Map<String, dynamic> category;
@@ -89,13 +27,70 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   final TextEditingController keteranganController = TextEditingController();
 
   bool _isLoading = false;
+  String? _currentUserId; // Untuk menyimpan ID pengguna dari auth.users
+  StreamSubscription<AuthState>? _authStateSubscription; // Untuk mendengarkan perubahan status autentikasi
 
   @override
   void initState() {
     super.initState();
-    // Initialize Supabase in main() instead of here for global access.
-    // Ensure you replace 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY'
-    // in main()
+    _getInitialUserId(); // Ambil ID pengguna saat inisialisasi
+    _listenToAuthChanges(); // Dengarkan perubahan status autentikasi
+  }
+
+  void _getInitialUserId() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      _currentUserId = user.id;
+      // Opsional: Isi nama dari profil pengguna jika tersedia
+      _fetchUserName(user.id);
+    }
+  }
+
+  // Metode untuk mengambil nama pengguna dari tabel 'members'
+  Future<void> _fetchUserName(String userId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('members') // Sesuaikan dengan nama tabel profil Anda
+          .select('nama_lengkap') // Sesuaikan dengan kolom nama di tabel members Anda
+          .eq('id', userId) // Mencari berdasarkan primary key 'id' di tabel members
+          .single(); // Mengambil satu baris saja
+
+      if (response != null && response['nama_lengkap'] != null) {
+        namaController.text = response['nama_lengkap'] as String;
+      }
+    } catch (e) {
+      print('Error fetching user name from members table: $e');
+      // Tidak perlu menampilkan SnackBar di sini, karena ini hanya pengisian awal
+    }
+  }
+
+  void _listenToAuthChanges() {
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      setState(() {
+        _currentUserId = data.session?.user?.id;
+      });
+      if (_currentUserId == null) {
+        // Jika pengguna logout saat di form ini, bisa arahkan kembali ke Home atau Login
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Anda telah logout. Silakan login kembali untuk reservasi.')),
+        );
+        // Opsional: Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        // Jika pengguna baru saja login (setelah logout), coba isi nama
+        _fetchUserName(_currentUserId!);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    namaController.dispose();
+    tanggalController.dispose();
+    waktuController.dispose();
+    jumlahController.dispose();
+    keteranganController.dispose();
+    _authStateSubscription?.cancel(); // Batalkan langganan saat widget dibuang
+    super.dispose();
   }
 
   Future<void> _selectDate() async {
@@ -107,10 +102,9 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: Colors.green[700],
-            colorScheme: ColorScheme.light(primary: Colors.green[700]!),
-            buttonTheme:
-                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            primaryColor: const Color(0xFF078603),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF078603)),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           child: child!,
         );
@@ -128,10 +122,9 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: Colors.green[700],
-            colorScheme: ColorScheme.light(primary: Colors.green[700]!),
-            buttonTheme:
-                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            primaryColor: const Color(0xFF078603),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF078603)),
+            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           child: child!,
         );
@@ -139,8 +132,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     );
     if (picked != null) {
       final now = DateTime.now();
-      final dt =
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+      final dt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
       waktuController.text = DateFormat('HH:mm').format(dt);
     }
   }
@@ -153,6 +145,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     final keterangan = keteranganController.text.trim();
     final namaTempat = widget.category['name'];
 
+    // Validasi input
     if (nama.isEmpty || tanggal.isEmpty || waktu.isEmpty || jumlah.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -168,7 +161,28 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     if (!dateRegex.hasMatch(tanggal) || !timeRegex.hasMatch(waktu)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Format tanggal atau waktu tidak valid.'),
+            content: Text('Format tanggal (dd/mm/yyyy) atau waktu (HH:mm) tidak valid.'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Pastikan _currentUserId tidak null sebelum mencoba submit
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Anda belum login atau sesi telah berakhir. Silakan login kembali.'),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Validasi jumlah harus angka
+    int? parsedJumlah = int.tryParse(jumlah);
+    if (parsedJumlah == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Jumlah orang harus berupa angka.'),
             backgroundColor: Colors.red),
       );
       return;
@@ -181,19 +195,27 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         'nama_pengguna': nama,
         'tanggal': _formatDateForSupabase(tanggal),
         'waktu': waktu,
-        'jumlah_orang': jumlah,
+        'jumlah_orang': parsedJumlah, // Menggunakan int.parse() yang sudah divalidasi
         'keterangan': keterangan,
         'nama_tempat': namaTempat,
         'created_at': DateTime.now().toIso8601String(),
-      }).select(); // Use .select() to get the inserted data if needed, or remove if not.
+        'member_id': _currentUserId, // Mengirim ID pengguna yang login
+      }).select(); // Gunakan .select() untuk mendapatkan data yang dimasukkan jika perlu
 
       if (response == null || response.isEmpty) {
+        // Ini mungkin terjadi jika .select() tidak mengembalikan data, tapi insert berhasil
+        // atau jika ada error di Supabase tapi tidak dilempar sebagai PostgrestException.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Gagal menyimpan reservasi.'),
+              content: Text('Gagal menyimpan reservasi. Coba lagi.'),
               backgroundColor: Colors.red),
         );
       } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Reservasi berhasil disimpan!'),
+              backgroundColor: Colors.green),
+        );
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -208,18 +230,31 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
           ),
         );
 
-        // Clear controllers after successful submission and navigation
+        // Bersihkan controllers setelah submit berhasil dan navigasi
         namaController.clear();
         tanggalController.clear();
-        waktuController.clear();
         jumlahController.clear();
+        waktuController.clear();
         keteranganController.clear();
       }
+    } on PostgrestException catch (e) {
+      print('PostgrestError: ${e.message}, Code: ${e.code}, Details: ${e.details}');
+      String errorMessage = 'Terjadi kesalahan saat menyimpan reservasi.';
+      if (e.code == '23503' && e.message.contains('reservasii_member_id_fkey')) {
+        errorMessage = 'Gagal: ID pengguna belum terdaftar di profil member. Mohon login ulang atau hubungi admin.';
+      } else {
+        errorMessage = 'Kesalahan database: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red),
+      );
     } catch (error) {
       print('Error menyimpan reservasi: $error');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Terjadi kesalahan: $error'),
+            content: Text('Terjadi kesalahan umum: ${error.toString()}'),
             backgroundColor: Colors.red),
       );
     } finally {
@@ -228,21 +263,22 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   }
 
   String _formatDateForSupabase(String dateString) {
-    final parts = dateString.split('/');
-    if (parts.length == 3) {
-      return '${parts[2]}-${parts[1]}-${parts[0]}'; // YYYY-MM-DD
+    // Mengubah format dd/MM/yyyy menjadi yyyy-MM-dd
+    try {
+      final DateTime parsedDate = DateFormat('dd/MM/yyyy').parseStrict(dateString);
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      print('Error parsing date for Supabase: $e');
+      return dateString; // Kembali ke string asli jika parsing gagal
     }
-    return dateString;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Lighter background
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
-          'Reservasi ${widget.category['name']}',
-        ),
+        title: Text('Reservasi ${widget.category['name']}'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -251,11 +287,11 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Buat Reservasi Anda', // More engaging title
+              'Buat Reservasi Anda',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.green[800],
+                color: const Color(0xFF078603),
               ),
             ),
             Padding(
@@ -275,7 +311,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                 borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1), // Softer shadow
+                    color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 10,
                     offset: const Offset(0, 5),
@@ -321,29 +357,21 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.green),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: _submitReservation,
-                        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                        label: const Text(
-                          'Konfirmasi Reservasi',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF078603), // Warna latar hijau
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(color: Color(0xFF078603)),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: _submitReservation,
+                            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                            label: const Text(
+                              'Konfirmasi Reservasi',
+                              style: TextStyle(color: Colors.white, fontSize: 18),
+                            ),
                           ),
-                          elevation: 2,
-                        ),
-                      ),
-              ),
+                  ),
                 ],
               ),
             ),
@@ -369,18 +397,20 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        readOnly: onTap != null,
+        readOnly: onTap != null, // Membuat TextField readOnly jika ada onTap
         onTap: onTap,
-        cursorColor: Colors.green[700],
+        cursorColor: const Color(0xFF078603),
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,
-          prefixIcon: Icon(icon), // Icon color handled by InputDecorationTheme
+          prefixIcon: Icon(icon),
         ),
       ),
     );
   }
 }
+
+// --- HasilReservasiScreen (Sertakan juga ini jika belum ada di file terpisah) ---
 
 class HasilReservasiScreen extends StatelessWidget {
   final String nama;
@@ -403,26 +433,26 @@ class HasilReservasiScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Consistent background
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Bukti Reservasi'),
-        backgroundColor: Color(0xFF078603),
-        foregroundColor: Colors.white, // White text for AppBar title
-        elevation: 0, // Flat app bar for a cleaner look
+        backgroundColor: const Color(0xFF078603),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center, // Center content
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle, color: Color(0xFF078603), size: 80),
+            Icon(Icons.check_circle, color: const Color(0xFF078603), size: 80),
             const SizedBox(height: 10),
             Text(
               'Reservasi Berhasil!',
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
-                color: Colors.green[700],
+                color: const Color(0xFF078603),
               ),
               textAlign: TextAlign.center,
             ),
@@ -432,14 +462,14 @@ class HasilReservasiScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, color: Colors.grey[700]),
             ),
-            const SizedBox(height: 30), // More space before card
+            const SizedBox(height: 30),
             Card(
               elevation: 5,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15), // Consistent rounding
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(20.0), // Increased padding
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -449,6 +479,8 @@ class HasilReservasiScreen extends StatelessWidget {
                     _buildDetailRow('Jumlah Orang:', jumlah, Icons.people_outline),
                     if (keterangan.isNotEmpty)
                       _buildDetailRow('Keterangan:', keterangan, Icons.note_outlined),
+                    const SizedBox(height: 10),
+                    _buildDetailRow('Tempat Reservasi:', namaTempat, Icons.location_on_outlined),
                   ],
                 ),
               ),
@@ -458,41 +490,24 @@ class HasilReservasiScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _kirimKeWhatsApp(context),
-
-              icon: Image.asset('assets/whatsapp.png',width: 24, height: 24, color: Colors.white, // opsional: jika ikon PNG transparan dan kamu ingin warnanya putih
-
-),
-                label: const Text('Lanjutkan ke WhatsApp'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF078603), // WhatsApp Green
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  elevation: 3,
+                icon: Image.asset(
+                  'assets/whatsapp.png',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
                 ),
+                label: const Text('Lanjutkan ke WhatsApp'),
               ),
             ),
             const SizedBox(height: 10),
-             SizedBox(
+            SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.popUntil(context, (route) => route.isFirst); // Go back to the first screen (e.g., home)
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 icon: const Icon(Icons.home_outlined, color: Colors.green),
                 label: const Text('Kembali ke Beranda'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green[700],
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  side: BorderSide(color: Colors.green[700]!, width: 2), // Green border
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
               ),
             ),
           ],
@@ -525,7 +540,7 @@ class HasilReservasiScreen extends StatelessWidget {
                 color: Colors.grey[700],
                 fontSize: 16,
               ),
-              textAlign: TextAlign.right, // Align value to the right
+              textAlign: TextAlign.right,
             ),
           ),
         ],
@@ -542,9 +557,11 @@ Halo, saya ingin konfirmasi reservasi:
 ⏰ Waktu: $waktu
 👥 Jumlah Orang: $jumlah
 📝 Keterangan: ${keterangan.isEmpty ? '-' : keterangan}
+
+Terima kasih.
 ''';
 
-    const nomorTujuan = '6281230735844'; // Ganti dengan nomor tujuan Anda
+    const nomorTujuan = '6281230735844'; // Ganti dengan nomor WhatsApp tujuan Anda
 
     final url = Uri.parse(
         'https://wa.me/$nomorTujuan?text=${Uri.encodeComponent(pesan)}');
