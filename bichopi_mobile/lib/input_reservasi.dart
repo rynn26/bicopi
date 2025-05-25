@@ -275,12 +275,20 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Text('Reservasi ${widget.category['name']}'),
-        centerTitle: true,
+  return Scaffold(
+    backgroundColor: Color.fromARGB(255, 255, 255, 255),
+    appBar: AppBar(
+      backgroundColor: Color(0xFF078603), // Warna hijau untuk AppBar
+      foregroundColor: Colors.white, // Membuat teks dan ikon jadi putih
+      centerTitle: true,
+      title: Text('Reservasi ${widget.category['name']}'),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
       ),
+    ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -370,6 +378,13 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                               'Konfirmasi Reservasi',
                               style: TextStyle(color: Colors.white, fontSize: 18),
                             ),
+                             style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF078603), // Warna hijau custom
+                            padding: const EdgeInsets.symmetric(vertical: 14), // Opsional: tinggi tombol
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8), // Opsional: sudut membulat
+                            ),
+                          ),
                           ),
                   ),
                 ],
@@ -485,31 +500,52 @@ class HasilReservasiScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _kirimKeWhatsApp(context),
-                icon: Image.asset(
-                  'assets/whatsapp.png',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
-                ),
-                label: const Text('Lanjutkan ke WhatsApp'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                icon: const Icon(Icons.home_outlined, color: Colors.green),
-                label: const Text('Kembali ke Beranda'),
-              ),
-            ),
+           const SizedBox(height: 30),
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    onPressed: () => _kirimKeWhatsApp(context),
+    icon: Image.asset(
+      'assets/whatsapp.png',
+      width: 24,
+      height: 24,
+      color: Colors.white,
+    ),
+    label: const Text(
+      'Lanjutkan ke WhatsApp',
+      style: TextStyle(color: Colors.white),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Color(0xFF078603),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+  ),
+),
+const SizedBox(height: 10),
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    onPressed: () {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    },
+    icon: const Icon(Icons.home_outlined, color: Colors.white),
+    label: const Text(
+      'Kembali ke Beranda',
+      style: TextStyle(color: Colors.white),
+    ),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Color(0xFF078603),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+  ),
+),
+
           ],
         ),
       ),

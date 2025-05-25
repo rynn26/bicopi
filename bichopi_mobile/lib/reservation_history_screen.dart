@@ -154,6 +154,10 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+             borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20), // Sudut melengkung kiri bawah
+            bottomRight: Radius.circular(20), // Sudut melengkung kanan bawah
+          ),
           ),
         ),
         title: Text(
