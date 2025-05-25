@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -180,28 +181,27 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-    print("PaymentPage build() called");
-    return Scaffold(
-      backgroundColor: Colors.grey[50], // Background yang lebih lembut
-      appBar: AppBar(
-        title: const Text(
-          'Pembayaran',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600, // Lebih tebal
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 1, // Sedikit shadow
-        iconTheme: const IconThemeData(color: Colors.black87),
-        shape: const RoundedRectangleBorder(
-          // Sudut membulat
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
+  print("PaymentPage build() called");
+  return Scaffold(
+    backgroundColor: Colors.grey[50], // Background yang lebih lembut
+    appBar: AppBar(
+      title: const Text(
+        'Pembayaran',
+        style: TextStyle(
+          color: Colors.white, // Ubah ke putih agar kontras dengan background hijau
+          fontWeight: FontWeight.w600,
         ),
       ),
+      centerTitle: true,
+      backgroundColor: Color(0xFF078603), // Hijau solid
+      elevation: 1, // Sedikit shadow
+      iconTheme: const IconThemeData(color: Colors.white), // Ikon putih
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(20), // Melengkung bawah kiri & kanan
+        ),
+      ),
+    ),
       body: Stack(
         children: [
           // Wrap the Padding with SingleChildScrollView to prevent overflow
@@ -283,7 +283,7 @@ class _PaymentPageState extends State<PaymentPage> {
         ? null
         : createTransaction,
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
+      backgroundColor: Color(0xFF078603),
       padding: const EdgeInsets.symmetric(vertical: 15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -516,6 +516,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   // Variabel untuk menyimpan ID Primary Key (PK) dari tabel 'members'
   // Ini akan digunakan untuk foreign key di tabel lain.
   String? _actualMemberIdInMembersTable;
+  final NumberFormat formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ');
+
 
   @override
   void initState() {
@@ -642,9 +644,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
           final List<Map<String, dynamic>> newMemberResponse = await supabase
               .from('members')
               .insert({
-            'id_user': widget.memberId, // Tautkan ke auth.users.id
-            'total_points': 0,
-          }).select(
+                'id_user': widget.memberId, // Tautkan ke auth.users.id
+                'total_points': 0,
+              }).select(
                   'id'); // Ambil 'id' (PK) dari member yang baru dibuat. select() returns a list.
 
           if (newMemberResponse.isNotEmpty) {
@@ -993,114 +995,201 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    print("PaymentSuccessPage build() called");
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Lottie.asset(
-                  'assets/animasi.json', // Pastikan path ini benar
-                  controller: _controller,
-                  onLoaded: (composition) {
-                    _controller
-                      ..duration = composition.duration
-                      ..forward();
-                  },
-                ),
-                const Text(
-                  'Pembayaran Berhasil!',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(15),
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildInfoRow('Total Pembayaran',
-                          formatter.format(widget.totalPrice)),
-                      _buildInfoRow('Nama Pelanggan', widget.namaPelanggan),
-                      _buildInfoRow('Nomor Meja', widget.nomorMeja),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                if (_isProcessingOrder)
-                  Column(
-                    children: [
-                      const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Memproses pesanan dan poin...',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-          if (_isProcessingOrder)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
+  // Helper function for info rows
+  Widget _buildInfoRow(String label, String value,
+      {bool isBoldValue = false, Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0), // Slightly reduced padding
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w500,
+            style: GoogleFonts.poppins(
+              fontSize: 14, // Slightly smaller font for info rows
+              color: Colors.grey[600],
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+          Flexible( // Use Flexible to prevent overflow of long values
+            child: Text(
+              value,
+              textAlign: TextAlign.right, // Align value to the right
+              style: GoogleFonts.poppins(
+                fontSize: 14, // Slightly smaller font for info rows
+                fontWeight: isBoldValue ? FontWeight.w600 : FontWeight.w500, // Medium-bold for value
+                color: valueColor ?? Colors.grey[800], // Default value color
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("PaymentSuccessPage build() called");
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA), // A very light, modern off-white/grey
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 50), // Increased vertical padding
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Lottie Animation
+                  Lottie.asset(
+                    'assets/animasi.json', // Your success animation
+                    controller: _controller,
+                    onLoaded: (composition) {
+                      _controller
+                        ..duration = composition.duration
+                        ..forward();
+                    },
+                    repeat: false,
+                    height: 160, // Smaller, more refined
+                    width: 160,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 20), // Adjusted spacing
+
+                  // Success Title
+                  Text(
+                    'Pembayaran Berhasil!',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26, // Smaller, elegant
+                      fontWeight: FontWeight.w700, // Bold but not overwhelming
+                      color: const Color(0xFF21A66A), // A clean, modern green
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8), // Tighter spacing
+
+                  // Thank You Message
+                  Text(
+                    'Terima kasih atas pesanan Anda, ${widget.namaPelanggan}!',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 15, // Reduced font size
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 30), // More space before the card
+
+                  // Order Summary Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(22), // Slightly reduced padding inside card
+                    decoration: BoxDecoration(
+                      color: Colors.white, // Crisp white
+                      borderRadius: BorderRadius.circular(16), // Slightly less rounded for sleekness
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06), // Very subtle shadow
+                          offset: const Offset(0, 8), // Shifted shadow
+                          blurRadius: 25, // More blur
+                          spreadRadius: -4, // Tighter spread
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Detail Pesanan',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16, // Smaller, balanced
+                            fontWeight: FontWeight.w600, // Semi-bold
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const Divider(height: 20, thickness: 0.8, color: Color(0xFFE0E0E0)), // Lighter, thinner divider
+                        _buildInfoRow(
+                          'Total Pembayaran',
+                          formatter.format(widget.totalPrice),
+                          isBoldValue: true,
+                          valueColor: const Color(0xFF21A66A), // Consistent green
+                        ),
+                        _buildInfoRow('Nama Pelanggan', widget.namaPelanggan),
+                        _buildInfoRow('Nomor Meja', widget.nomorMeja),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 35),
+
+                  // Processing Indicator (if applicable)
+                  if (_isProcessingOrder)
+                    Column(
+                      children: [
+                        const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF21A66A)), // Consistent green
+                          strokeWidth: 2.5, // Even thinner loader
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Memproses pesanan dan poin...',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14, // Smaller text
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 15),
+
+                  // Back to Home Button
+                  AnimatedOpacity(
+                    opacity: _isProcessingOrder ? 0.4 : 1.0, // Dim more if processing
+                    duration: const Duration(milliseconds: 300),
+                    child: IgnorePointer(
+                      ignoring: _isProcessingOrder,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Navigate back or to a specific home screen
+                          Navigator.of(context).popUntil((route) => route.isFirst); // Go to root
+                          print("Back to Home pressed!");
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1CB85F), // A slightly brighter, more engaging green for the button
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12), // Slightly less rounded for modernity
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 16), // Adjusted padding
+                          elevation: 6, // Slightly less elevation for a flatter look
+                          shadowColor: const Color(0xFF1CB85F).withOpacity(0.3), // More subtle shadow
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        child: Text(
+                          'Kembali ke Beranda',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16, // Balanced font size
+                            fontWeight: FontWeight.w600, // Semi-bold
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Overlay for processing (full screen dimmer)
+          if (_isProcessingOrder)
+            Container(
+              color: Colors.black.withOpacity(0.3), // Even lighter overlay
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3, // Balanced loader thickness
+                ),
+              ),
+            ),
         ],
       ),
     );
