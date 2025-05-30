@@ -440,32 +440,41 @@ class _ProfilePage extends State<ProfileScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20), // Added spacing for the new button
+                  _buildClickableRoundedBox(
+                      "Masuk ke Affiliate", Icons.monetization_on, () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AffiliateScreen()),
+                    );
+                  }),
                   const SizedBox(height: 30),
-                   Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    Icons.save, 
-                    "Save Changes",
-                    _updateUserData,
-                    const Color(0xFF078603), // Hijau gelap
-                  ),
+                    Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        Icons.save, 
+                        "Save Changes",
+                        _updateUserData,
+                        const Color(0xFF078603), // Hijau gelap
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildActionButton(
+                        Icons.logout,
+                        "Logout",
+                        _logout,
+                        Colors.redAccent,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionButton(
-                    Icons.logout,
-                    "Logout",
-                    _logout,
-                    Colors.redAccent,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -496,6 +505,25 @@ class _ProfilePage extends State<ProfileScreen> {
           fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+}
+
+// --- New AffiliateScreen class ---
+class AffiliateScreen extends StatelessWidget {
+  const AffiliateScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Affiliate Program"),
+        backgroundColor: const Color(0xFF078603),
+        foregroundColor: Colors.white,
+      ),
+      body: const Center(
+        child: Text("This is the Affiliate Program page."),
       ),
     );
   }

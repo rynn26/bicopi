@@ -28,12 +28,67 @@ class _PaymentPageState extends State<PaymentPage> {
   bool _isLoading = false;
   String? _memberId;
   bool _isMemberIdLoading = false;
+  String? _userName; // Added to store the user's name
 
   @override
   void initState() {
     super.initState();
     print("PaymentPage initState() called");
     _fetchMemberId();
+    _fetchUserName(); // Call the new function to fetch the user name
+  }
+
+  // New function to fetch the user's name from Supabase auth
+  Future<void> _fetchUserName() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        // --- MODIFICATION HERE ---
+        // Attempt to get 'user_name' from user_metadata.
+        // If not found, fall back to 'email' (though you want 'username' specifically).
+        // If your username is stored in a separate 'profiles' table,
+        // you'll need an additional Supabase query.
+        _userName = user.userMetadata?['user_name']; // Assumes 'user_name' in user_metadata
+
+        // If user_metadata does not contain 'user_name', you might need to fetch from a custom table
+        if (_userName == null || _userName!.isEmpty) {
+          print("PaymentPage: 'user_name' not found in user_metadata. Trying 'users' table.");
+          try {
+            // Assuming you have a 'users' table that stores a 'username' column
+            // and is linked by 'id_user' to auth.users.id
+            final userData = await Supabase.instance.client
+                .from('users') // Your custom users table
+                .select('username') // Select the 'username' column
+                .eq('id_user', user.id) // Link to auth.users.id
+                .maybeSingle(); // Use maybeSingle to get one record or null
+
+            if (userData != null && userData['username'] != null) {
+              _userName = userData['username'] as String;
+              print("PaymentPage fetched username from 'users' table: $_userName");
+            } else {
+              print("PaymentPage: Username not found in 'users' table for user ID: ${user.id}");
+              // Fallback if username is not found anywhere
+              _userName = user.email?.split('@').first; // Use part of email as a last resort
+              print("PaymentPage falling back to email prefix as username: $_userName");
+            }
+          } catch (e) {
+            print("PaymentPage Error fetching username from 'users' table: $e");
+            _userName = user.email?.split('@').first; // Fallback
+            print("PaymentPage falling back to email prefix as username due to error: $_userName");
+          }
+        }
+
+
+        if (_userName != null && _userName!.isNotEmpty) {
+          _nameController.text = _userName!; // Set the text field
+        }
+        print("PaymentPage fetched userName: $_userName");
+      } else {
+        print("PaymentPage: No current user found.");
+      }
+    } catch (e) {
+      print("PaymentPage Error fetching user name: $e");
+    }
   }
 
   Future<void> _fetchMemberId() async {
@@ -181,27 +236,27 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-  print("PaymentPage build() called");
-  return Scaffold(
-    backgroundColor: Colors.grey[50], // Background yang lebih lembut
-    appBar: AppBar(
-      title: const Text(
-        'Pembayaran',
-        style: TextStyle(
-          color: Colors.white, // Ubah ke putih agar kontras dengan background hijau
-          fontWeight: FontWeight.w600,
+    print("PaymentPage build() called");
+    return Scaffold(
+      backgroundColor: Colors.grey[50], // Background yang lebih lembut
+      appBar: AppBar(
+        title: const Text(
+          'Pembayaran',
+          style: TextStyle(
+            color: Colors.white, // Ubah ke putih agar kontras dengan background hijau
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF078603), // Hijau solid
+        elevation: 1, // Sedikit shadow
+        iconTheme: const IconThemeData(color: Colors.white), // Ikon putih
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20), // Melengkung bawah kiri & kanan
+          ),
         ),
       ),
-      centerTitle: true,
-      backgroundColor: Color(0xFF078603), // Hijau solid
-      elevation: 1, // Sedikit shadow
-      iconTheme: const IconThemeData(color: Colors.white), // Ikon putih
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(20), // Melengkung bawah kiri & kanan
-        ),
-      ),
-    ),
       body: Stack(
         children: [
           // Wrap the Padding with SingleChildScrollView to prevent overflow
@@ -277,33 +332,33 @@ class _PaymentPageState extends State<PaymentPage> {
                     ),
                   ),
                   SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: _isLoading || _isMemberIdLoading
-        ? null
-        : createTransaction,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Color(0xFF078603),
-      padding: const EdgeInsets.symmetric(vertical: 15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 2,
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    child: Text(
-      _isLoading || _isMemberIdLoading
-          ? 'Memproses...'
-          : 'Bayar Sekarang',
-      style: const TextStyle(
-        color: Colors.white,
-      ),
-    ),
-  ),
-),
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading || _isMemberIdLoading
+                          ? null
+                          : createTransaction,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF078603),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Text(
+                        _isLoading || _isMemberIdLoading
+                            ? 'Memproses...'
+                            : 'Bayar Sekarang',
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 20), // Added bottom space
                 ],
@@ -463,9 +518,10 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
           },
         ),
       )
-..loadRequest(Uri.parse(
-    'https://app.sandbox.midtrans.com/snap/v4/redirection/${widget.snapToken}'));
+      ..loadRequest(Uri.parse(
+          'https://app.sandbox.midtrans.com/snap/v4/redirection/${widget.snapToken}'));
   }
+
   @override
   Widget build(BuildContext context) {
     print("MidtransWebViewPage build() called");
@@ -488,6 +544,7 @@ class _MidtransWebViewPageState extends State<MidtransWebViewPage> {
   }
 }
 
+//r
 // --- PaymentSuccessPage Class ---
 // --- PaymentSuccessPage Class ---
 
