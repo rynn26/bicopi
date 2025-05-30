@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
- // Make sure this import path is correct
+// import 'package:your_app_name/popup_page.dart'; // Jika ada PopupPage untuk detail, pastikan diimpor jika diperlukan
 
 class PaymentHistoryPage extends StatefulWidget {
   const PaymentHistoryPage({Key? key, required String memberId})
@@ -136,154 +136,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
     }
   }
 
-  Future<void> _clearPaymentHistory() async {
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: Text(
-            'Hapus Semua Riwayat?',
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[900],
-            ),
-          ),
-          content: Text(
-            'Apakah Anda yakin ingin menghapus semua riwayat pembayaran Anda? Tindakan ini tidak dapat dibatalkan.',
-            style: GoogleFonts.poppins(
-                fontSize: 13, color: Colors.grey[700]), // Reduced font size
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'Batal',
-                style: GoogleFonts.poppins(
-                    color: Colors.grey[600], fontWeight: FontWeight.w500),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[400],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                elevation: 3,
-              ),
-              child: Text(
-                'Hapus',
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14), // Reduced font size
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm == true) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = '';
-      });
-      try {
-        final String? currentAuthUserId =
-            Supabase.instance.client.auth.currentUser?.id;
-        if (currentAuthUserId == null || currentAuthUserId.isEmpty) {
-          throw Exception(
-              'Tidak ada pengguna yang masuk atau ID autentikasi tidak valid.');
-        }
-
-        String? actualMemberIdForDeletion;
-        try {
-          final memberRecord = await Supabase.instance.client
-              .from('members')
-              .select('id')
-              .eq('id_user', currentAuthUserId)
-              .maybeSingle();
-
-          if (memberRecord != null && memberRecord['id'] != null) {
-            actualMemberIdForDeletion = memberRecord['id'] as String;
-          } else {
-            throw Exception(
-                'Tidak ada catatan member ditemukan untuk user yang masuk.');
-          }
-        } catch (e) {
-          throw Exception(
-              'Gagal mendapatkan ID member untuk penghapusan: ${e.toString()}');
-        }
-
-        await Supabase.instance.client
-            .from('orderkasir_history')
-            .delete()
-            .eq('member_id', actualMemberIdForDeletion);
-
-        // Update the state
-        setState(() {
-          _paymentHistory = []; // Clear the list
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Riwayat pembayaran berhasil dihapus!',
-              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(10),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      } on PostgrestException catch (e) {
-        setState(() {
-          _errorMessage = 'Gagal menghapus riwayat: ${e.message}.';
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Gagal menghapus riwayat: ${e.message}',
-              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(10),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      } catch (e) {
-        setState(() {
-          _errorMessage = 'Terjadi kesalahan tidak terduga: ${e.toString()}.';
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Terjadi kesalahan: ${e.toString()}',
-              style: GoogleFonts.poppins(fontSize: 13), // Reduced font size
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(10),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    }
-  }
+  // Fungsi _clearPaymentHistory telah dihapus
 
   @override
   Widget build(BuildContext context) {
@@ -322,11 +175,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
             },
             tooltip: 'Riwayat Reservasi',
           ),
-          IconButton(
-            icon: Icon(Icons.delete_forever, color: Colors.red[400], size: 24), // Reduced icon size
-            onPressed: _paymentHistory.isEmpty ? null : _clearPaymentHistory,
-            tooltip: 'Hapus Semua Riwayat',
-          ),
+          // Tombol delete_forever sudah dihapus
         ],
       ),
       body: _isLoading

@@ -62,85 +62,8 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
     }
   }
 
-  Future<void> _deleteReservation(String id) async {
-    try {
-      await Supabase.instance.client.from('reservasii').delete().eq('id', id);
-      if (mounted) {
-        setState(() {
-          _reservationsFuture = _fetchUserReservations(_currentUserId!);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Reservasi berhasil dihapus.'),
-            backgroundColor: originalGreen, // Consistent green for success
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(10),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menghapus reservasi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(10),
-          ),
-        );
-      }
-    }
-  }
-
-  void _confirmDelete(String id) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          "Hapus Reservasi",
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Colors.red.shade700,
-          ),
-        ),
-        content: Text(
-          "Apakah Anda yakin ingin menghapus reservasi ini? Tindakan ini tidak dapat dibatalkan.",
-          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[600],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: Text("Batal", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              elevation: 3,
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteReservation(id);
-            },
-            child: Text("Hapus", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
+  // Fungsi _deleteReservation telah dihapus
+  // Fungsi _confirmDelete telah dihapus
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +77,7 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-             borderRadius: BorderRadius.only(
+              borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(20), // Sudut melengkung kiri bawah
             bottomRight: Radius.circular(20), // Sudut melengkung kanan bawah
           ),
@@ -194,25 +117,8 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final data = snapshot.data![index];
-                      final id = data['id'] ?? '';
-                      return Dismissible(
-                        key: Key(id),
-                        direction: DismissDirection.endToStart,
-                        confirmDismiss: (direction) async {
-                          _confirmDelete(id);
-                          return false;
-                        },
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 25),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade500,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(Icons.delete_forever_rounded, color: Colors.white, size: 30),
-                        ),
-                        child: _buildReservationCard(data),
-                      );
+                      // Dismissible widget dihapus karena tidak ada lagi fungsi delete
+                      return _buildReservationCard(data);
                     },
                   );
                 }
@@ -250,7 +156,7 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
     final String waktu = data['waktu'] ?? 'N/A';
     final String jumlahOrang = data['jumlah_orang']?.toString() ?? 'N/A';
     final String keterangan = data['keterangan'] ?? 'Tidak ada keterangan.'; // Added this line
-    final String id = data['id'];
+    // final String id = data['id']; // Tidak diperlukan lagi karena tidak ada fungsi delete
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -327,36 +233,9 @@ class _ReservationHistoryScreenState extends State<ReservationHistoryScreen> {
                 _buildInfoRow(Icons.notes_rounded, 'Keterangan', keterangan), // New row for keterangan
               ],
             ),
-          const SizedBox(height: 20),
+          // const SizedBox(height: 20), // SizedBox ini juga bisa dihapus jika tidak ada lagi tombol di bawahnya
 
-          Align(
-            alignment: Alignment.centerRight,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(15),
-                onTap: () => _confirmDelete(id),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.delete_sweep_rounded, size: 24, color: Colors.redAccent.shade700),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Batalkan Reservasi",
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          color: Colors.redAccent.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Bagian tombol "Batalkan Reservasi" telah dihapus
         ],
       ),
     );
