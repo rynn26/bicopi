@@ -404,7 +404,7 @@ class HomeContent extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
-              "Paket",
+              "Informasi Terkini",
               style: GoogleFonts.poppins(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -416,7 +416,7 @@ class HomeContent extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
-              "Favorit",
+              "Best Seller",
               style: GoogleFonts.poppins(
                 fontSize: 19,
                 fontWeight: FontWeight.bold,
@@ -653,35 +653,77 @@ Widget _buildCategoryList(BuildContext context) {
     ),
   );
 }
-
 Widget _buildCarousel() {
-  final List<String> imageList = [
-    "assets/paketramadhan.png",
-    "assets/pakethebat.png",
-  ];
+  return FutureBuilder<List<String>>(
+    future: Supabase.instance.client
+        .from('informasi')
+        .select('image_url')
+        .then((response) {
+          final data = response as List;
+          return data.map<String>((row) => row['image_url'] as String).toList();
+        }),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      } else if (snapshot.hasError) {
+        return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+      }
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 10),
-    child: CarouselSlider(
-      options: CarouselOptions(
-        height: 180,
-        autoPlay: true,
-        enlargeCenterPage: true,
-      ),
-      items: imageList.map((image) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.asset(
-            image,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
+      final imageList = snapshot.data ?? [];
+
+      if (imageList.isEmpty) {
+        // Tampilan jika data kosong
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/nodata.png', // Ganti dengan gambar default yang tersedia
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 180,
+                ),
+              ),
+            ),
+            const Text(
+              'Tidak ada informasi yang tersedia.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
         );
-      }).toList(),
-    ),
+      }
+
+      // Tampilan jika data tersedia
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: CarouselSlider(
+          options: CarouselOptions(
+            height: 180,
+            autoPlay: true,
+            enlargeCenterPage: true,
+          ),
+          items: imageList.map((imageUrl) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Center(child: Icon(Icons.broken_image)),
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    },
   );
 }
+
+
 
 void _showItemDetails(BuildContext context, Map<String, String> item,
     Function(String itemName) addItemToCart) {
